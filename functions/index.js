@@ -54,6 +54,7 @@ admin.initializeApp();
  * שדה fcmToken בעל תוקף שגוי אוטומטית כאן, לא בתחום v1.
  */
 async function sendPushToTokens(tokens, notification) {
+  logger.info(`sendPushToTokens: ${tokens ? tokens.length : 0} tokens נמצאו לשליחה`, { notification });
   if (!tokens || tokens.length === 0) return { successCount: 0, failureCount: 0 };
   const CHUNK_SIZE = 500;
   let successCount = 0;
@@ -63,6 +64,17 @@ async function sendPushToTokens(tokens, notification) {
     const response = await admin.messaging().sendEachForMulticast({ notification, tokens: chunk });
     successCount += response.successCount;
     failureCount += response.failureCount;
+    // FCM response המלא לצ'אנק — כולל error.code/message לכל token שנכשל
+    // (למשל invalid-registration-token / registration-token-not-registered),
+    // קריטי לאבחון פעם ראשונה שיש טוקנים בפועל אבל ה-push עדיין לא מגיע.
+    response.responses.forEach((r, idx) => {
+      if (!r.success) {
+        logger.warn(`sendPushToTokens: token ${chunk[idx].substring(0, 15)}... נכשל`, {
+          code: r.error && r.error.code,
+          message: r.error && r.error.message,
+        });
+      }
+    });
   }
   return { successCount, failureCount };
 }
@@ -1110,6 +1122,9 @@ exports.sendAnnouncement = onCall(
         .filter((d) => d.data().institutionId === institutionId)
         .map((d) => d.id);
       const tokens = await getTokensForUids(studentUids);
+      logger.info(
+        `sendAnnouncement: ${studentUids.length} תלמידים בכיתה ${classId}, ${tokens.length} tokens נמצאו ב-users/*/tokens`
+      );
       const { successCount, failureCount } = await sendPushToTokens(tokens, {
         title: "📢 הודעה חדשה מהמורה",
         body: message,
