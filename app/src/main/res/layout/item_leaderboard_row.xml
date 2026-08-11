@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <TextView
+        android:id="@+id/tvLeaderboardRank"
+        android:layout_width="32dp"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="@color/green_dark"
+        android:gravity="center"
+        tools:text="1" />
+
+    <TextView
+        android:id="@+id/tvLeaderboardName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:textSize="15sp"
+        android:textColor="#333333"
+        tools:text="יוסי כ' (אתה)" />
+
+    <TextView
+        android:id="@+id/tvLeaderboardXp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/turquoise_accent"
+        tools:text="910 XP" />
+
+</LinearLayout>

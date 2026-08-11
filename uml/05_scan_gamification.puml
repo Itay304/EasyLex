@@ -1,0 +1,152 @@
+@startuml 05_Scan_Gamification
+title סריקה וגמיפיקציה — Scan & Gamification
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #EDE7F6
+  BorderColor #4527A0
+  HeaderBackgroundColor #4527A0
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #4527A0
+
+
+class ScanFragment {
+  - {static} TAG : String
+  - {static} HEBREW_PATTERN : Pattern
+  - viewFinder : PreviewView
+  - imageResult : ImageView
+  - graphicOverlay : GraphicOverlay
+  - imageContainer : View
+  - textTitle : TextView
+  - captureButtons : View
+  - reviewButtons : View
+  - imageCapture : ImageCapture
+  - cameraExecutor : ExecutorService
+  - textRecognizer : TextRecognizer
+  - viewModel : MyWordsViewModel
+  - localWordsList : List<Word>
+  - tts : TextToSpeech
+  - currentPhotoFile : File
+  - isFreeTextMode : boolean
+  - requestPermissionLauncher : ActivityResultLauncher<String>
+  - pickImageLauncher : ActivityResultLauncher<String>
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onDestroyView()
+  - showCaptureMode()
+  - showReviewMode()
+  - setupOverlayClick()
+  - handleWordClick(WordBox)
+  - showAddDialogWithTranslation(String english, String pos)
+  - showAddDialog(String english, String pos, String suggestedHebrew)
+  - checkCameraPermission()
+  - startCamera()
+  - takePhoto()
+  - recognizeText(InputImage)
+  - blockHasBulletLine(TextBlock) : boolean
+  - extractWordBoxes(Text) : List<WordBox>
+  - extractFreeTextBoxes(Text) : List<WordBox>
+  - loadRotatedBitmap(File) : Bitmap
+}
+note right of ScanFragment
+  שני מצבים: CAPTURE / REVIEW
+  ספר: Element level (מילה בודדת)
+  חופשי: Line level (שורה שלמה)
+  ExifInterface: תיקון סיבוב EXIF
+  ML Kit OCR → ML Kit Translate
+  שמירה: isVerified=false, isFavorite=true
+  pageBounds: union של Rect בלוקים
+end note
+
+class GraphicOverlay {
+  - {static} TAG : String
+  - {static} COLOR_EXISTS : int
+  - {static} COLOR_ADD : int
+  - wordBoxes : List<WordBox>
+  - fillPaint : Paint
+  - imageWidth : int
+  - imageHeight : int
+  ==
+  + GraphicOverlay(Context, AttributeSet)
+  + setImageSourceInfo(int width, int height)
+  + setWordBoxes(List<WordBox>)
+  + getWordBoxes() : List<WordBox>
+  + getScaledRect(Rect) : RectF
+  # onDraw(Canvas)
+}
+note right of GraphicOverlay
+  WordBox inner class:
+  rect, exists, text, pos
+  exists=true → ירוק
+  exists=false → כחול
+end note
+
+class GamificationEngine <<Singleton>> {
+  - {static} instance : volatile GamificationEngine
+  - prefs : SharedPreferences
+  - db : FirebaseFirestore
+  - {static} PREFS_NAME : String
+  - {static} KEY_TOTAL_XP : String
+  - {static} KEY_LEVEL : String
+  - {static} KEY_STREAK : String
+  - {static} KEY_STREAK_DATE : String
+  - {static} KEY_DAILY_CORRECT_PREFIX : String
+  - {static} XP_CORRECT_ANSWER : int
+  - {static} XP_MODULE_COMPLETE : int
+  - {static} XP_WORD_MASTERED : int
+  ==
+  - GamificationEngine(Context)
+  + {static} getInstance(Context) : GamificationEngine
+  + onCorrectAnswer(Word before, Word after)
+  + onModuleComplete()
+  + getTotalXp() : int
+  + getCurrentLevel() : int
+  + getStreak() : int
+  + getDailyCorrectCount() : int
+  + getWeeklyActivity() : int[]
+  + getXpForLevelStart(int level) : int
+  + getXpForNextLevel() : int
+  + getXpWithinLevel() : int
+  + getXpRangeOfLevel() : int
+  + syncFromFirestore(Runnable)
+  - addXp(int amount)
+  - {static} computeLevel(int xp) : int
+  - checkStreak()
+  - persistToFirestore(int xp, int level)
+  - recordDailyActivity()
+  - {static} todayString() : String
+}
+note right of GamificationEngine
+  Level = floor(sqrt(XP/100)) + 1
+  SharedPrefs + Firestore dual-write
+  +10 XP נכון
+  +100 XP mastery <5 → 5
+  +50 XP סוף מודול
+  weekly: KEY_DAILY_CORRECT_yyyy-MM-dd
+end note
+
+class StreakManager {
+  - {static} DATE_FMT : SimpleDateFormat
+  ==
+  + {static} checkAndUpdate(String uid, int currentStreak, FirebaseFirestore db, StreakCallback callback)
+  - {static} computeStreak(String lastDateStr, int currentStreak, String today) : int
+  - {static} daysDiff(String dateA, String dateB) : long
+}
+note right of StreakManager
+  diffDays == 0 → ללא שינוי
+  diffDays == 1 → streak++
+  diffDays  > 1 → streak = 1
+  interface StreakCallback { onResult(int) }
+end note
+
+ScanFragment --> GraphicOverlay    : draws
+GamificationEngine --> StreakManager : checkAndUpdate()
+
+@enduml

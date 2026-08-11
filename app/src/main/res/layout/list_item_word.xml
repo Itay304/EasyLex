@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:layoutDirection="ltr">
+
+        <TextView
+            android:id="@+id/textViewEnglishWord"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/green_dark"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:gravity="start"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/textViewHebrewTranslation"
+            app:layout_constraintHorizontal_weight="1"/>
+
+        <TextView
+            android:id="@+id/textViewHebrewTranslation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:gravity="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/div"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="#F5F5F5"
+            app:layout_constraintTop_toBottomOf="@id/textViewEnglishWord" />
+
+        <TextView
+            android:id="@+id/textViewExampleSentence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#555555"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:gravity="start"
+            app:layout_constraintTop_toBottomOf="@id/div" />
+
+        <TextView
+            android:id="@+id/textViewHebrewExample"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#999999"
+            android:textSize="13sp"
+            android:gravity="right"
+            android:textAlignment="viewEnd"
+            app:layout_constraintTop_toBottomOf="@id/textViewExampleSentence" />
+
+        <ImageButton
+            android:id="@+id/imageButtonPronounce"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            app:tint="@color/turquoise_accent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textViewHebrewExample" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

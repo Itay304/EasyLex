@@ -1,0 +1,125 @@
+@startuml 06_Admin_Stats_Settings
+title מנהל, סטטיסטיקות והגדרות
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #F5F5F5
+  BorderColor #424242
+  HeaderBackgroundColor #424242
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #424242
+
+
+package "Admin" {
+  class AdminEditFragment {
+    - {static} COL : String
+    - {static} DOC : String
+    - {static} SUB : String
+    - rootView : View
+    - recyclerView : RecyclerView
+    - adapter : AdminWordAdapter
+    - tvProgress : TextView
+    - progressBar : LinearProgressIndicator
+    - allWords : List<Word>
+    - allDocIds : List<String>
+    ==
+    + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+    - loadWords()
+    - setupSwipeToDelete()
+    - setupSearch()
+    - setupFab()
+  }
+  note right of AdminEditFragment
+    CoordinatorLayout + FAB
+    ItemTouchHelper: swipe→מחיקה
+    Snackbar "בטל" עם undo
+    גישה ישירה ל-Firestore
+    (לא דרך Room)
+  end note
+
+  class AdminWordAdapter {
+    - words : List<Word>
+    - docIds : List<String>
+    ==
+    + setData(List<Word>, List<String>)
+    + getWord(int position) : Word
+    + getDocId(int position) : String
+    + removeItem(int position)
+    + insertItem(int position, Word, String docId)
+    + onCreateViewHolder(ViewGroup, int) : AdminViewHolder
+    + onBindViewHolder(AdminViewHolder, int)
+    + getItemCount() : int
+    - {static} nullToEmpty(String) : String
+  }
+  note right of AdminWordAdapter
+    Inner class: AdminViewHolder
+    כרטיסי קריאה בלבד
+    layoutDirection=ltr
+    EN שמאל | HE ימין
+    Optimistic UI Update
+  end note
+}
+
+package "Statistics" {
+  class StatisticsFragment {
+    - binding : FragmentStatisticsBinding
+    - gamification : GamificationEngine
+    ==
+    + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+    + onResume()
+    + onDestroyView()
+    - calculateMastery(List<Word>)
+    - updateRank(float pct, int mastered)
+    - updateGamificationUi()
+  }
+  note right of StatisticsFragment
+    7 רמות דרגה:
+    < 5%  = 🌱 מתחיל
+    5-19% = 📖 תלמיד
+    20-39%= ⭐ מתקדם
+    40-59%= 🎖 אלוף
+    60-79%= 👑 נסיך
+    80-94%= 🏆 מלך
+    95%+  = 💎 אגדה
+    onResume: syncFromFirestore()
+  end note
+}
+
+package "Settings" {
+  class SettingsFragment {
+    + {static} PREFS_SETTINGS : String
+    + {static} KEY_DAILY_GOAL : String
+    + {static} KEY_TTS_ENABLED : String
+    - {static} DEFAULT_DAILY_GOAL : int
+    ==
+    + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+    + onDestroyView()
+    - setupToolbar()
+    - loadAccountInfo()
+    - showEditNameDialog()
+    - updateDisplayName(String name)
+    - loadLearningSettings()
+    - updateDailyGoalChip(int goal)
+    - setupDataActions()
+    - resetProgress()
+    - setupAbout()
+  }
+  note right of SettingsFragment
+    Slider: יעד יומי (1-50)
+    Switch: TTS on/off
+    resetProgress: Room + Firestore
+    loadAccountInfo: Firebase Auth
+    updateDisplayName: Firestore + Auth
+  end note
+}
+
+AdminEditFragment --> AdminWordAdapter : owns
+
+@enduml

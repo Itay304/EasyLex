@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyLex — תיעוד UML מלא</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white; padding: 2.5rem 2rem; text-align: center; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  header h1 { font-size: 2rem; letter-spacing: 2px; margin-bottom: 0.4rem; }
+  header p { opacity: 0.8; font-size: 0.95rem; }
+
+  nav { background: #16213e; padding: 0.8rem 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;
+    justify-content: center; border-bottom: 2px solid #0f3460; }
+  nav a { color: #e0e0e0; text-decoration: none; padding: 0.35rem 0.8rem; border-radius: 20px;
+    font-size: 0.8rem; background: rgba(255,255,255,0.08); transition: all 0.2s; white-space: nowrap; }
+  nav a:hover { background: rgba(255,255,255,0.22); color: white; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .section-header { background: linear-gradient(135deg, var(--c1), var(--c2));
+    color: white; padding: 1.5rem 2rem; border-radius: 12px; margin: 2.5rem 0 1.5rem;
+    display: flex; align-items: center; gap: 1rem; }
+  .section-header h2 { font-size: 1.4rem; }
+  .section-header .icon { font-size: 2rem; }
+
+  .diagram-card { background: white; border-radius: 14px; padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 2.5rem;
+    border-top: 5px solid var(--accent, #1565C0); }
+  .diagram-title { font-size: 1.3rem; font-weight: 700; color: var(--accent, #1565C0);
+    margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 2px solid #f0f0f0; }
+
+  .uml-container { text-align: center; margin: 1rem 0 1.5rem; background: #fafafa;
+    border-radius: 10px; padding: 1rem; border: 1px solid #e0e0e0; min-height: 80px; }
+  .uml-container img { max-width: 100%; border-radius: 6px; }
+  .loading { color: #888; font-size: 0.9rem; padding: 2rem; }
+
+  .exp-section { margin-top: 1.5rem; }
+  .exp-title { font-size: 1rem; font-weight: 700; color: #333; margin: 1.2rem 0 0.6rem;
+    padding: 0.4rem 0.8rem; background: #f5f5f5; border-radius: 6px;
+    border-right: 4px solid var(--accent, #1565C0); }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.88rem; }
+  th { background: var(--accent, #1565C0); color: white; padding: 0.6rem 0.8rem; text-align: right; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  tr:hover { background: #f0f4ff; }
+
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem;
+    font-weight: 600; }
+  .b-private { background: #ffebee; color: #c62828; }
+  .b-public { background: #e8f5e9; color: #2e7d32; }
+  .b-protected { background: #fff3e0; color: #e65100; }
+  .b-static { background: #e3f2fd; color: #1565c0; }
+
+  .class-block { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 1.2rem; margin-bottom: 1.5rem; }
+  .class-name { font-size: 1.1rem; font-weight: 700; color: var(--accent, #1565C0);
+    margin-bottom: 0.3rem; }
+  .class-desc { font-size: 0.9rem; color: #555; margin-bottom: 0.8rem; line-height: 1.5; }
+
+  .seq-step { background: white; border: 1px solid #e0e0e0; border-radius: 8px;
+    padding: 0.8rem 1rem; margin-bottom: 0.6rem; display: flex; align-items: flex-start; gap: 1rem; }
+  .step-num { background: var(--accent, #1565C0); color: white; border-radius: 50%;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+  .step-text { font-size: 0.88rem; line-height: 1.6; }
+  .step-text strong { color: var(--accent, #1565C0); }
+
+  .note-box { background: #fffde7; border: 1px solid #f9a825; border-radius: 8px;
+    padding: 0.8rem 1rem; margin: 0.8rem 0; font-size: 0.88rem; line-height: 1.6; }
+  .note-box::before { content: '💡 '; }
+
+  code { background: #f5f5f5; padding: 0.1rem 0.4rem; border-radius: 4px;
+    font-family: 'Consolas', monospace; font-size: 0.85rem; color: #c62828; }
+
+  footer { text-align: center; padding: 2rem; color: #888; font-size: 0.85rem;
+    border-top: 1px solid #e0e0e0; margin-top: 3rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📐 EasyLex — תיעוד UML מלא</h1>
+  <p>11 תרשימי UML | 6 מחלקות + 5 רצפים | עם הסבר מפורט לכל שדה, פונקציה ומחלקה</p>
+</header>
+
+<nav>
+  <a href="#d01">01 שכבת נתונים</a>
+  <a href="#d02">02 אימות וניווט</a>
+  <a href="#d03">03 MyWords MVVM</a>
+  <a href="#d04">04 מודולי תרגול</a>
+  <a href="#d05">05 סריקה וגמיפיקציה</a>
+  <a href="#d06">06 מנהל, סטטיסטיקות, הגדרות</a>
+  <a href="#d07">07 סנכרון Firestore</a>
+  <a href="#d08">08 מחיקה בזמן אמת</a>
+  <a href="#d09">09 זרימת חידון</a>
+  <a href="#d10">10 זרימת OCR</a>
+  <a href="#d11">11 זרימת אימות</a>
+</nav>
+
+<div class="container">
+
+<!-- ===== CLASS DIAGRAMS ===== -->
+<div class="section-header" style="--c1:#1565C0;--c2:#1976D2;">
+  <span class="icon">🏗️</span>
+  <div><h2>תרשימי מחלקות</h2><p style="opacity:0.85;font-size:0.9rem;">ארכיטקטורת MVVM+Repository | 6 תרשימים</p></div>
+</div>
+
+<!-- ===== 01 DATA LAYER ===== -->
+<div id="d01" class="diagram-card" style="--accent:#1565C0;">
+  <div class="diagram-title">01 — שכבת הנתונים (Data Layer)</div>
+  <div class="uml-container"><img id="img01" src="" alt="Data Layer UML"><div class="loading" id="l01">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+
+    <div class="class-block">
+      <div class="class-name">📦 Word <span style="font-size:0.8rem;background:#e3f2fd;padding:0.1rem 0.5rem;border-radius:10px;color:#1565C0;">@Entity</span></div>
+      <div class="class-desc">מודל הנתונים הראשי של האפליקציה. מייצג מילה בשפה האנגלית עם תרגומה לעברית, נתוני למידה, וסטטיסטיקות תרגול. שמור ב-Room תחת טבלה <code>words_table</code>.</div>
+
+      <div class="exp-title">שדות (Fields)</div>
+      <table>
+        <tr><th>שם</th><th>סוג</th><th>גישה</th><th>תיאור</th></tr>
+        <tr><td><code>id</code></td><td>int</td><td><span class="badge b-private">private</span></td><td>מזהה ייחודי, נוצר אוטומטית ע"י Room (@PrimaryKey autoGenerate)</td></tr>
+        <tr><td><code>englishWord</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>המילה באנגלית — המזהה הלוגי של המילה בסנכרון עם Firestore</td></tr>
+        <tr><td><code>hebrewTranslation</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>התרגום לעברית, מוצג בכרטיסי למידה ובממשק RTL</td></tr>
+        <tr><td><code>partOfSpeech</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>חלק הדיבור (noun, verb, adj…) — לצורכי סינון ותצוגה</td></tr>
+        <tr><td><code>exampleSentence</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>משפט דוגמה באנגלית</td></tr>
+        <tr><td><code>hebrewExample</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>תרגום משפט הדוגמה לעברית</td></tr>
+        <tr><td><code>tags</code></td><td>String</td><td><span class="badge b-private">private</span></td><td>תגיות חופשיות מופרדות בפסיק — לסינון מתקדם</td></tr>
+        <tr><td><code>creationTimestamp</code></td><td>long</td><td><span class="badge b-private">private</span></td><td>חותמת זמן של הוספת המילה (milliseconds since epoch)</td></tr>
+        <tr><td><code>correctAttempts</code></td><td>int</td><td><span class="badge b-private">private</span></td><td>מספר ניסיונות נכונים בחידון — נכנס לחישוב Mastery</td></tr>
+        <tr><td><code>totalAttempts</code></td><td>int</td><td><span class="badge b-private">private</span></td><td>סה"כ ניסיונות בחידון — מכנה בנוסחת Mastery</td></tr>
+        <tr><td><code>spellingCorrect</code></td><td>int</td><td><span class="badge b-private">private</span></td><td>מספר איותים נכונים (SpellingFragment)</td></tr>
+        <tr><td><code>isFavorite</code></td><td>boolean</td><td><span class="badge b-private">private</span></td><td>מסמן מילה אישית (שנוספה ע"י המשתמש) לעומת מילה גלובלית</td></tr>
+        <tr><td><code>isVerified</code></td><td>boolean</td><td><span class="badge b-private">private</span></td><td>true = מילה גלובלית שסונכרנה מ-Firestore; false = מילה אישית/OCR</td></tr>
+        <tr><td><code>errorInQuiz</code></td><td>boolean</td><td><span class="badge b-private">private</span></td><td>true אם נטעה בחידון בסשן האחרון — מאפשר מצב "טעויות"</td></tr>
+        <tr><td><code>errorInSpelling</code></td><td>boolean</td><td><span class="badge b-private">private</span></td><td>true אם נטעה באיות — מאפשר סינון מילות שגיאה באיות</td></tr>
+        <tr><td><code>errorInFlashcards</code></td><td>boolean</td><td><span class="badge b-private">private</span></td><td>true אם סומנה "לא יודע" בפלאשקארד — לאימון ממוקד</td></tr>
+      </table>
+
+      <div class="exp-title">מתודות לוגיקה</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>getMasteryLevel() : int</code></td><td>מחשב רמת שליטה 0–5: <code>min(5, floor(correctAttempts / (totalAttempts+1) × 5))</code>. משמש ל: בחירה אדפטיבית בחידון, אנימציית XP, סטטיסטיקות</td></tr>
+        <tr><td><code>Word()</code></td><td>קונסטרוקטור ריק הנדרש ע"י Room</td></tr>
+      </table>
+      <div class="note-box">כל שאר המתודות הן getters/setters סטנדרטיים. Room דורש אותם כי השדות private.</div>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🗄️ WordDao <span style="font-size:0.8rem;background:#e3f2fd;padding:0.1rem 0.5rem;border-radius:10px;color:#1565C0;">@Dao interface</span></div>
+      <div class="class-desc">ממשק גישה לנתונים של Room. מגדיר את כל שאילתות ה-SQL המורשות על <code>words_table</code>. Room מייצר את המימוש בזמן קומפילציה.</div>
+      <table>
+        <tr><th>מתודה</th><th>SQL / תיאור</th></tr>
+        <tr><td><code>insert(Word)</code></td><td>@Insert(onConflict=REPLACE) — מוסיף מילה, מעדכן אם קיימת</td></tr>
+        <tr><td><code>update(Word)</code></td><td>@Update — מעדכן שורה לפי id</td></tr>
+        <tr><td><code>delete(Word)</code></td><td>@Delete — מוחק שורה לפי id</td></tr>
+        <tr><td><code>getAllWords()</code></td><td>SELECT * ORDER BY englishWord ASC — מחזיר LiveData לצפייה חיה</td></tr>
+        <tr><td><code>getPersonalWords()</code></td><td>SELECT WHERE isFavorite=1 AND isVerified=0 — מילות המשתמש</td></tr>
+        <tr><td><code>getVerifiedEnglishWords()</code></td><td>SELECT englishWord WHERE isVerified=1 — לסנכרון diff עם Firestore</td></tr>
+        <tr><td><code>deleteUnmarkedGlobalWords()</code></td><td>DELETE WHERE isVerified=1 AND isFavorite=0 — ניקוי מילים גלובליות לא מסומנות</td></tr>
+        <tr><td><code>deletePersonalWords()</code></td><td>DELETE WHERE isVerified=0 — מחיקת כל המילים האישיות</td></tr>
+        <tr><td><code>deleteVerifiedWordByEnglish(String)</code></td><td>DELETE WHERE englishWord=? AND isVerified=1 — מחיקה ספציפית מ-Firestore listener</td></tr>
+        <tr><td><code>deleteVerifiedWords()</code></td><td>DELETE WHERE isVerified=1 — ניקוי כל המילים הגלובליות</td></tr>
+        <tr><td><code>deleteAllWords()</code></td><td>DELETE FROM words_table — איפוס מלא</td></tr>
+        <tr><td><code>resetAllWordProgress()</code></td><td>UPDATE: מאפס correctAttempts, totalAttempts, spellingCorrect, errors לכולם</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🏛️ WordRoomDatabase <span style="font-size:0.8rem;background:#e3f2fd;padding:0.1rem 0.5rem;border-radius:10px;color:#1565C0;">Singleton</span></div>
+      <div class="class-desc">מחלקת ה-Room Database. Singleton עם Double-Checked Locking לאתחול בטוח ב-multi-thread. גרסה 3, <code>fallbackToDestructiveMigration()</code> כי אין migrations ידניות.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>getDatabase(Context)</code></td><td>מחזיר (ויוצר אם צריך) את ה-Singleton instance. מוחזק ב-volatile לצמצום בעיות cache בין threads</td></tr>
+        <tr><td><code>wordDao()</code></td><td>abstract — Room מייצר את המימוש. מחזיר את ממשק ה-DAO</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🔄 WordRepository</div>
+      <div class="class-desc">שכבת הריפוזיטורי — ה"מוח" של שכבת הנתונים. מתווך בין ViewModel לבין Room ו-Firestore. כל פעולות DB רצות ב-<code>ExecutorService</code> (4 threads).</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>WordRepository(Application)</code></td><td>בונה Room DB + DAO + ExecutorService. מאתחל LiveData</td></tr>
+        <tr><td><code>insert(Word)</code></td><td>מריץ databaseWriteExecutor.execute(() → dao.insert)</td></tr>
+        <tr><td><code>update(Word)</code></td><td>מריץ databaseWriteExecutor.execute(() → dao.update)</td></tr>
+        <tr><td><code>delete(Word)</code></td><td>מריץ databaseWriteExecutor.execute(() → dao.delete)</td></tr>
+        <tr><td><code>deleteAll()</code></td><td>מוחק את כל המילים מ-Room</td></tr>
+        <tr><td><code>deletePersonalWords()</code></td><td>מוחק רק מילים אישיות (isVerified=0)</td></tr>
+        <tr><td><code>resetAllWordProgress(Runnable)</code></td><td>מאפס סטטיסטיקות לכל המילים, קורא callback בסיום</td></tr>
+        <tr><td><code>syncGlobalWordsFromFirestore(Runnable)</code></td><td>מביא את כל מילות Firestore, מחשב diff עם Room, מוסיף חדשות, מוחק שנעלמו</td></tr>
+        <tr><td><code>startGlobalDeleteListener()</code></td><td>מאזין ל-Firestore (MetadataChanges.EXCLUDE). כאשר מסמך נמחק → מוחק מ-Room</td></tr>
+        <tr><td><code>stopGlobalDeleteListener()</code></td><td>מנתק את ה-Listener. נקרא מ-ViewModel.onCleared() למניעת דליפת זיכרון</td></tr>
+        <tr><td><code>replaceAllWords(List&lt;Word&gt;)</code></td><td>מוחק הכל ומכניס רשימה חדשה — לשימוש בהעברת מאגר שלם</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 02 AUTH & NAV ===== -->
+<div id="d02" class="diagram-card" style="--accent:#C62828;">
+  <div class="diagram-title">02 — אימות וניווט (Auth & Navigation)</div>
+  <div class="uml-container"><img id="img02" src="" alt="Auth UML"><div class="loading" id="l02">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+
+    <div class="class-block">
+      <div class="class-name">🚀 SplashActivity <span style="font-size:0.8rem;background:#ffebee;padding:0.1rem 0.5rem;border-radius:10px;color:#c62828;">LAUNCHER</span></div>
+      <div class="class-desc">מסך הפתיחה. מנהל שני תהליכים מקבילים: אנימציית לוגו + בדיקת מצב Auth. ניווט מתרחש רק כשה<b>שניים</b> סיימו.</div>
+      <table>
+        <tr><th>שדה / מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>authReady : boolean</code></td><td>הופך true כשתשובת Firebase Auth התקבלה</td></tr>
+        <tr><td><code>animDone : boolean</code></td><td>הופך true כשאנימציית ה-Splash הסתיימה</td></tr>
+        <tr><td><code>goToMain : boolean</code></td><td>true = יש משתמש מחובר, false = צריך Login</td></tr>
+        <tr><td><code>startSplashAnimation()</code></td><td>מריץ Lottie / ValueAnimator על לוגו EasyLex; בסיום → animDone=true, tryProceed()</td></tr>
+        <tr><td><code>checkAppVersion()</code></td><td>בודק Remote Config אם יש גרסה חדשה חובה — מציג dialog אם כן</td></tr>
+        <tr><td><code>resolveAuth()</code></td><td>קורא FirebaseAuth.getCurrentUser() → מעדכן goToMain → authReady=true → tryProceed()</td></tr>
+        <tr><td><code>tryProceed()</code></td><td>שומר: מנווט רק אם animDone AND authReady. מונע race condition</td></tr>
+        <tr><td><code>showForceUpdateDialog(String)</code></td><td>מציג AlertDialog עם כפתור לחנות. אינו ניתן לסגירה</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🔐 LoginActivity</div>
+      <div class="class-desc">מסך כניסה. Email + Password עם Firebase Authentication. מוביל ל-MainActivity או ל-RegisterActivity.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onCreate(Bundle)</code></td><td>מגדיר ViewBinding, כפתורי כניסה והרשמה</td></tr>
+        <tr><td><code>loginUser()</code></td><td>מפעיל signInWithEmailAndPassword(), בהצלחה → startActivity(MainActivity)</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">📝 RegisterActivity</div>
+      <div class="class-desc">מסך הרשמה. יוצר חשבון Firebase חדש. בסיום קורא <code>finishAffinity()</code> למחיקת כל ה-backstack (Splash+Login+Register).</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onCreate(Bundle)</code></td><td>מגדיר ViewBinding + כפתור הרשמה</td></tr>
+        <tr><td><code>registerUser()</code></td><td>מפעיל createUserWithEmailAndPassword() → startActivity(Main) + finishAffinity()</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🏠 MainActivity</div>
+      <div class="class-desc">Activity ראשית. מכילה NavHostFragment + BottomNavigationView עם 5 טאבים. כל הניווט עובר דרכה.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onCreate(Bundle)</code></td><td>inflate ActivityMainBinding, מקשר NavController עם BottomNavigationView</td></tr>
+        <tr><td><code>onSupportNavigateUp()</code></td><td>מאפשר ניווט אחורה עם כפתור Back בטולבר</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">📊 DashboardFragment</div>
+      <div class="class-desc">מסך הבית (הטאב הראשון). מציג: מילה יומית, אתגר יומי, גרף פעילות שבועי, שורת טעויות, ציטוט מוטיבציוני.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onResume()</code></td><td>מרענן נתוני XP/Streak מ-GamificationEngine בכל כניסה</td></tr>
+        <tr><td><code>onWordsLoaded(List&lt;Word&gt;)</code></td><td>callback של LiveData — מופעל בכל שינוי ברשימת המילים</td></tr>
+        <tr><td><code>setupWordOfDay(List&lt;Word&gt;)</code></td><td>בוחר מילה לפי <code>DAY_OF_YEAR % words.size()</code> — אותה מילה כל היום</td></tr>
+        <tr><td><code>setupDailyChallenges(List&lt;Word&gt;)</code></td><td>מציג progress bar של dailyCorrect/dailyGoal לכל מודול</td></tr>
+        <tr><td><code>setupWeeklyActivity()</code></td><td>בונה גרף עמודות ידני (LinearLayout + View) ל-7 ימים — ללא ספרייה חיצונית</td></tr>
+        <tr><td><code>buildDayLabels()</code></td><td>מחזיר מערך שמות ימים עברית מה-יום הנוכחי אחורה</td></tr>
+        <tr><td><code>setupMistakesRow(List&lt;Word&gt;)</code></td><td>מציג את המילים שנטעה בהן לאחרונה (errorInQuiz=true)</td></tr>
+        <tr><td><code>navigateToQuiz(String type)</code></td><td>מנווט ל-QuizFragment עם type argument (quiz/daily/mistakes)</td></tr>
+        <tr><td><code>setupGreeting()</code></td><td>מציג ברכה לפי שעה: בוקר טוב / צהריים / ערב טוב</td></tr>
+        <tr><td><code>getDailyQuote()</code></td><td>בוחר ציטוט ממערך QUOTES לפי DAY_OF_YEAR</td></tr>
+        <tr><td><code>refreshStats()</code></td><td>מעדכן תצוגת XP/Level/Streak בכרטיס הסטטיסטיקות</td></tr>
+        <tr><td><code>dpToPx(int)</code></td><td>המרת dp לפיקסלים — לבניית גרף הפעילות</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 03 MYWORDS VIEWMODEL ===== -->
+<div id="d03" class="diagram-card" style="--accent:#2E7D32;">
+  <div class="diagram-title">03 — מילון (MyWords MVVM)</div>
+  <div class="uml-container"><img id="img03" src="" alt="MyWords UML"><div class="loading" id="l03">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-block">
+      <div class="class-name">📖 MyWordsFragment</div>
+      <div class="class-desc">מסך המילים. RecyclerView עם אינדקס צדדי A-Z, חיפוש חי, סינון לפי חלק דיבור/תגיות, Popup Bubble, TTS.</div>
+      <table>
+        <tr><th>שדה</th><th>תיאור</th></tr>
+        <tr><td><code>tts : TextToSpeech</code></td><td>מנגן הגייה של מילים אנגליות</td></tr>
+        <tr><td><code>sideIndex : LinearLayout</code></td><td>עמודת א-ב בצד המסך ל-scroll מהיר</td></tr>
+        <tr><td><code>bubblePopup : PopupWindow</code></td><td>בועית שמציגה את האות הנבחרת בזמן גלילה</td></tr>
+        <tr><td><code>showPersonalOnly : boolean</code></td><td>מצב סינון מילים אישיות בלבד</td></tr>
+      </table>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>setupFilterChips(View)</code></td><td>מגדיר ChipGroup לסינון לפי חלק דיבור</td></tr>
+        <tr><td><code>applyPersonalFilter()</code></td><td>מחליף בין כל המילים למילים אישיות</td></tr>
+        <tr><td><code>setupFab(View)</code></td><td>FAB לפתיחת dialog הוספת מילה</td></tr>
+        <tr><td><code>showAddWordDialog()</code></td><td>AlertDialog עם שדות: EN, HE, POS, example, tags</td></tr>
+        <tr><td><code>setupViewModel()</code></td><td>צופה ב-LiveData, מעדכן adapter ומסנן</td></tr>
+        <tr><td><code>setupDropdowns()</code></td><td>AutoCompleteTextView לחלקי דיבור ותגיות</td></tr>
+        <tr><td><code>setupSideIndex()</code></td><td>בונה עמודת אותיות A-Z עם onTouch listener</td></tr>
+        <tr><td><code>scrollToLetter(String)</code></td><td>מוצא את מיקום המילה הראשונה שמתחילה באות ו-scroll</td></tr>
+        <tr><td><code>showBubble(String, float, View)</code></td><td>מציג PopupWindow עם האות ליד האצבע</td></tr>
+        <tr><td><code>setupSearch(View)</code></td><td>TextWatcher על SearchView — מסנן רשימה וצובע SpannableString</td></tr>
+        <tr><td><code>initializeTts()</code></td><td>אתחול TextToSpeech, locale=ENGLISH</td></tr>
+        <tr><td><code>onPronounceClick(String)</code></td><td>מנגן הגייה של מילה, נקרא מ-adapter</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🧠 MyWordsViewModel <span style="font-size:0.8rem;background:#e8f5e9;padding:0.1rem 0.5rem;border-radius:10px;color:#2e7d32;">AndroidViewModel</span></div>
+      <div class="class-desc">ViewModel של מסך המילים. חי לאורך rotation. מנהל סנכרון ומיגרציה חד-פעמית.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>MyWordsViewModel(Application)</code></td><td>1) ריצת migration חד-פעמי | 2) startGlobalDeleteListener() | 3) syncFromCloud() עם throttle 24h</td></tr>
+        <tr><td><code>getAllWords()</code></td><td>מחזיר LiveData&lt;List&lt;Word&gt;&gt; — הנתונים הגולמיים מ-Room</td></tr>
+        <tr><td><code>getPersonalWords()</code></td><td>מחזיר LiveData עם מילים אישיות (isFavorite=1, isVerified=0)</td></tr>
+        <tr><td><code>insert(Word)</code></td><td>מעביר לריפוזיטורי</td></tr>
+        <tr><td><code>update(Word)</code></td><td>מעביר לריפוזיטורי</td></tr>
+        <tr><td><code>deletePersonalWords()</code></td><td>מוחק מילים אישיות דרך הריפוזיטורי</td></tr>
+        <tr><td><code>syncFromCloud()</code></td><td>בודק SharedPrefs: אם עברו >24h → קורא syncGlobalWordsFromFirestore()</td></tr>
+        <tr><td><code>onCleared()</code></td><td>קורא stopGlobalDeleteListener() — מונע memory leak</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 04 PRACTICE ===== -->
+<div id="d04" class="diagram-card" style="--accent:#00695C;">
+  <div class="diagram-title">04 — מודולי תרגול (Practice Modules)</div>
+  <div class="uml-container"><img id="img04" src="" alt="Practice UML"><div class="loading" id="l04">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-block">
+      <div class="class-name">🎯 PracticeFragment</div>
+      <div class="class-desc">מסך בחירת מצב תרגול. מציג 6 כרטיסים + כרטיס XP Header עם רמה, progress bar, ו-streak.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onResume()</code></td><td>סנכרון GamificationEngine מ-Firestore, עדכון XP header</td></tr>
+        <tr><td><code>updateXpHeader(GamificationEngine)</code></td><td>מעדכן כרטיס XP: שם רמה, progress bar תוך-רמה, streak</td></tr>
+        <tr><td><code>getDailyProgress(int)</code></td><td>מחזיר "X/Y" של מילים נכונות היום מול היעד</td></tr>
+        <tr><td><code>getMistakeCount()</code></td><td>סופר מילים עם errorInQuiz=true</td></tr>
+        <tr><td><code>getSpellingCount()</code></td><td>סופר מילים עם errorInSpelling=true</td></tr>
+        <tr><td><code>getPersonalCount()</code></td><td>סופר מילים אישיות (isFavorite=1)</td></tr>
+        <tr><td><code>getFlashCount()</code></td><td>סופר מילים עם errorInFlashcards=true</td></tr>
+        <tr><td><code>handleNav(View, PracticeOption)</code></td><td>ניווט לפרגמנט התרגול המתאים עם args</td></tr>
+        <tr><td><code>showCategorySelection(View)</code></td><td>מציג BottomSheet לבחירת קטגוריה (POS)</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">❓ QuizFragment</div>
+      <div class="class-desc">חידון 4 אפשרויות. בוחר 20 מילים אדפטיבית (60/20/20). Handler.postDelayed לעיכוב של 1 שניה אחרי בחירה.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>prepareQuiz(String type, String category)</code></td><td>בונה rreshימת 20 מילים לפי סוג: quiz/daily/mistakes/personal/category. daily משתמש ב-seed יומי</td></tr>
+        <tr><td><code>addUpTo(List dest, List src, int max)</code></td><td>static helper: מוסיף מרשימה לרשימה עד max פריטים</td></tr>
+        <tr><td><code>showNextQuestion()</code></td><td>מגרל 3 distractors, מציג שאלה + 4 כפתורים, מריץ TTS</td></tr>
+        <tr><td><code>checkAnswer(MaterialButton, Word)</code></td><td>בדיקה, צביעת כפתור ירוק/אדום, עדכון DB, קריאה ל-GamificationEngine</td></tr>
+        <tr><td><code>showXpAnimation(String)</code></td><td>מציג "+10 XP" או "+100 XP" עם fadeIn/fadeOut</td></tr>
+        <tr><td><code>finishQuiz()</code></td><td>קורא onModuleComplete() +50 XP, מציג dialog תוצאות</td></tr>
+        <tr><td><code>showResultDialog(int, int)</code></td><td>AlertDialog עם OvershootInterpolator animation, ציון, כפתורי חזרה/סיום</td></tr>
+        <tr><td><code>speakCurrentWord()</code></td><td>מנגן הגייה של המילה הנוכחית בעברית</td></tr>
+      </table>
+      <div class="note-box">אלגוריתם בחירה: 60% קשות (Mastery 0-2), 20% חדשות (0 ניסיונות), 20% מוצקות (Mastery 3-5). Daily Quiz משתמש ב-seed = currentTimeMillis/86400000 לאותן מילים כל היום.</div>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">✏️ SpellingFragment</div>
+      <div class="class-desc">מודול איות — המשתמש מקליד את המילה האנגלית. SESSION_SIZE = 15 מילים. מציג המילה הנכונה בטעות.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>selectAdaptiveWords(List, int)</code></td><td>בוחר אדפטיבית: מילים חלשות קודם</td></tr>
+        <tr><td><code>showWord()</code></td><td>מציג תרגום עברי, מנגן TTS</td></tr>
+        <tr><td><code>check()</code></td><td>השוואת קלט ל-englishWord (case-insensitive). currentAttempted מונע ספירה כפולה</td></tr>
+        <tr><td><code>finish()</code></td><td>מציג dialog סיכום, מנקה שגיאות אחרי הסשן</td></tr>
+        <tr><td><code>speak()</code></td><td>מנגן הגייה לפי מצב: שאלה=עברי, תשובה=אנגלי</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🃏 FlashcardsFragment</div>
+      <div class="class-desc">כרטיסיות הפיכות. Swipe ימינה = יודע (+XP), שמאלה = לא יודע. flipCard() מבצע rotationY 0→180° עם counter-rotate לצד האחורי.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>orderByPriority(List)</code></td><td>ממיין: errorInFlashcards קודם, אחר כך Mastery נמוך</td></tr>
+        <tr><td><code>showWord()</code></td><td>מציג צד קדמי (Hebrew), מנגן TTS אנגלי</td></tr>
+        <tr><td><code>advanceCard()</code></td><td>עובר לכרטיס הבא, מעדכן counter</td></tr>
+        <tr><td><code>handleSwipe(boolean)</code></td><td>ימינה: correctAttempts++, XP | שמאלה: errorInFlashcards=true</td></tr>
+        <tr><td><code>resetCard()</code></td><td>מחזיר כרטיס למיקום ההתחלתי עם animation</td></tr>
+        <tr><td><code>flipCard()</code></td><td>ObjectAnimator: rotationY 0→90° (flip1), מחליף layout, 90°→180° (flip2)</td></tr>
+        <tr><td><code>showFlashResult()</code></td><td>dialog סיכום עם ציון ידוע/לא ידוע</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">⚡ GamificationEngine <span style="font-size:0.8rem;background:#e8f5e9;padding:0.1rem 0.5rem;border-radius:10px;color:#2e7d32;">Singleton</span></div>
+      <div class="class-desc">מנוע הגמיפיקציה. Volatile Singleton. כותב ל-SharedPrefs (מיידי) ול-Firestore (אסינכרוני). נוסחת רמה: <code>L = floor(sqrt(XP/100)) + 1</code></div>
+      <table>
+        <tr><th>שדה</th><th>תיאור</th></tr>
+        <tr><td><code>XP_CORRECT_ANSWER = 10</code></td><td>XP לתשובה נכונה בחידון/איות/פלאשקארד</td></tr>
+        <tr><td><code>XP_MODULE_COMPLETE = 50</code></td><td>XP לסיום מודול שלם</td></tr>
+        <tr><td><code>XP_WORD_MASTERED = 100</code></td><td>בונוס כשמילה עוברת Mastery 4→5</td></tr>
+      </table>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>getInstance(Context)</code></td><td>Double-Checked Locking Singleton</td></tr>
+        <tr><td><code>onCorrectAnswer(Word before, Word after)</code></td><td>+10 XP. אם Mastery עלה ל-5 → +100 XP בונוס. מעדכן streak</td></tr>
+        <tr><td><code>onModuleComplete()</code></td><td>+50 XP, מפעיל recordDailyActivity()</td></tr>
+        <tr><td><code>getTotalXp() / getCurrentLevel() / getStreak()</code></td><td>getters מ-SharedPrefs</td></tr>
+        <tr><td><code>getDailyCorrectCount()</code></td><td>ספירת תשובות נכונות של היום מ-SharedPrefs</td></tr>
+        <tr><td><code>getWeeklyActivity()</code></td><td>מחזיר int[7] עם תשובות נכונות ל-7 ימים אחרונים</td></tr>
+        <tr><td><code>getXpWithinLevel() / getXpRangeOfLevel()</code></td><td>לחישוב progress bar תוך-רמה</td></tr>
+        <tr><td><code>syncFromFirestore(Runnable)</code></td><td>מביא XP/Level/Streak מ-Firestore ומעדכן SharedPrefs. קורא callback בסיום</td></tr>
+        <tr><td><code>addXp(int)</code></td><td>מוסיף XP, מחשב רמה חדשה, שומר ב-SharedPrefs, מפעיל persistToFirestore()</td></tr>
+        <tr><td><code>computeLevel(int xp)</code></td><td><code>floor(sqrt(xp/100)) + 1</code></td></tr>
+        <tr><td><code>checkStreak()</code></td><td>מאציל ל-StreakManager.checkAndUpdate()</td></tr>
+        <tr><td><code>persistToFirestore(int, int)</code></td><td>כותב totalXp + level לנתיב users/{uid} ב-Firestore</td></tr>
+        <tr><td><code>recordDailyActivity()</code></td><td>מגדיל ב-1 את מפתח KEY_DAILY_CORRECT_{date} ב-SharedPrefs</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 05 SCAN ===== -->
+<div id="d05" class="diagram-card" style="--accent:#4527A0;">
+  <div class="diagram-title">05 — סריקה וגמיפיקציה (Scan & Gamification)</div>
+  <div class="uml-container"><img id="img05" src="" alt="Scan UML"><div class="loading" id="l05">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-block">
+      <div class="class-name">📷 ScanFragment</div>
+      <div class="class-desc">מסך סריקה עם מצלמה + OCR. שני מצבים: CAPTURE (מצלמה חיה) ו-REVIEW (תוצאות + overlay). שני מצבי OCR: מצב ספר (מילה בודדת) ומצב טקסט חופשי (שורה שלמה).</div>
+      <table>
+        <tr><th>שדה</th><th>תיאור</th></tr>
+        <tr><td><code>HEBREW_PATTERN : Pattern</code></td><td>Regex לסינון טקסט עברי מתוצאות OCR (לא רוצים עברית)</td></tr>
+        <tr><td><code>graphicOverlay : GraphicOverlay</code></td><td>View מעל התמונה שמציג מסגרות צבעוניות על המילים</td></tr>
+        <tr><td><code>imageCapture : ImageCapture</code></td><td>CameraX component לצילום תמונה סטטית</td></tr>
+        <tr><td><code>textRecognizer : TextRecognizer</code></td><td>ML Kit OCR engine</td></tr>
+        <tr><td><code>isFreeTextMode : boolean</code></td><td>false=מצב ספר, true=מצב טקסט חופשי</td></tr>
+        <tr><td><code>requestPermissionLauncher</code></td><td>ActivityResultLauncher לבקשת הרשאת מצלמה</td></tr>
+        <tr><td><code>pickImageLauncher</code></td><td>ActivityResultLauncher לבחירת תמונה מהגלריה</td></tr>
+      </table>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>showCaptureMode()</code></td><td>מציג PreviewView + כפתורי צילום, מסתיר תוצאות</td></tr>
+        <tr><td><code>showReviewMode()</code></td><td>מציג תמונה + Overlay + כפתורי review, מסתיר מצלמה</td></tr>
+        <tr><td><code>setupOverlayClick()</code></td><td>מגדיר listener ל-GraphicOverlay — לחיצה על WordBox → handleWordClick</td></tr>
+        <tr><td><code>handleWordClick(WordBox)</code></td><td>אם exists=true: מציג הגייה. אם false: פותח dialog הוספה</td></tr>
+        <tr><td><code>showAddDialogWithTranslation(String, String)</code></td><td>קורא ML Kit Translate → מביא תרגום → showAddDialog</td></tr>
+        <tr><td><code>showAddDialog(String, String, String)</code></td><td>dialog עם שדות pre-filled: EN, HE, POS</td></tr>
+        <tr><td><code>checkCameraPermission()</code></td><td>בודק CAMERA permission, מבקש אם חסר</td></tr>
+        <tr><td><code>startCamera()</code></td><td>CameraX: ProcessCameraProvider.bindToLifecycle(Preview + ImageCapture)</td></tr>
+        <tr><td><code>takePhoto()</code></td><td>ImageCapture.takePicture() → שומר לקובץ זמני</td></tr>
+        <tr><td><code>recognizeText(InputImage)</code></td><td>ML Kit OCR process() → extractWordBoxes/extractFreeTextBoxes → GraphicOverlay</td></tr>
+        <tr><td><code>blockHasBulletLine(TextBlock)</code></td><td>מסנן blocks שמכילים bullet lines (•, -, *)</td></tr>
+        <tr><td><code>extractWordBoxes(Text)</code></td><td>מצב ספר: עוצר ב-Element level, מילה בודדת כל WordBox</td></tr>
+        <tr><td><code>extractFreeTextBoxes(Text)</code></td><td>מצב חופשי: Line level — שורה שלמה כל WordBox</td></tr>
+        <tr><td><code>loadRotatedBitmap(File)</code></td><td>קורא EXIF orientation → Matrix.postRotate() → מחזיר Bitmap מסובב נכון</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">🎨 GraphicOverlay</div>
+      <div class="class-desc">Custom View שמצייר מסגרות צבעוניות על המילות שזוהו ב-OCR. ירוק = קיים, כחול = חדש.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>setImageSourceInfo(int, int)</code></td><td>מגדיר מימדי התמונה המקורית לחישוב scale</td></tr>
+        <tr><td><code>setWordBoxes(List&lt;WordBox&gt;)</code></td><td>מעדכן רשימת מסגרות → invalidate()</td></tr>
+        <tr><td><code>getScaledRect(Rect)</code></td><td>ממיר קוא' תמונה לקוא' מסך (scale + offset)</td></tr>
+        <tr><td><code>onDraw(Canvas)</code></td><td>מצייר RectF צבעוני לכל WordBox עם fillPaint</td></tr>
+      </table>
+      <div class="note-box">WordBox היא inner class עם שדות: rect (Rect), exists (boolean), text (String), pos (String). exists קובע את הצבע.</div>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">📅 StreakManager</div>
+      <div class="class-desc">מחלקה סטטית לחישוב Streak יומי. לא Singleton — רק מתודות static. משווה תאריכים ב-Firestore.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>checkAndUpdate(uid, currentStreak, db, callback)</code></td><td>קורא מ-Firestore את lastActiveDate, מחשב streak חדש, כותב ל-Firestore, קורא callback(newStreak)</td></tr>
+        <tr><td><code>computeStreak(String lastDate, int current, String today)</code></td><td>daysDiff==0: ללא שינוי | daysDiff==1: current+1 | daysDiff&gt;1: 1 (reset)</td></tr>
+        <tr><td><code>daysDiff(String dateA, String dateB)</code></td><td>מחשב הפרש ימים בין שני strings של תאריך yyyy-MM-dd</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 06 ADMIN ===== -->
+<div id="d06" class="diagram-card" style="--accent:#424242;">
+  <div class="diagram-title">06 — מנהל, סטטיסטיקות והגדרות</div>
+  <div class="uml-container"><img id="img06" src="" alt="Admin UML"><div class="loading" id="l06">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-block">
+      <div class="class-name">🛠️ AdminEditFragment</div>
+      <div class="class-desc">מסך ניהול מילים גלובליות. גישה ישירה ל-Firestore (לא דרך Room). CoordinatorLayout עם FAB. Swipe למחיקה עם Snackbar Undo.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>loadWords()</code></td><td>מביא את כל collection "words" מ-Firestore, ממיין לפי englishWord, מעדכן adapter</td></tr>
+        <tr><td><code>setupSwipeToDelete()</code></td><td>ItemTouchHelper: swipe ימינה/שמאלה → רקע אדום + אייקון פח → removeItem() → delete מ-Firestore → Snackbar "בטל"</td></tr>
+        <tr><td><code>setupSearch()</code></td><td>TextWatcher → scrollToPosition למיקום האות</td></tr>
+        <tr><td><code>setupFab()</code></td><td>FAB (+): פותח dialog_admin_add_word.xml → תיקוף שדות → שמירה ל-Firestore → הוספה לאדפטר</td></tr>
+      </table>
+      <div class="note-box">Optimistic UI: removeItem() מיד על ה-UI, ואז הבקשה ל-Firestore. אם כפתור "בטל": insertItem() מחזיר את הכרטיס לפני ה-Firestore delete.</div>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">📋 AdminWordAdapter</div>
+      <div class="class-desc">Adapter לתצוגה בלבד (read-only). כרטיסים עם: EN | HE (ראשית), משפטי דוגמה. layoutDirection=ltr לפריסה נכונה.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>setData(List&lt;Word&gt;, List&lt;String&gt;)</code></td><td>מעדכן רשימת מילים ו-docIds במקביל</td></tr>
+        <tr><td><code>getWord(int) / getDocId(int)</code></td><td>getters לפי מיקום — נדרשים ל-ItemTouchHelper</td></tr>
+        <tr><td><code>removeItem(int)</code></td><td>מוחק מ-lists ו-notifyItemRemoved — מיידי</td></tr>
+        <tr><td><code>insertItem(int, Word, String)</code></td><td>מכניס בחזרה לפוזיציה מקורית — ל-undo</td></tr>
+        <tr><td><code>nullToEmpty(String)</code></td><td>static helper: מחזיר "" אם null — למניעת NullPointerException בתצוגה</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">📊 StatisticsFragment</div>
+      <div class="class-desc">מציג 7 רמות דרגה, progress bar XP, streak, ספירות Mastery, ואנליטיקת למידה.</div>
+      <table>
+        <tr><th>מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>onResume()</code></td><td>קורא syncFromFirestore() לרענון נתוני XP/Streak</td></tr>
+        <tr><td><code>calculateMastery(List&lt;Word&gt;)</code></td><td>מחשב כמה מילים בכל רמת Mastery (0-5) ומציג bar chart</td></tr>
+        <tr><td><code>updateRank(float pct, int mastered)</code></td><td>בוחר דרגה לפי אחוז שליטה: &lt;5%=🌱 מתחיל, 5-19%=📖 תלמיד, 20-39%=⭐ מתקדם, 40-59%=🎖 אלוף, 60-79%=👑 נסיך, 80-94%=🏆 מלך, 95%+=💎 אגדה</td></tr>
+        <tr><td><code>updateGamificationUi()</code></td><td>מעדכן כרטיס XP: רמה, XP כולל, progress bar, streak</td></tr>
+      </table>
+    </div>
+
+    <div class="class-block">
+      <div class="class-name">⚙️ SettingsFragment</div>
+      <div class="class-desc">מסך הגדרות. Slider ליעד יומי (1-50), Switch ל-TTS, ניהול חשבון, איפוס נתונים.</div>
+      <table>
+        <tr><th>שדה / מתודה</th><th>תיאור</th></tr>
+        <tr><td><code>PREFS_SETTINGS</code></td><td>שם SharedPreferences: "settings_prefs"</td></tr>
+        <tr><td><code>KEY_DAILY_GOAL</code></td><td>מפתח ליעד יומי (ברירת מחדל: 10)</td></tr>
+        <tr><td><code>KEY_TTS_ENABLED</code></td><td>מפתח ל-switch TTS</td></tr>
+        <tr><td><code>loadAccountInfo()</code></td><td>מציג email + displayName מ-FirebaseAuth + Firestore</td></tr>
+        <tr><td><code>showEditNameDialog()</code></td><td>AlertDialog עם EditText לשינוי שם תצוגה</td></tr>
+        <tr><td><code>updateDisplayName(String)</code></td><td>מעדכן שם ב-Firestore (users/{uid}) וב-FirebaseAuth.updateProfile()</td></tr>
+        <tr><td><code>loadLearningSettings()</code></td><td>טוען Slider ו-Switch מ-SharedPrefs</td></tr>
+        <tr><td><code>updateDailyGoalChip(int)</code></td><td>מעדכן Chip טקסט לפי ערך ה-Slider</td></tr>
+        <tr><td><code>setupDataActions()</code></td><td>כפתור "אפס התקדמות" → dialog אישור → resetProgress()</td></tr>
+        <tr><td><code>resetProgress()</code></td><td>קורא dao.resetAllWordProgress() + מאפס GamificationEngine ב-Firestore</td></tr>
+        <tr><td><code>setupAbout()</code></td><td>מציג גרסת אפליקציה וקישורים</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SEQUENCE DIAGRAMS HEADER ===== -->
+<div class="section-header" style="--c1:#1B5E20;--c2:#388E3C;">
+  <span class="icon">🔄</span>
+  <div><h2>תרשימי רצף</h2><p style="opacity:0.85;font-size:0.9rem;">זרימות עיקריות במערכת | 5 תרשימים</p></div>
+</div>
+
+<!-- ===== 07 SYNC ===== -->
+<div id="d07" class="diagram-card" style="--accent:#1B5E20;">
+  <div class="diagram-title">07 — סנכרון Firestore (Throttle 24h + Diff)</div>
+  <div class="uml-container"><img id="img07" src="" alt="Sync Sequence"><div class="loading" id="l07">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-desc" style="margin-bottom:1rem;">תרשים זה מתאר את תהליך הסנכרון בין Room DB המקומי לבין Firestore. הסנכרון מוגבל ל-פעם אחת ב-24 שעות למניעת עומס על Firebase.</div>
+
+    <div class="exp-title">שחקנים (Participants)</div>
+    <table>
+      <tr><th>שחקן</th><th>תפקיד</th></tr>
+      <tr><td><strong>MyWordsViewModel</strong></td><td>מפעיל את הסנכרון בעת אתחול, בדיקת throttle</td></tr>
+      <tr><td><strong>SharedPreferences</strong></td><td>שומר את זמן הסנכרון האחרון (<code>last_global_sync_ms</code>)</td></tr>
+      <tr><td><strong>WordRepository</strong></td><td>מבצע את הלוגיקה של הסנכרון</td></tr>
+      <tr><td><strong>Firestore</strong></td><td>מקור האמת לכלל המילים הגלובליות</td></tr>
+      <tr><td><strong>ExecutorService</strong></td><td>thread pool ל-4 threads — כל פעולות DB</td></tr>
+      <tr><td><strong>Room DB</strong></td><td>בסיס הנתונים המקומי</td></tr>
+    </table>
+
+    <div class="exp-title">שלבי הרצף</div>
+    <div class="seq-step"><div class="step-num">1</div><div class="step-text"><strong>בדיקת Throttle:</strong> VM שואל SharedPrefs מתי היה הסנכרון האחרון. אם עברו &lt;24 שעות → קפיצה לסוף (skip).</div></div>
+    <div class="seq-step"><div class="step-num">2</div><div class="step-text"><strong>שמירת זמן:</strong> VM שומר את הזמן הנוכחי ב-SharedPrefs לפני הסנכרון.</div></div>
+    <div class="seq-step"><div class="step-num">3</div><div class="step-text"><strong>שליפה מ-Firestore:</strong> Repository מביא את כל מסמכי collection "words" מ-Firestore.</div></div>
+    <div class="seq-step"><div class="step-num">4</div><div class="step-text"><strong>שליפה מ-Room:</strong> ב-background thread, שולף רשימת englishWords של מילים גלובליות מ-Room.</div></div>
+    <div class="seq-step"><div class="step-num">5</div><div class="step-text"><strong>חישוב Diff:</strong> <code>firestoreSet = {englishWords...}</code> ו-<code>roomSet = {englishWords...}</code>. מחשב הבדלים.</div></div>
+    <div class="seq-step"><div class="step-num">6</div><div class="step-text"><strong>הוספת חדשות:</strong> מילים שב-Firestore אבל לא ב-Room → insert(word, isVerified=true)</div></div>
+    <div class="seq-step"><div class="step-num">7</div><div class="step-text"><strong>מחיקת ישנות:</strong> מילים שב-Room אבל לא ב-Firestore → deleteVerifiedWordByEnglish(). כך Room מעודכן תמיד.</div></div>
+    <div class="note-box">הסנכרון חד-כיווני: Firestore → Room. המשתמש לא כותב מילות admin בחזרה ל-Firestore. מילים אישיות (isVerified=0) לא מושפעות מהסנכרון.</div>
+  </div>
+</div>
+
+<!-- ===== 08 REALTIME DELETE ===== -->
+<div id="d08" class="diagram-card" style="--accent:#B71C1C;">
+  <div class="diagram-title">08 — מחיקה בזמן אמת (Real-time Delete)</div>
+  <div class="uml-container"><img id="img08" src="" alt="Realtime Delete Sequence"><div class="loading" id="l08">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-desc" style="margin-bottom:1rem;">כאשר מנהל מוחק מילה מ-Firestore, כל המכשירים המחוברים מקבלים עדכון בזמן אמת. הזרימה מתרחשת תוך פחות משניה.</div>
+
+    <div class="exp-title">שלבי הרצף</div>
+    <div class="seq-step"><div class="step-num">1</div><div class="step-text"><strong>Listener פעיל:</strong> WordRepository מפעיל <code>startGlobalDeleteListener()</code> עם <code>MetadataChanges.EXCLUDE</code> — מאזין רק לשינויי שרת (לא local).</div></div>
+    <div class="seq-step"><div class="step-num">2</div><div class="step-text"><strong>המנהל מחליק:</strong> AdminEditFragment מקבל swipe → <code>removeItem(pos)</code> מסיר מיד מה-UI (Optimistic Update).</div></div>
+    <div class="seq-step"><div class="step-num">3</div><div class="step-text"><strong>מחיקה מ-Firestore:</strong> <code>document(docId).delete()</code> — בקשה אסינכרונית ל-Firestore.</div></div>
+    <div class="seq-step"><div class="step-num">4</div><div class="step-text"><strong>Snackbar Undo:</strong> המנהל רואה מיד "נמחקה — בטל" עם אפשרות ביטול (insertItem בחזרה).</div></div>
+    <div class="seq-step"><div class="step-num">5</div><div class="step-text"><strong>Event ל-Listener:</strong> Firestore שולח <code>DocumentChange.REMOVED</code> לכל המכשירים המאזינים.</div></div>
+    <div class="seq-step"><div class="step-num">6</div><div class="step-text"><strong>מחיקה מ-Room:</strong> Repository קורא <code>deleteVerifiedWordByEnglish()</code> ב-background thread.</div></div>
+    <div class="seq-step"><div class="step-num">7</div><div class="step-text"><strong>LiveData:</strong> Room triggers LiveData → Fragment מקבל רשימה מעודכנת → המילה נעלמת מכל מסכי המשתמש.</div></div>
+    <div class="note-box">MetadataChanges.EXCLUDE: הListener מגיב רק לאישור השרת, לא ל-local cache. מונע "רטט" בממשק.</div>
+  </div>
+</div>
+
+<!-- ===== 09 QUIZ ===== -->
+<div id="d09" class="diagram-card" style="--accent:#1565C0;">
+  <div class="diagram-title">09 — זרימת חידון (Quiz + Gamification)</div>
+  <div class="uml-container"><img id="img09" src="" alt="Quiz Sequence"><div class="loading" id="l09">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-desc" style="margin-bottom:1rem;">זרימת סשן חידון שלם — מבנייה אדפטיבית של 20 שאלות, דרך תשובות ועדכוני XP, ועד dialog תוצאות.</div>
+
+    <div class="exp-title">שלבי הרצף</div>
+    <div class="seq-step"><div class="step-num">1</div><div class="step-text"><strong>טעינת מילים:</strong> QuizFragment צופה ב-LiveData של ViewModel → מקבל את כל המילים מ-Room.</div></div>
+    <div class="seq-step"><div class="step-num">2</div><div class="step-text"><strong>בניית סשן (buildSession):</strong> אלגוריתם אדפטיבי: 60% קשות (Mastery 0-2), 20% חדשות (0 ניסיונות), 20% מוצקות (Mastery 3-5). Daily: seed = currentTimeMillis/86400000.</div></div>
+    <div class="seq-step"><div class="step-num">3</div><div class="step-text"><strong>לולאת שאלות (20 פעמים):</strong> הצגת שאלה, המתנה ללחיצת המשתמש.</div></div>
+    <div class="seq-step"><div class="step-num">4a</div><div class="step-text"><strong>תשובה נכונה:</strong> correctAttempts++ → update DB → onCorrectAnswer(before, after) → +10 XP (ואם mastery 4→5: +100 XP) → update Firestore → אנימציה "+10 XP" → Handler.postDelayed(1000ms) → שאלה הבאה.</div></div>
+    <div class="seq-step"><div class="step-num">4b</div><div class="step-text"><strong>תשובה שגויה:</strong> totalAttempts++ + errorInQuiz=true → update DB → ממשיך לשאלה הבאה.</div></div>
+    <div class="seq-step"><div class="step-num">5</div><div class="step-text"><strong>סיום סשן:</strong> onModuleComplete() +50 XP → showResultDialog() עם OvershootInterpolator animation.</div></div>
+    <div class="note-box">Handler.postDelayed(1000ms): נותן למשתמש שניה לראות הצבע ירוק/אדום לפני שעוברים לשאלה הבאה.</div>
+  </div>
+</div>
+
+<!-- ===== 10 OCR ===== -->
+<div id="d10" class="diagram-card" style="--accent:#4A148C;">
+  <div class="diagram-title">10 — זרימת סריקה (OCR + תרגום + שמירה)</div>
+  <div class="uml-container"><img id="img10" src="" alt="OCR Sequence"><div class="loading" id="l10">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-desc" style="margin-bottom:1rem;">תהליך מלא מצילום תמונה ועד שמירת מילים. כולל תיקון סיבוב EXIF, OCR בשני מצבים, ותרגום offline.</div>
+
+    <div class="exp-title">שלבי הרצף</div>
+    <div class="seq-step"><div class="step-num">1</div><div class="step-text"><strong>אתחול מצלמה:</strong> CameraX bindToLifecycle עם Preview (תצוגה חיה) + ImageCapture (צילום).</div></div>
+    <div class="seq-step"><div class="step-num">2</div><div class="step-text"><strong>צילום:</strong> לחיצת "סרוק" → ImageCapture.takePicture() → savedUri של קובץ זמני.</div></div>
+    <div class="seq-step"><div class="step-num">3</div><div class="step-text"><strong>תיקון EXIF:</strong> ExifInterface.readOrientation() → Matrix.postRotate() → Bitmap מסובב. בלי זה תמונות מצלמה אחורית הופכות.</div></div>
+    <div class="seq-step"><div class="step-num">4</div><div class="step-text"><strong>OCR:</strong> ML Kit TextRecognizer.process(InputImage) → TextRecognitionResult.</div></div>
+    <div class="seq-step"><div class="step-num">5a</div><div class="step-text"><strong>מצב ספר:</strong> extractWordBoxes() — Element level (מילה בודדת). מסנן Hebrew, punctuation, tokens קצרים.</div></div>
+    <div class="seq-step"><div class="step-num">5b</div><div class="step-text"><strong>מצב טקסט חופשי:</strong> extractFreeTextBoxes() — Line level (שורה שלמה). לטקסטים שאינם ספרים.</div></div>
+    <div class="seq-step"><div class="step-num">6</div><div class="step-text"><strong>מעבר ל-REVIEW:</strong> GraphicOverlay מציג מסגרות על המילות. ירוק = קיים בDB, כחול = חדש.</div></div>
+    <div class="seq-step"><div class="step-num">7</div><div class="step-text"><strong>הורדת מודל תרגום:</strong> ML Kit Translate downloadModelIfNeeded() — פעם אחת ~30MB. לאחר מכן offline לחלוטין.</div></div>
+    <div class="seq-step"><div class="step-num">8</div><div class="step-text"><strong>תרגום:</strong> לכל מילה → ML Kit translate(english) → hebrew. רץ offline.</div></div>
+    <div class="seq-step"><div class="step-num">9</div><div class="step-text"><strong>שמירה:</strong> "שמור הכל" → לכל תוצאה: insert(Word, isVerified=false, isFavorite=true) → Room.</div></div>
+    <div class="note-box">מילות OCR נשמרות עם isVerified=false (מילה אישית) ו-isFavorite=true (ב-MyWords). לא מסונכרנות ל-Firestore.</div>
+  </div>
+</div>
+
+<!-- ===== 11 AUTH ===== -->
+<div id="d11" class="diagram-card" style="--accent:#E65100;">
+  <div class="diagram-title">11 — זרימת אימות (Splash → Login → MainActivity)</div>
+  <div class="uml-container"><img id="img11" src="" alt="Auth Sequence"><div class="loading" id="l11">טוען תרשים...</div></div>
+
+  <div class="exp-section">
+    <div class="class-desc" style="margin-bottom:1rem;">זרימת הפעלה ראשונית של האפליקציה — מניהול מקביל של אנימציה ובדיקת Auth ועד ניקוי backstack מלא.</div>
+
+    <div class="exp-title">שלבי הרצף</div>
+    <div class="seq-step"><div class="step-num">1</div><div class="step-text"><strong>Splash Parallel:</strong> שני תהליכים מקבילים: (א) אנימציית לוגו — בסיום animDone=true + tryProceed() | (ב) Firebase Auth getCurrentUser() — בסיום authReady=true + tryProceed()</div></div>
+    <div class="seq-step"><div class="step-num">2</div><div class="step-text"><strong>tryProceed:</strong> ניווט מתרחש רק אם animDone AND authReady. מונע שני מצבים: ניווט לפני Auth בדק, ניווט לפני Animation הסתיימה.</div></div>
+    <div class="seq-step"><div class="step-num">3a</div><div class="step-text"><strong>מחובר:</strong> startActivity(MainActivity) + finish() — SplashActivity לא ב-backstack.</div></div>
+    <div class="seq-step"><div class="step-num">3b</div><div class="step-text"><strong>לא מחובר:</strong> startActivity(LoginActivity) + finish() → LoginActivity.</div></div>
+    <div class="seq-step"><div class="step-num">4</div><div class="step-text"><strong>Login:</strong> signInWithEmailAndPassword() → הצלחה: startActivity(MainActivity) | כישלון: Toast שגיאה.</div></div>
+    <div class="seq-step"><div class="step-num">5</div><div class="step-text"><strong>Register:</strong> createUserWithEmailAndPassword() → startActivity(MainActivity) → <strong>finishAffinity()</strong> — מנקה Splash+Login+Register מה-backstack.</div></div>
+    <div class="seq-step"><div class="step-num">6</div><div class="step-text"><strong>DashboardFragment:</strong> MainActivity מציג את ה-Dashboard כ-start destination של nav_graph.</div></div>
+    <div class="note-box">finishAffinity() קריטי: בלעדיו כפתור Back במסך הראשי יחזיר ל-LoginActivity במקום לצאת מהאפליקציה.</div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>EasyLex UML Documentation · 11 Diagrams · Generated for Project Report</p>
+  <p style="margin-top:0.4rem;font-size:0.75rem;">Rendered via PlantUML Online Server · pako.js deflate encoding</p>
+</footer>
+
+<script>
+// ─── PlantUML Encoding ───────────────────────────────────────────────────────
+function encode6bit(b) {
+  if (b < 10) return String.fromCharCode(48 + b);
+  b -= 10; if (b < 26) return String.fromCharCode(65 + b);
+  b -= 26; if (b < 26) return String.fromCharCode(97 + b);
+  b -= 26; if (b === 0) return '-'; if (b === 1) return '_'; return '?';
+}
+function append3bytes(b1, b2, b3) {
+  return encode6bit(b1 >> 2 & 0x3f) + encode6bit(((b1 & 0x3) << 4 | b2 >> 4) & 0x3f) +
+         encode6bit(((b2 & 0xf) << 2 | b3 >> 6) & 0x3f) + encode6bit(b3 & 0x3f);
+}
+function encode64(data) {
+  let r = '';
+  for (let i = 0; i < data.length; i += 3) {
+    if (i + 2 === data.length) r += append3bytes(data[i], data[i+1], 0);
+    else if (i + 1 === data.length) r += append3bytes(data[i], 0, 0);
+    else r += append3bytes(data[i], data[i+1], data[i+2]);
+  }
+  return r;
+}
+function encodePuml(puml) {
+  const utf8 = unescape(encodeURIComponent(puml));
+  const compressed = pako.deflate(utf8, {level: 9, raw: true});
+  return encode64(compressed);
+}
+function loadDiagram(puml, imgId, loadingId) {
+  try {
+    const url = 'https://www.plantuml.com/plantuml/png/' + encodePuml(puml);
+    const img = document.getElementById(imgId);
+    const loading = document.getElementById(loadingId);
+    img.onload = () => { loading.style.display = 'none'; img.style.display = 'block'; };
+    img.onerror = () => { loading.textContent = '⚠️ לא ניתן לטעון תרשים (בדוק חיבור אינטרנט)'; };
+    img.style.display = 'none';
+    img.src = url;
+  } catch(e) { document.getElementById(loadingId).textContent = '❌ שגיאה בקידוד: ' + e.message; }
+}
+
+// ─── PUML Sources ────────────────────────────────────────────────────────────
+const puml01 = `@startuml 01_Data_Layer
+title שכבת הנתונים — Data Layer
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  HeaderBackgroundColor #1565C0
+  HeaderFontColor white
+}
+skinparam ArrowColor #1565C0
+class Word <<Entity>> {
+  - id : int
+  - englishWord : String
+  - hebrewTranslation : String
+  - partOfSpeech : String
+  - exampleSentence : String
+  - hebrewExample : String
+  - tags : String
+  - creationTimestamp : long
+  - correctAttempts : int
+  - totalAttempts : int
+  - spellingCorrect : int
+  - isFavorite : boolean
+  - isVerified : boolean
+  - errorInQuiz : boolean
+  - errorInSpelling : boolean
+  - errorInFlashcards : boolean
+  ==
+  + Word()
+  + getMasteryLevel() : int
+  + getId() / setId(int)
+  + getEnglishWord() / setEnglishWord(String)
+  + getHebrewTranslation() / setHebrewTranslation(String)
+  + isFavorite() / setFavorite(boolean)
+  + isVerified() / setVerified(boolean)
+}
+note right of Word
+  Mastery = min(5,
+  floor(correct/(total+1)x5))
+  tableName = "words_table"
+end note
+interface WordDao <<Dao>> {
+  + insert(Word)
+  + update(Word)
+  + delete(Word)
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + getVerifiedEnglishWords() : List<String>
+  + deleteVerifiedWordByEnglish(String)
+  + deletePersonalWords()
+  + resetAllWordProgress()
+  + deleteAllWords()
+}
+class WordRoomDatabase <<Database>> {
+  - {static} INSTANCE : volatile WordRoomDatabase
+  + {abstract} wordDao() : WordDao
+  + {static} getDatabase(Context) : WordRoomDatabase
+}
+class WordRepository {
+  - mWordDao : WordDao
+  - mAllWords : LiveData<List<Word>>
+  + {static} databaseWriteExecutor : ExecutorService
+  + insert(Word)
+  + update(Word)
+  + delete(Word)
+  + syncGlobalWordsFromFirestore(Runnable)
+  + startGlobalDeleteListener()
+  + stopGlobalDeleteListener()
+  + resetAllWordProgress(Runnable)
+}
+WordRoomDatabase --> WordDao
+WordRepository --> WordDao
+WordRepository ..> WordRoomDatabase
+@enduml`;
+
+const puml02 = `@startuml 02_Auth_Navigation
+title Auth and Navigation
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+skinparam class {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+  HeaderBackgroundColor #C62828
+  HeaderFontColor white
+}
+skinparam ArrowColor #C62828
+class SplashActivity <<LAUNCHER>> {
+  - authReady : boolean
+  - animDone : boolean
+  # onCreate(Bundle)
+  - startSplashAnimation()
+  - resolveAuth()
+  - tryProceed()
+  - showForceUpdateDialog(String)
+}
+class LoginActivity {
+  # onCreate(Bundle)
+  - loginUser()
+}
+class RegisterActivity {
+  # onCreate(Bundle)
+  - registerUser()
+}
+note right of RegisterActivity
+  finishAffinity()
+end note
+class MainActivity {
+  - binding : ActivityMainBinding
+  # onCreate(Bundle)
+  + onSupportNavigateUp() : boolean
+}
+note right of MainActivity
+  NavHostFragment
+  BottomNavigationView 5 tabs
+end note
+class DashboardFragment {
+  - binding : FragmentDashboardBinding
+  - gamification : GamificationEngine
+  + onResume()
+  - setupWordOfDay(List<Word>)
+  - setupWeeklyActivity()
+  - setupDailyChallenges(List<Word>)
+  - setupGreeting()
+  - getDailyQuote() : String
+  - refreshStats()
+}
+SplashActivity --> LoginActivity : not logged in
+SplashActivity --> MainActivity : logged in
+LoginActivity --> MainActivity : success
+RegisterActivity --> MainActivity : success + finishAffinity()
+MainActivity --> DashboardFragment
+@enduml`;
+
+const puml03 = `@startuml 03_MyWords_ViewModel
+title MyWords MVVM
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+skinparam class {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  HeaderBackgroundColor #2E7D32
+  HeaderFontColor white
+}
+skinparam ArrowColor #2E7D32
+class MyWordsFragment {
+  - binding : FragmentMyWordsBinding
+  - viewModel : MyWordsViewModel
+  - adapter : WordListAdapter
+  - tts : TextToSpeech
+  - sideIndex : LinearLayout
+  + onCreateView(...) : View
+  + onDestroyView()
+  + onPronounceClick(String)
+  - setupFilterChips(View)
+  - setupFab(View)
+  - showAddWordDialog()
+  - setupViewModel()
+  - setupSideIndex()
+  - scrollToLetter(String)
+  - showBubble(String, float, View)
+  - setupSearch(View)
+  - initializeTts()
+}
+class MyWordsViewModel <<AndroidViewModel>> {
+  - mRepository : WordRepository
+  - mAllWords : LiveData<List<Word>>
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + insert(Word)
+  + update(Word)
+  + deletePersonalWords()
+  + syncFromCloud()
+  # onCleared()
+}
+note left of MyWordsViewModel
+  Constructor:
+  1. Migration
+  2. startGlobalDeleteListener()
+  3. Throttle sync 24h
+  onCleared: stopGlobalDeleteListener()
+end note
+class WordRepository
+MyWordsFragment --> MyWordsViewModel : observe LiveData
+MyWordsViewModel --> WordRepository : delegates
+@enduml`;
+
+const puml04 = `@startuml 04_Practice_Modules
+title Practice Modules
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam class {
+  BackgroundColor #E0F2F1
+  BorderColor #00695C
+  HeaderBackgroundColor #00695C
+  HeaderFontColor white
+}
+skinparam ArrowColor #00695C
+class PracticeFragment {
+  + onResume()
+  - updateXpHeader(GamificationEngine)
+  - getDailyProgress(int) : String
+  - getMistakeCount() : String
+  - getSpellingCount() : String
+  - handleNav(View, PracticeOption)
+}
+class QuizFragment {
+  - quizWords : List<Word>
+  - currentIndex : int
+  - score : int
+  + onCreateView(...) : View
+  - prepareQuiz(String type, String category)
+  - showNextQuestion()
+  - checkAnswer(MaterialButton, Word)
+  - showXpAnimation(String)
+  - finishQuiz()
+  - showResultDialog(int, int)
+}
+note right of QuizFragment
+  60% hard (Mastery 0-2)
+  20% new (0 attempts)
+  20% solid (Mastery 3-5)
+  20 words per session
+end note
+class SpellingFragment {
+  - words : List<Word>
+  - currentIndex : int
+  - currentAttempted : boolean
+  - selectAdaptiveWords(List<Word>, int) : List<Word>
+  - showWord()
+  - check()
+  - finish()
+}
+class FlashcardsFragment {
+  - isShowingFront : boolean
+  - orderByPriority(List<Word>) : List<Word>
+  - showWord()
+  - handleSwipe(boolean known)
+  - flipCard()
+  - showFlashResult()
+}
+note right of FlashcardsFragment
+  Swipe RIGHT = correct +XP
+  Swipe LEFT = mistake
+  flipCard: rotationY 0->180
+end note
+class GamificationEngine <<Singleton>> {
+  + onCorrectAnswer(Word, Word)
+  + onModuleComplete()
+  + getTotalXp() : int
+  + getCurrentLevel() : int
+  + getStreak() : int
+  + syncFromFirestore(Runnable)
+}
+note bottom of GamificationEngine
+  +10 XP correct
+  +100 XP mastery 4->5
+  +50 XP module complete
+  Level = floor(sqrt(XP/100))+1
+end note
+PracticeFragment ..> QuizFragment : navigate
+PracticeFragment ..> SpellingFragment : navigate
+PracticeFragment ..> FlashcardsFragment : navigate
+QuizFragment --> GamificationEngine : onCorrectAnswer
+SpellingFragment --> GamificationEngine : onCorrectAnswer
+FlashcardsFragment --> GamificationEngine : onCorrectAnswer
+@enduml`;
+
+const puml05 = `@startuml 05_Scan_Gamification
+title Scan and Gamification
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam class {
+  BackgroundColor #EDE7F6
+  BorderColor #4527A0
+  HeaderBackgroundColor #4527A0
+  HeaderFontColor white
+}
+skinparam ArrowColor #4527A0
+class ScanFragment {
+  - {static} HEBREW_PATTERN : Pattern
+  - viewFinder : PreviewView
+  - graphicOverlay : GraphicOverlay
+  - imageCapture : ImageCapture
+  - textRecognizer : TextRecognizer
+  - isFreeTextMode : boolean
+  + onCreateView(...) : View
+  - showCaptureMode()
+  - showReviewMode()
+  - handleWordClick(WordBox)
+  - showAddDialogWithTranslation(String, String)
+  - startCamera()
+  - takePhoto()
+  - recognizeText(InputImage)
+  - extractWordBoxes(Text) : List<WordBox>
+  - extractFreeTextBoxes(Text) : List<WordBox>
+  - loadRotatedBitmap(File) : Bitmap
+}
+note right of ScanFragment
+  Book mode: Element level (single word)
+  Free mode: Line level (full line)
+  ExifInterface: EXIF rotation fix
+  ML Kit OCR -> ML Kit Translate
+  isVerified=false, isFavorite=true
+end note
+class GraphicOverlay {
+  - wordBoxes : List<WordBox>
+  - imageWidth : int
+  - imageHeight : int
+  + setImageSourceInfo(int, int)
+  + setWordBoxes(List<WordBox>)
+  + getScaledRect(Rect) : RectF
+  # onDraw(Canvas)
+}
+note right of GraphicOverlay
+  WordBox: rect, exists, text, pos
+  exists=true -> green
+  exists=false -> blue
+end note
+class GamificationEngine <<Singleton>> {
+  + onCorrectAnswer(Word, Word)
+  + syncFromFirestore(Runnable)
+  + getStreak() : int
+  + getTotalXp() : int
+}
+class StreakManager {
+  + {static} checkAndUpdate(String, int, FirebaseFirestore, StreakCallback)
+  - {static} computeStreak(String, int, String) : int
+  - {static} daysDiff(String, String) : long
+}
+ScanFragment --> GraphicOverlay : draws
+GamificationEngine --> StreakManager : checkAndUpdate()
+@enduml`;
+
+const puml06 = `@startuml 06_Admin_Stats_Settings
+title Admin Stats Settings
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam class {
+  BackgroundColor #F5F5F5
+  BorderColor #424242
+  HeaderBackgroundColor #424242
+  HeaderFontColor white
+}
+skinparam ArrowColor #424242
+package "Admin" {
+  class AdminEditFragment {
+    - recyclerView : RecyclerView
+    - adapter : AdminWordAdapter
+    + onCreateView(...) : View
+    - loadWords()
+    - setupSwipeToDelete()
+    - setupSearch()
+    - setupFab()
+  }
+  note right of AdminEditFragment
+    CoordinatorLayout + FAB
+    ItemTouchHelper: swipe->delete
+    Snackbar "undo"
+    Direct Firestore access
+  end note
+  class AdminWordAdapter {
+    - words : List<Word>
+    - docIds : List<String>
+    + setData(List<Word>, List<String>)
+    + getWord(int) : Word
+    + getDocId(int) : String
+    + removeItem(int)
+    + insertItem(int, Word, String)
+  }
+}
+package "Statistics" {
+  class StatisticsFragment {
+    - binding : FragmentStatisticsBinding
+    - gamification : GamificationEngine
+    + onResume()
+    - calculateMastery(List<Word>)
+    - updateRank(float, int)
+    - updateGamificationUi()
+  }
+}
+package "Settings" {
+  class SettingsFragment {
+    + {static} KEY_DAILY_GOAL : String
+    + {static} KEY_TTS_ENABLED : String
+    - loadAccountInfo()
+    - showEditNameDialog()
+    - updateDisplayName(String)
+    - loadLearningSettings()
+    - setupDataActions()
+    - resetProgress()
+  }
+}
+AdminEditFragment --> AdminWordAdapter : owns
+@enduml`;
+
+const puml07 = `@startuml 07_Seq_Sync
+title Firestore Sync - Throttle 24h
+skinparam defaultFontSize 12
+skinparam sequence {
+  ArrowColor #1B5E20
+  ParticipantBackgroundColor #E8F5E9
+  ParticipantBorderColor #2E7D32
+}
+participant "MyWordsViewModel" as VM
+participant "SharedPreferences" as SP
+participant "WordRepository" as Repo
+participant "Firestore" as FS
+participant "ExecutorService" as BG
+participant "Room DB" as DB
+VM -> SP : getLong("last_global_sync_ms")
+SP --> VM : lastSync
+alt elapsed > 24h
+  VM -> SP : save(now)
+  VM -> Repo : syncGlobalWordsFromFirestore()
+  Repo -> FS : words collection .get()
+  FS --> Repo : all documents
+  Repo -> BG : execute()
+  BG -> DB : getVerifiedEnglishWords()
+  DB --> BG : roomList
+  note over BG
+    firestoreSet vs roomSet diff
+  end note
+  loop new word (in Firestore, not Room)
+    BG -> DB : insert(word, isVerified=true)
+  end
+  loop deleted word (in Room, not Firestore)
+    BG -> DB : deleteVerifiedWordByEnglish(eng)
+  end
+else elapsed < 24h
+  VM -> VM : skip sync
+end
+@enduml`;
+
+const puml08 = `@startuml 08_Seq_RealtimeDelete
+title Real-time Delete - Admin to All Devices
+skinparam defaultFontSize 12
+skinparam sequence {
+  ArrowColor #B71C1C
+  ParticipantBackgroundColor #FFEBEE
+  ParticipantBorderColor #C62828
+}
+actor "Admin" as Admin
+actor "User" as User
+participant "AdminEditFragment" as AEF
+participant "Firestore" as FS
+participant "WordRepository" as Repo
+participant "Room DB" as DB
+participant "LiveData" as LD
+participant "Fragments" as UI
+note over Repo
+  startGlobalDeleteListener()
+  MetadataChanges.EXCLUDE
+end note
+Admin -> AEF : swipe word
+AEF -> AEF : removeItem(pos) - instant UI
+AEF -> FS : document(docId).delete()
+AEF --> Admin : Snackbar "deleted - undo"
+FS -> Repo : DocumentChange.REMOVED
+Repo -> DB : deleteVerifiedWordByEnglish()
+DB --> LD : trigger
+LD --> UI : onChanged(list)
+UI --> User : word disappears
+note over Admin, User : all < 1 second
+@enduml`;
+
+const puml09 = `@startuml 09_Seq_Quiz
+title Quiz Flow + Gamification
+skinparam defaultFontSize 12
+skinparam sequence {
+  ArrowColor #1565C0
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #1565C0
+}
+actor "User" as User
+participant "QuizFragment" as QF
+participant "MyWordsViewModel" as VM
+participant "Room DB" as DB
+participant "GamificationEngine" as GE
+participant "Firestore" as FS
+QF -> VM : getAllWords().observe()
+VM -> DB : LiveData<List<Word>>
+DB --> QF : allWords
+QF -> QF : buildSession()
+note right : 60% Mastery 0-2\n20% 0 attempts\n20% Mastery 3-5
+loop 20 questions
+  QF --> User : question + 4 options
+  User -> QF : press
+  alt correct
+    QF -> QF : correctAttempts++
+    QF -> VM : update(word)
+    VM -> DB : UPDATE
+    QF -> GE : onCorrectAnswer(before, after)
+    GE -> GE : +10 XP
+    GE -> FS : update(totalXp, level)
+    QF --> User : +10 XP animation
+    QF -> QF : Handler.postDelayed(1s)
+  else wrong
+    QF -> QF : totalAttempts++\nerrorInQuiz=true
+    QF -> VM : update(word)
+  end
+end
+QF -> GE : onModuleComplete() +50 XP
+QF --> User : showResultDialog()
+@enduml`;
+
+const puml10 = `@startuml 10_Seq_OCR
+title OCR Flow - Scan + Translate + Save
+skinparam defaultFontSize 12
+skinparam sequence {
+  ArrowColor #4A148C
+  ParticipantBackgroundColor #F3E5F5
+  ParticipantBorderColor #6A1B9A
+}
+actor "User" as User
+participant "ScanFragment" as SF
+participant "CameraX" as CX
+participant "ExifInterface" as EI
+participant "ML Kit OCR" as OCR
+participant "ML Kit Translate" as TR
+participant "MyWordsViewModel" as VM
+participant "Room DB" as DB
+SF -> CX : bindToLifecycle(Preview + ImageCapture)
+CX --> User : live camera view
+User -> SF : press "Scan"
+SF -> CX : takePicture()
+CX --> SF : savedUri
+SF -> EI : readOrientation(uri)
+EI --> SF : EXIF tag
+SF -> SF : loadRotatedBitmap()\nMatrix.postRotate()
+SF -> OCR : process(InputImage)
+OCR --> SF : TextRecognitionResult
+alt book mode
+  SF -> SF : extractWordBoxes()\nElement level - single word
+else free text mode
+  SF -> SF : extractFreeTextBoxes()\nLine level - full line
+end
+SF --> User : switch to REVIEW mode
+SF -> TR : downloadModelIfNeeded()
+note right : one-time ~30MB\nthen offline
+loop each word
+  SF -> TR : translate(english)
+  TR --> SF : hebrew
+end
+SF --> User : list (EN | HE)
+User -> SF : "Save All"
+loop each result
+  SF -> VM : insert(Word)\nisVerified=false\nisFavorite=true
+  VM -> DB : INSERT
+end
+SF --> User : "Saved X words"
+@enduml`;
+
+const puml11 = `@startuml 11_Seq_Auth
+title Auth Flow - Splash to MainActivity
+skinparam defaultFontSize 12
+skinparam sequence {
+  ArrowColor #E65100
+  ParticipantBackgroundColor #FBE9E7
+  ParticipantBorderColor #BF360C
+}
+actor "User" as User
+participant "SplashActivity" as SA
+participant "Firebase Auth" as FA
+participant "LoginActivity" as LA
+participant "RegisterActivity" as RA
+participant "MainActivity" as MA
+User -> SA : opens app
+SA -> SA : startSplashAnimation()\nanimDone=false
+par
+  SA -> SA : animation ends\nanimDone=true\ntryProceed()
+  SA -> FA : getCurrentUser()
+  FA --> SA : user or null\nauthReady=true\ntryProceed()
+end
+note over SA : tryProceed: navigate only if\nboth flags true
+alt logged in
+  SA -> MA : startActivity + finish()
+else not logged in
+  SA -> LA : startActivity + finish()
+  User -> LA : email + password
+  LA -> FA : signInWithEmailAndPassword()
+  alt success
+    LA -> MA : startActivity + finish()
+  else failure
+    LA --> User : Toast error
+    User -> LA : "Register"
+    LA -> RA : startActivity
+    User -> RA : email + password
+    RA -> FA : createUserWithEmailAndPassword()
+    RA -> MA : startActivity
+    RA -> RA : finishAffinity()
+    note right : clears full back stack
+  end
+end
+MA --> User : DashboardFragment
+@enduml`;
+
+// ─── Load all diagrams ───────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const diagrams = [
+    [puml01, 'img01', 'l01'], [puml02, 'img02', 'l02'], [puml03, 'img03', 'l03'],
+    [puml04, 'img04', 'l04'], [puml05, 'img05', 'l05'], [puml06, 'img06', 'l06'],
+    [puml07, 'img07', 'l07'], [puml08, 'img08', 'l08'], [puml09, 'img09', 'l09'],
+    [puml10, 'img10', 'l10'], [puml11, 'img11', 'l11']
+  ];
+  // Stagger loads to avoid hammering plantuml.com
+  diagrams.forEach(([puml, imgId, loadId], i) => {
+    setTimeout(() => loadDiagram(puml, imgId, loadId), i * 300);
+  });
+});
+</script>
+</body>
+</html>

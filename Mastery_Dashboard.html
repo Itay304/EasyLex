@@ -1,0 +1,2620 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyLex — לוח בקרת שליטה למבחן</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #0f1117;
+  color: #e0e0e0;
+  direction: rtl;
+  line-height: 1.7;
+}
+
+/* ===== LAYOUT ===== */
+#app {
+  display: flex;
+  flex-direction: row-reverse;
+  min-height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+#sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+#sidebar-header {
+  padding: 18px 16px 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4CAF50;
+  border-bottom: 1px solid #30363d;
+  letter-spacing: 0.5px;
+  text-align: center;
+  background: #0f1117;
+}
+#sidebar-subtitle {
+  font-size: 0.72rem;
+  color: #8b949e;
+  text-align: center;
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+#sidebar-search {
+  margin: 10px 12px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0f1117;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  width: calc(100% - 24px);
+  direction: rtl;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#sidebar-search:focus { border-color: #4CAF50; }
+#sidebar-search::placeholder { color: #8b949e; }
+
+#nav-links { padding: 4px 0 24px; }
+#nav-links a {
+  display: block;
+  padding: 7px 18px;
+  color: #8b949e;
+  text-decoration: none;
+  font-size: 0.84rem;
+  transition: background 0.15s, color 0.15s;
+  border-right: 3px solid transparent;
+}
+#nav-links a:hover, #nav-links a.active {
+  background: #1f2937;
+  color: #4CAF50;
+  border-right-color: #4CAF50;
+}
+.nav-group {
+  padding: 10px 18px 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4CAF50;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+/* ===== MAIN CONTENT ===== */
+#main-content {
+  flex: 1;
+  padding: 32px 40px;
+  max-width: calc(100vw - 260px);
+  overflow-x: hidden;
+}
+
+/* ===== SECTION TITLES ===== */
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #4CAF50;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 8px;
+  margin-bottom: 28px;
+  margin-top: 60px;
+}
+.section-title:first-child { margin-top: 0; }
+.section-subtitle {
+  font-size: 0.95rem;
+  color: #8b949e;
+  margin-top: -18px;
+  margin-bottom: 24px;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+}
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #4CAF50;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card.examiner {
+  border-color: #d97706;
+  background: #1a1505;
+}
+.card.examiner .card-title { color: #fbbf24; }
+.card.story {
+  border-color: #2563eb;
+  background: #0d1626;
+}
+.card.story .card-title { color: #60a5fa; }
+.card.info {
+  border-color: #6d28d9;
+  background: #120d1a;
+}
+.card.info .card-title { color: #a78bfa; }
+
+/* ===== CLASS HEADER ===== */
+.class-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.class-badge {
+  background: #4CAF50;
+  color: #0f1117;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+.class-badge.dao { background: #2196F3; }
+.class-badge.db { background: #9C27B0; }
+.class-badge.repo { background: #FF9800; }
+.class-badge.activity { background: #E91E63; }
+.class-badge.fragment { background: #00BCD4; }
+.class-badge.viewmodel { background: #8BC34A; }
+.class-badge.engine { background: #FF5722; }
+.class-badge.manager { background: #607D8B; }
+
+.class-desc {
+  font-size: 0.97rem;
+  color: #c9d1d9;
+  margin-bottom: 18px;
+  line-height: 1.7;
+}
+
+/* ===== TABLES ===== */
+.table-wrap { overflow-x: auto; margin: 14px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+th {
+  background: #1f2937;
+  color: #4CAF50;
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 700;
+  border: 1px solid #30363d;
+}
+td {
+  padding: 9px 14px;
+  border: 1px solid #30363d;
+  vertical-align: top;
+  color: #c9d1d9;
+}
+tr:nth-child(even) td { background: #161b22; }
+tr:nth-child(odd) td { background: #0f1117; }
+tr:hover td { background: #1f2937; }
+
+/* ===== CODE BLOCKS ===== */
+pre {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  margin: 12px 0;
+  font-family: 'Consolas', 'Courier New', monospace;
+  direction: ltr;
+  text-align: left;
+}
+code {
+  background: #1f2937;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.85em;
+  color: #79c0ff;
+  direction: ltr;
+  display: inline-block;
+}
+.kw { color: #ff7b72; } /* keyword */
+.ty { color: #ffa657; } /* type */
+.st { color: #a5d6ff; } /* string */
+.cm { color: #8b949e; font-style: italic; } /* comment */
+.nu { color: #79c0ff; } /* number */
+.fn { color: #d2a8ff; } /* function */
+.an { color: #4CAF50; } /* annotation */
+
+/* ===== ACCORDION ===== */
+.accordion-item {
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.accordion-header {
+  padding: 12px 18px;
+  background: #1f2937;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #e0e0e0;
+  user-select: none;
+  transition: background 0.15s;
+}
+.accordion-header:hover { background: #2d3748; }
+.accordion-header .method-name { color: #79c0ff; font-family: 'Consolas', monospace; font-size: 0.9rem; }
+.accordion-arrow {
+  transition: transform 0.25s;
+  color: #4CAF50;
+  font-size: 0.85rem;
+}
+.accordion-item.open .accordion-arrow { transform: rotate(90deg); }
+.accordion-body {
+  display: none;
+  padding: 16px 18px;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  font-size: 0.88rem;
+}
+.accordion-item.open .accordion-body { display: block; }
+
+/* ===== Q&A BLOCKS ===== */
+.qa-block {
+  margin-bottom: 18px;
+  border-right: 3px solid #d97706;
+  padding-right: 14px;
+}
+.qa-block:last-child { margin-bottom: 0; }
+.question {
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+.answer {
+  color: #d1d5db;
+  font-size: 0.9rem;
+  line-height: 1.75;
+}
+
+/* ===== STORY STEPS ===== */
+.story-steps { list-style: none; padding: 0; margin: 12px 0; }
+.story-step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+}
+.step-num {
+  background: #4CAF50;
+  color: #0f1117;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+.step-text { color: #c9d1d9; font-size: 0.9rem; line-height: 1.7; padding-top: 3px; }
+.step-text strong { color: #4CAF50; }
+
+/* ===== FLOW DIAGRAM ===== */
+.flow-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 18px 0;
+}
+.flow-box {
+  background: #1f2937;
+  border: 2px solid #4CAF50;
+  border-radius: 8px;
+  padding: 10px 24px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: #e0e0e0;
+  font-weight: 600;
+  min-width: 220px;
+}
+.flow-box.highlight { background: #14532d; border-color: #86efac; color: #86efac; }
+.flow-box.firebase { background: #1e1a00; border-color: #fbbf24; color: #fbbf24; }
+.flow-box.room { background: #0c1a2e; border-color: #60a5fa; color: #60a5fa; }
+.flow-arrow {
+  color: #4CAF50;
+  font-size: 1.3rem;
+  line-height: 1;
+  margin: 2px 0;
+}
+
+/* ===== TAGS ===== */
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 2px 3px;
+}
+.tag-green { background: #14532d; color: #86efac; border: 1px solid #4CAF50; }
+.tag-blue { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb; }
+.tag-amber { background: #451a03; color: #fcd34d; border: 1px solid #d97706; }
+.tag-red { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
+.tag-purple { background: #2e1065; color: #d8b4fe; border: 1px solid #7c3aed; }
+
+/* ===== FORMULA BOX ===== */
+.formula-box {
+  background: #0d1117;
+  border: 2px solid #6d28d9;
+  border-radius: 8px;
+  padding: 14px 20px;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+  font-size: 1.05rem;
+  color: #a78bfa;
+  margin: 12px 0;
+  direction: ltr;
+}
+
+/* ===== HIGHLIGHT BOX ===== */
+.highlight-box {
+  background: #14532d33;
+  border-right: 4px solid #4CAF50;
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 14px 0;
+  font-size: 0.9rem;
+  color: #c9d1d9;
+}
+.highlight-box.warning {
+  background: #451a0333;
+  border-right-color: #d97706;
+}
+.highlight-box.danger {
+  background: #450a0a33;
+  border-right-color: #dc2626;
+}
+.highlight-box.info {
+  background: #1e3a5f33;
+  border-right-color: #2563eb;
+}
+
+/* ===== GRID ===== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+@media (max-width: 900px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  #sidebar { display: none; }
+  #main-content { max-width: 100vw; padding: 20px; }
+}
+
+/* ===== RANK TABLE ===== */
+.rank-table td:first-child { font-size: 1.1rem; text-align: center; }
+.rank-bar {
+  height: 8px;
+  background: #30363d;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.rank-fill { height: 100%; background: #4CAF50; border-radius: 4px; }
+
+/* ===== GLOSSARY ===== */
+.glossary-item {
+  border-bottom: 1px solid #30363d;
+  padding: 10px 0;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+}
+.glossary-term {
+  color: #79c0ff;
+  font-family: 'Consolas', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-width: 180px;
+}
+.glossary-def { color: #c9d1d9; font-size: 0.88rem; }
+
+/* ===== SCROLL TO TOP ===== */
+#scroll-top {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: #4CAF50;
+  color: #0f1117;
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(76,175,80,0.4);
+  transition: opacity 0.2s;
+  display: none;
+  z-index: 200;
+}
+#scroll-top:hover { background: #66BB6A; }
+
+/* ===== HERO ===== */
+.hero {
+  background: linear-gradient(135deg, #0f1117 0%, #14532d22 50%, #0f1117 100%);
+  border: 1px solid #4CAF50;
+  border-radius: 12px;
+  padding: 32px 36px;
+  margin-bottom: 36px;
+  text-align: center;
+}
+.hero h1 { font-size: 2.4rem; color: #4CAF50; font-weight: 900; margin-bottom: 8px; }
+.hero .subtitle { font-size: 1.05rem; color: #8b949e; margin-bottom: 18px; }
+.hero .examiner-name { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+.hero .meta { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.meta-item { background: #1f2937; padding: 8px 16px; border-radius: 8px; font-size: 0.83rem; color: #8b949e; }
+.meta-item span { color: #4CAF50; font-weight: 700; }
+
+/* ===== DIVIDER ===== */
+.divider { border: none; border-top: 1px solid #30363d; margin: 32px 0; }
+
+/* ===== SECTION ANCHOR PADDING ===== */
+section { scroll-margin-top: 24px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== SIDEBAR ===== -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    EasyLex
+    <div id="sidebar-subtitle">לוח בקרת שליטה למבחן</div>
+  </div>
+  <input id="sidebar-search" type="text" placeholder="חיפוש...">
+  <nav id="nav-links">
+    <a href="#hero">ראשי</a>
+    <a href="#global-flow">זרימה גלובלית</a>
+
+    <div class="nav-group">סיפורי הקוד</div>
+    <a href="#story-scan">OCR — סריקה</a>
+    <a href="#story-gamification">גמיפיקציה</a>
+    <a href="#story-sync">סנכרון Firebase</a>
+
+    <div class="nav-group">שכבת הנתונים</div>
+    <a href="#word">Word</a>
+    <a href="#word-dao">WordDao</a>
+    <a href="#word-db">WordRoomDatabase</a>
+    <a href="#word-repo">WordRepository</a>
+
+    <div class="nav-group">אימות</div>
+    <a href="#splash">SplashActivity</a>
+    <a href="#login">LoginActivity</a>
+    <a href="#register">RegisterActivity</a>
+
+    <div class="nav-group">מסך ראשי</div>
+    <a href="#main-activity">MainActivity</a>
+    <a href="#dashboard">DashboardFragment</a>
+
+    <div class="nav-group">מילון</div>
+    <a href="#my-words">MyWordsFragment</a>
+    <a href="#my-words-vm">MyWordsViewModel</a>
+
+    <div class="nav-group">תרגול</div>
+    <a href="#practice">PracticeFragment</a>
+    <a href="#quiz">QuizFragment</a>
+    <a href="#spelling">SpellingFragment</a>
+    <a href="#flashcards">FlashcardsFragment</a>
+
+    <div class="nav-group">סריקה</div>
+    <a href="#scan">ScanFragment</a>
+    <a href="#graphic-overlay">GraphicOverlay</a>
+
+    <div class="nav-group">גמיפיקציה</div>
+    <a href="#gamification-engine">GamificationEngine</a>
+    <a href="#streak-manager">StreakManager</a>
+
+    <div class="nav-group">מידע והגדרות</div>
+    <a href="#statistics">StatisticsFragment</a>
+    <a href="#settings">SettingsFragment</a>
+
+    <div class="nav-group">כלים</div>
+    <a href="#glossary">מילון מונחים</a>
+    <a href="#key-concepts">עקרונות מפתח</a>
+  </nav>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content">
+
+<!-- HERO -->
+<section id="hero">
+<div class="hero">
+  <h1>EasyLex — לוח בקרת שליטה</h1>
+  <p class="subtitle">מסמך הכנה מקיף לבחינת פרויקט גמר</p>
+  <p class="examiner-name">בוחן: זאב פריימן</p>
+  <div class="meta">
+    <div class="meta-item">שפה: <span>Java</span></div>
+    <div class="meta-item">ארכיטקטורה: <span>MVVM + Repository</span></div>
+    <div class="meta-item">DB: <span>Room 2.6.1</span></div>
+    <div class="meta-item">ענן: <span>Firebase BOM 33.0.0</span></div>
+    <div class="meta-item">מינ' SDK: <span>24 (Android 7)</span></div>
+    <div class="meta-item">יעד SDK: <span>34 (Android 14)</span></div>
+  </div>
+</div>
+</section>
+
+<!-- GLOBAL FLOW -->
+<section id="global-flow">
+<h2 class="section-title">זרימה גלובלית של האפליקציה</h2>
+<p class="section-subtitle">כיצד שכבות ה-MVVM מתקשרות ביניהן</p>
+
+<div class="card">
+  <div class="card-title">ארכיטקטורת MVVM + Repository</div>
+  <div class="flow-diagram">
+    <div class="flow-box highlight">Fragment / Activity (View)</div>
+    <div class="flow-arrow">↓ observes LiveData / calls methods</div>
+    <div class="flow-box">AndroidViewModel</div>
+    <div class="flow-arrow">↓ calls repository methods</div>
+    <div class="flow-box">WordRepository (Repository)</div>
+    <div class="flow-arrow" style="display:flex;gap:60px;">↙ Room DAO &nbsp;&nbsp;&nbsp;&nbsp; Firestore ↘</div>
+    <div style="display:flex;gap:24px;margin-top:2px;">
+      <div class="flow-box room">Room Database (מקומי)</div>
+      <div class="flow-box firebase">Firestore (ענן)</div>
+    </div>
+  </div>
+  <div class="highlight-box">
+    <strong>כלל מפתח:</strong> ה-Fragment לעולם לא מדבר ישירות עם ה-Repository או ה-Database. הוא רק צופה ב-LiveData ומפעיל מתודות על ה-ViewModel. הפרדה זו מאפשרת בדיקות, תחזוקה, ושמירה על מצב ה-UI גם בסיבוב מסך.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">מחזור חיים מלא — מנתון ב-Firestore עד תצוגה ב-UI</div>
+  <ol class="story-steps">
+    <li class="story-step"><div class="step-num">1</div><div class="step-text"><strong>Firestore</strong> — ב-Cloud יש אוסף "words" עם 1902 מילים מאומתות (isVerified=true)</div></li>
+    <li class="story-step"><div class="step-num">2</div><div class="step-text"><strong>WordRepository.syncGlobalWordsFromFirestore()</strong> — מוריד את המילים ומכניס רק מילים חדשות ל-Room (אלגוריתם Insert-Only)</div></li>
+    <li class="story-step"><div class="step-num">3</div><div class="step-text"><strong>Room Database</strong> — שומר את המילים בטבלת "words_table" עם כל סטטיסטיקות התרגול</div></li>
+    <li class="story-step"><div class="step-num">4</div><div class="step-text"><strong>WordDao.getAllWords()</strong> — מחזיר <code>LiveData&lt;List&lt;Word&gt;&gt;</code>. Room עוקב אחר שינויים ומשדר אותם אוטומטית</div></li>
+    <li class="story-step"><div class="step-num">5</div><div class="step-text"><strong>MyWordsViewModel</strong> — חושף את ה-LiveData מה-Repository. לא מאחסן עותק נוסף</div></li>
+    <li class="story-step"><div class="step-num">6</div><div class="step-text"><strong>MyWordsFragment.observe()</strong> — מקבל את הרשימה המעודכנת → מעביר ל-WordListAdapter → RecyclerView מציג</div></li>
+  </ol>
+</div>
+
+<div class="card">
+  <div class="card-title">כללי Threads (חוטים) באפליקציה</div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Thread</th><th>שימוש</th><th>כלי</th></tr>
+    <tr><td>Main Thread</td><td>עדכון UI, LiveData observe, Navigation</td><td>Handler, runOnUiThread</td></tr>
+    <tr><td>Background Thread</td><td>כל פעולות Room DB</td><td>ExecutorService (4 threads)</td></tr>
+    <tr><td>Firestore Thread</td><td>קריאה/כתיבה ל-Cloud — Firestore מנהל לבד</td><td>Firebase SDK async callbacks</td></tr>
+    <tr><td>CameraX Thread</td><td>עיבוד תמונה, OCR</td><td>CameraX internal executor</td></tr>
+  </table>
+  </div>
+  <div class="highlight-box warning">
+    <strong>חשוב:</strong> לעולם אסור להריץ פעולות Room על ה-Main Thread — האפליקציה תקרוס עם שגיאת IllegalStateException. כל כתיבה/קריאה מרחוק עוברת דרך <code>executorService.execute(() -> { ... })</code>
+  </div>
+</div>
+</section>
+
+<!-- STORY: OCR SCAN -->
+<section id="story-scan">
+<h2 class="section-title">סיפור הקוד — זרימת OCR (סריקה)</h2>
+<p class="section-subtitle">כיצד תמונת ספר הופכת למילים בבסיס הנתונים</p>
+
+<div class="card story">
+  <div class="card-title">הסיפור המלא: מצלמה → מסך → Room</div>
+  <ol class="story-steps">
+    <li class="story-step"><div class="step-num">1</div><div class="step-text"><strong>ScanFragment נטען.</strong> CameraX מאתחל שני UseCases: <code>Preview</code> (מה שהמשתמש רואה) ו-<code>ImageCapture</code> (לצילום). שניהם מחוברים ל-<code>ProcessCameraProvider.bindToLifecycle()</code>.</div></li>
+    <li class="story-step"><div class="step-num">2</div><div class="step-text"><strong>המשתמש לוחץ "צלם".</strong> <code>imageCapture.takePicture()</code> שומר את התמונה לקובץ זמני. ה-callback מוקרא עם <code>File</code> על CameraX background thread.</div></li>
+    <li class="story-step"><div class="step-num">3</div><div class="step-text"><strong>loadRotatedBitmap(file).</strong> קורא את EXIF הכיוון של הקובץ דרך <code>ExifInterface</code>. המצלמה שומרת בlandscape עם EXIF. ללא תיקון — התמונה מסובבת. יוצר Matrix עם <code>setRotate(degrees)</code> ומייצר Bitmap מסובב.</div></li>
+    <li class="story-step"><div class="step-num">4</div><div class="step-text"><strong>מעבר למצב REVIEW.</strong> מסתיר את ה-PreviewView, מציג ImageView עם הBitmap המתוקן. UI עובר לstate של "סקירה" — כפתורי "אשר" ו"צלם שוב" מופיעים.</div></li>
+    <li class="story-step"><div class="step-num">5</div><div class="step-text"><strong>ML Kit Text Recognition.</strong> <code>TextRecognition.getClient()</code> מנתח את ה-Bitmap באמצעות OCR מקומי (on-device, ללא אינטרנט). מחזיר <code>Task&lt;Text&gt;</code>.</div></li>
+    <li class="story-step"><div class="step-num">6</div><div class="step-text"><strong>עיבוד תוצאות OCR.</strong>
+      <br>• מצב ספר (<code>extractWordBoxes</code>): עובר על TextBlock → Line → Element. לכל Element — חותך bounding box מה-Bitmap המקורי → Bitmap מילה קטנה.
+      <br>• מצב טקסט חופשי (<code>extractFreeTextBoxes</code>): חותך שורות שלמות.</div></li>
+    <li class="story-step"><div class="step-num">7</div><div class="step-text"><strong>ML Kit Translate.</strong> <code>TranslationModel(EN→HE)</code>. קודם בודק אם מודל ההורדה קיים (<code>downloadModelIfNeeded()</code>). לאחר הורדה ראשונה — עובד offline. מתרגם כל מילה/שורה.</div></li>
+    <li class="story-step"><div class="step-num">8</div><div class="step-text"><strong>תצוגת תוצאות.</strong> RecyclerView מציג זוגות (אנגלית, עברית). המשתמש בוחר אילו מילים לשמור.</div></li>
+    <li class="story-step"><div class="step-num">9</div><div class="step-text"><strong>שמירה ל-Room.</strong> המילים הנבחרות עוברות דרך <code>WordRepository.insert(word)</code> → <code>executorService.execute()</code> → <code>WordDao.insert(word)</code>. מסומנות כ-<code>isVerified=false, isFavorite=true</code> (מילים אישיות).</div></li>
+  </ol>
+</div>
+
+<div class="card story">
+  <div class="card-title">מדוע EXIF חשוב — הסבר לבוחן</div>
+  <pre><span class="cm">// ExifInterface קורא את מטאדאטה הסיבוב מהקובץ</span>
+ExifInterface exif = <span class="kw">new</span> ExifInterface(file.getAbsolutePath());
+<span class="kw">int</span> orientation = exif.getAttributeInt(
+    ExifInterface.TAG_ORIENTATION,
+    ExifInterface.ORIENTATION_NORMAL
+);
+
+<span class="cm">// ממפה orientation לזווית</span>
+<span class="kw">switch</span> (orientation) {
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_90:  degrees = <span class="nu">90</span>;  <span class="kw">break</span>;
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_180: degrees = <span class="nu">180</span>; <span class="kw">break</span>;
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_270: degrees = <span class="nu">270</span>; <span class="kw">break</span>;
+}
+
+Matrix matrix = <span class="kw">new</span> Matrix();
+matrix.setRotate(degrees);
+<span class="kw">return</span> Bitmap.createBitmap(source, <span class="nu">0</span>, <span class="nu">0</span>, w, h, matrix, <span class="kw">true</span>);</pre>
+</div>
+</section>
+
+<!-- STORY: GAMIFICATION -->
+<section id="story-gamification">
+<h2 class="section-title">סיפור הקוד — זרימת הגמיפיקציה (XP)</h2>
+<p class="section-subtitle">כיצד תשובה נכונה הופכת ל-XP, Level ו-Streak</p>
+
+<div class="card story">
+  <div class="card-title">הסיפור: ממשתמש עונה נכון → עדכון UI</div>
+  <ol class="story-steps">
+    <li class="story-step"><div class="step-num">1</div><div class="step-text"><strong>המשתמש בוחר תשובה נכונה ב-QuizFragment.</strong> נרשמים שני ערכים: <code>beforeMastery = word.getMasteryLevel()</code> לפני עדכון.</div></li>
+    <li class="story-step"><div class="step-num">2</div><div class="step-text"><strong>עדכון Word בDB.</strong> <code>word.setCorrectAttempts(word.getCorrectAttempts() + 1)</code> ו-<code>word.setTotalAttempts(...+1)</code>. <code>afterMastery = word.getMasteryLevel()</code> מחושב לאחר עדכון.</div></li>
+    <li class="story-step"><div class="step-num">3</div><div class="step-text"><strong>GamificationEngine.onCorrectAnswer(beforeMastery, afterMastery).</strong> מוסיף +10 XP תמיד. אם <code>beforeMastery &lt; 5 AND afterMastery == 5</code> → בונוס +100 XP (הגיע לשליטה מלאה!).</div></li>
+    <li class="story-step"><div class="step-num">4</div><div class="step-text"><strong>Level מחושב מחדש.</strong> <code>L = floor(sqrt(totalXp / 100)) + 1</code>. אם Level עלה — מוצג animation חגיגי.</div></li>
+    <li class="story-step"><div class="step-num">5</div><div class="step-text"><strong>כפול כתיבה (Dual-Write).</strong> GamificationEngine מעדכן גם <code>SharedPreferences</code> (מיידי, לוקאלי) וגם <code>Firestore users/{uid}</code> (לענן).</div></li>
+    <li class="story-step"><div class="step-num">6</div><div class="step-text"><strong>אנימציית +10 XP.</strong> ב-QuizFragment: <code>tvXpGain.setVisibility(VISIBLE)</code>, <code>ObjectAnimator</code> מפעיל אנימציית עלייה ו-Fade Out.</div></li>
+    <li class="story-step"><div class="step-num">7</div><div class="step-text"><strong>Handler.postDelayed(1000ms).</strong> לאחר שנייה — מתקדמים לשאלה הבאה. <strong>לא</strong> Thread.sleep שיקפיא את ה-UI!</div></li>
+  </ol>
+</div>
+
+<div class="card story">
+  <div class="card-title">נוסחאות הגמיפיקציה</div>
+  <div class="formula-box">Mastery = min(5, floor(correctAttempts / (totalAttempts + 1) × 5))</div>
+  <div class="formula-box">Level = floor(sqrt(totalXP / 100)) + 1</div>
+  <div class="formula-box">XP_for_next_level = ((Level)²) × 100</div>
+  <div class="highlight-box">
+    <strong>+1 במכנה של Mastery:</strong> מונע חלוקה באפס כאשר <code>totalAttempts = 0</code>. גם מבטיח שמשתמש עם ניסיון אחד נכון מ-1 לא יקבל Mastery=5 מיד.
+  </div>
+</div>
+</section>
+
+<!-- STORY: FIREBASE SYNC -->
+<section id="story-sync">
+<h2 class="section-title">סיפור הקוד — זרימת סנכרון Firebase</h2>
+<p class="section-subtitle">כיצד מילים מ-Firestore מגיעות ל-Room בלי למחוק נתוני תרגול</p>
+
+<div class="card story">
+  <div class="card-title">אלגוריתם Insert-Only — הסיפור</div>
+  <ol class="story-steps">
+    <li class="story-step"><div class="step-num">1</div><div class="step-text"><strong>MyWordsViewModel בודק throttle של 24 שעות.</strong> קורא <code>SharedPreferences "last_global_sync_ms"</code>. אם עברו פחות מ-24 שעות — לא מסנכרן.</div></li>
+    <li class="story-step"><div class="step-num">2</div><div class="step-text"><strong>WordRepository.syncGlobalWordsFromFirestore().</strong> מבצע <code>firestore.collection("words").get()</code> — מוריד את כל 1902 המילים.</div></li>
+    <li class="story-step"><div class="step-num">3</div><div class="step-text"><strong>קבלת מילים קיימות מ-Room.</strong> ב-background thread: <code>wordDao.getAllWordsSnapshot()</code> (query סינכרוני, לא LiveData). בונה <code>Set&lt;String&gt; existingEnglishWords</code>.</div></li>
+    <li class="story-step"><div class="step-num">4</div><div class="step-text"><strong>השוואה ו-Insert בלבד.</strong> לכל מילה מ-Firestore: <code>if (!existingEnglishWords.contains(word.englishWord))</code> → מכניס ל-Room. מילים קיימות — לא נגעות. כך כל נתוני התרגול (<code>correctAttempts</code>, <code>errorInQuiz</code> וכד') נשמרים.</div></li>
+    <li class="story-step"><div class="step-num">5</div><div class="step-text"><strong>Room משדר LiveData.</strong> כי הכנסנו שורות חדשות → Room מעיר את ה-Observer ב-Fragment → RecyclerView מתעדכן אוטומטית.</div></li>
+    <li class="story-step"><div class="step-num">6</div><div class="step-text"><strong>עדכון timestamp.</strong> <code>SharedPreferences.edit().putLong("last_global_sync_ms", System.currentTimeMillis()).apply()</code> — הסנכרון הבא יהיה עוד 24 שעות.</div></li>
+  </ol>
+</div>
+
+<div class="card story">
+  <div class="card-title">מדוע Insert-Only? — הבעיה שנפתרה</div>
+  <div class="highlight-box warning">
+    <strong>בעיה קודמת:</strong> הקוד המקורי ביצע <code>deleteUnmarkedGlobalWords()</code> ואז <code>insert()</code> לכל המילים מחדש. כל פעם שהמשתמש ניווט למסך המילים, כל 1902 המילים נמחקו ונוספו מחדש — תוך כדי מחיקת correctAttempts, totalAttempts, errorInQuiz וכו'.
+  </div>
+  <div class="highlight-box">
+    <strong>הפתרון (Insert-Only):</strong> אנחנו לעולם לא מוחקים מילים גלובליות שכבר קיימות. רק מוסיפים מילים חדשות שטרם היו. נתוני התרגול נשמרים לעולם.
+  </div>
+  <pre><span class="cm">// אלגוריתם Insert-Only — פסאודו קוד</span>
+Set&lt;String&gt; existing = <span class="kw">new</span> HashSet&lt;&gt;();
+<span class="kw">for</span> (Word w : wordDao.getAllWordsNow()) {
+    existing.add(w.getEnglishWord().toLowerCase());
+}
+
+<span class="kw">for</span> (DocumentSnapshot doc : firestoreDocs) {
+    String eng = doc.getString(<span class="st">"englishWord"</span>);
+    <span class="kw">if</span> (!existing.contains(eng.toLowerCase())) {
+        wordDao.insert(<span class="fn">buildWordFromDoc</span>(doc)); <span class="cm">// רק חדשים!</span>
+    }
+}</pre>
+</div>
+</section>
+
+<!-- ===== DATA LAYER ===== -->
+
+<!-- WORD.JAVA -->
+<section id="word">
+<h2 class="section-title">Word.java</h2>
+<p class="section-subtitle">שכבת הנתונים — ישות Room</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge">@Entity</span>
+    <span class="class-badge dao">Room</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מודל הנתונים המרכזי של האפליקציה. מייצג מילה אחת עם כל המידע הלשוני ונתוני התרגול. מסומן ב-<code>@Entity(tableName = "words_table")</code> כך ש-Room יוצר עבורו טבלת SQLite אוטומטית.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שם שדה</th><th>סוג</th><th>תפקיד</th><th>ערך ברירת מחדל</th></tr>
+    <tr><td><code>id</code></td><td>int</td><td>מפתח ראשי, Auto-Generate. Room מקצה אוטומטית</td><td>0 (Room מחליף)</td></tr>
+    <tr><td><code>englishWord</code></td><td>String</td><td>המילה באנגלית — שדה חיפוש ראשי</td><td>—</td></tr>
+    <tr><td><code>hebrewTranslation</code></td><td>String</td><td>תרגום לעברית</td><td>—</td></tr>
+    <tr><td><code>partOfSpeech</code></td><td>String</td><td>חלק דיבר (noun/verb/adj...)</td><td>—</td></tr>
+    <tr><td><code>exampleSentence</code></td><td>String</td><td>משפט לדוגמה באנגלית</td><td>—</td></tr>
+    <tr><td><code>hebrewExample</code></td><td>String</td><td>משפט לדוגמה בעברית</td><td>—</td></tr>
+    <tr><td><code>tags</code></td><td>String</td><td>תגיות לסינון (מופרדות בפסיק)</td><td>—</td></tr>
+    <tr><td><code>creationTimestamp</code></td><td>long</td><td>Unix timestamp של יצירה — לגרף שבועי</td><td>System.currentTimeMillis()</td></tr>
+    <tr><td><code>correctAttempts</code></td><td>int</td><td>כמה פעמים המשתמש ענה נכון</td><td>0</td></tr>
+    <tr><td><code>totalAttempts</code></td><td>int</td><td>סה"כ ניסיונות (כולל שגיאות)</td><td>0</td></tr>
+    <tr><td><code>spellingCorrect</code></td><td>boolean</td><td>האם נוקד נכון אי פעם ב-Spelling</td><td>false</td></tr>
+    <tr><td><code>isFavorite</code></td><td>boolean</td><td>מסמן מילה אישית (נסרקה/נוספה ידנית)</td><td>false</td></tr>
+    <tr><td><code>isVerified</code></td><td>boolean</td><td>true = מילה גלובלית מ-Firestore, false = אישית</td><td>false</td></tr>
+    <tr><td><code>errorInQuiz</code></td><td>boolean</td><td>האם טעה בחידון לאחרונה</td><td>false</td></tr>
+    <tr><td><code>errorInSpelling</code></td><td>boolean</td><td>האם טעה בכתיב לאחרונה</td><td>false</td></tr>
+    <tr><td><code>errorInFlashcards</code></td><td>boolean</td><td>האם טעה בפלאשקארדס לאחרונה</td><td>false</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">מתודות מרכזיות</div>
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">getMasteryLevel() : int</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>מחשב רמת שליטה בין 0 ל-5 בהתבסס על ביצועי המשתמש.</p>
+      <div class="formula-box">M = min(5, floor(correctAttempts / (totalAttempts + 1) × 5))</div>
+      <p><strong>הסבר:</strong> <code>totalAttempts + 1</code> במכנה — מניעת חלוקה באפס. כפל ב-5 ממיר יחס (0-1) לסקאלה (0-5). min(5,...) מוודא שלא חורגים מ-5.</p>
+      <pre><span class="kw">public int</span> <span class="fn">getMasteryLevel</span>() {
+    <span class="kw">return</span> Math.min(<span class="nu">5</span>,
+        (<span class="kw">int</span>) (correctAttempts / (totalAttempts + <span class="nu">1.0</span>) * <span class="nu">5</span>));
+}</pre>
+      <p><strong>דוגמאות:</strong></p>
+      <ul style="margin-top:8px;color:#c9d1d9;font-size:0.88rem;">
+        <li>correctAttempts=0, totalAttempts=0 → min(5, floor(0/1×5)) = <strong>0</strong></li>
+        <li>correctAttempts=3, totalAttempts=3 → min(5, floor(3/4×5)) = min(5,3) = <strong>3</strong></li>
+        <li>correctAttempts=5, totalAttempts=5 → min(5, floor(5/6×5)) = min(5,4) = <strong>4</strong></li>
+        <li>correctAttempts=10, totalAttempts=10 → min(5, floor(10/11×5)) = min(5,4) = <strong>4</strong></li>
+        <li>correctAttempts=20, totalAttempts=20 → min(5, floor(20/21×5)) = min(5,4) = <strong>4</strong></li>
+        <li>correctAttempts=100, totalAttempts=100 → ≈ <strong>4</strong> → צריך יחס כמעט 1.0 ל-5</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">Constructor: Word(english, hebrew, pos, example, hebrewExample, isVerified, timestamp)</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>קונסטרקטור ראשי לשימוש Room. כל שדות הסטטיסטיקה (<code>correctAttempts</code>, <code>totalAttempts</code> וכד') מאותחלים ל-0/false.</p>
+      <pre><span class="kw">public</span> <span class="fn">Word</span>(String englishWord, String hebrewTranslation,
+         String partOfSpeech, String exampleSentence,
+         String hebrewExample, <span class="kw">boolean</span> isVerified,
+         <span class="kw">long</span> creationTimestamp) {
+    <span class="kw">this</span>.englishWord = englishWord;
+    <span class="kw">this</span>.hebrewTranslation = hebrewTranslation;
+    <span class="cm">// ... שאר השדות ...</span>
+    <span class="kw">this</span>.correctAttempts = <span class="nu">0</span>;
+    <span class="kw">this</span>.totalAttempts = <span class="nu">0</span>;
+    <span class="cm">// כל boolean fields = false</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: Word.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע יש +1 במכנה של נוסחת getMasteryLevel?</div>
+    <div class="answer">כדי למנוע חלוקה באפס כאשר <code>totalAttempts = 0</code> (מילה חדשה שעוד לא תורגלה). בלי ה-+1, הנוסחה היתה <code>0/0 = NaN</code> — שגיאה בחישוב. ה-+1 גם מבטיח שמשתמש עם תשובה נכונה אחת מ-1 לא ישיג Mastery=5 מיד (1/2×5=2.5 → floor=2, לא 5).</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה ההבדל בין isFavorite ל-isVerified?</div>
+    <div class="answer"><code>isVerified=true</code> — מילה גלובלית שנוספה מ-Firestore ועברה אימות על ידי האדמין. <code>isFavorite=true</code> — מילה שהמשתמש סימן כאישית (נסרקה בOCR, נוספה ידנית, או סומנה). מילה אישית: <code>isVerified=false AND isFavorite=true</code>. הסינון ב-getPersonalWords() מבוסס על שני השדות האלה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע creationTimestamp הוא long ולא Date?</div>
+    <div class="answer">Room לא יודע לאחסן <code>java.util.Date</code> ישירות בלי TypeConverter. Unix timestamp (milliseconds since epoch) הוא <code>long</code> — Room מאחסן אותו ישירות. ה-DashboardFragment משתמש בו לחישוב גרף שבועי: מחסיר את ה-timestamp של יומיים אחורה ומונה כמה מילים נוספו בכל יום.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע errorInQuiz, errorInSpelling, errorInFlashcards שדות נפרדים ולא מחושבים?</div>
+    <div class="answer">כי השגיאה האחרונה בכל מודול היא מידע <em>סטטוס</em> — לא ניתן לחשב אותה מ-correctAttempts כי אלה ספירות מצטברות. לדוגמה, מילה עם correctAttempts=10, totalAttempts=12 — ייתכן שהשתי הטעויות היו לפני חודש. ה-<code>errorInQuiz</code> מציין שהמשתמש טעה בפעם <em>האחרונה</em> בחידון — זה מה שנראה כ"טעויות אחרונות" ב-PracticeFragment.</div>
+  </div>
+</div>
+</section>
+
+<!-- WORD DAO -->
+<section id="word-dao">
+<h2 class="section-title">WordDao.java</h2>
+<p class="section-subtitle">שכבת הנתונים — ממשק גישה ל-Room</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge dao">@Dao</span>
+    <span class="class-badge">Room</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> ממשק (interface) המגדיר את כל פעולות הגישה לבסיס הנתונים. Room מייצר בזמן קומפילציה את המימוש של הממשק אוטומטית. כל מתודה עם אנוטציית <code>@Query</code> הופכת ל-SQL statement.
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">getAllWords() : LiveData&lt;List&lt;Word&gt;&gt;</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Query</span>(<span class="st">"SELECT * FROM words_table ORDER BY englishWord ASC"</span>)
+LiveData&lt;List&lt;Word&gt;&gt; <span class="fn">getAllWords</span>();</pre>
+      <p>מחזיר את כל המילים ממוינות אלפביתית. ה-<code>LiveData</code> אומר ל-Room לשלוח עדכון כל פעם שהטבלה משתנה — <strong>אוטומטית</strong>, ללא polling.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">getPersonalWords() : LiveData&lt;List&lt;Word&gt;&gt;</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Query</span>(<span class="st">"SELECT * FROM words_table WHERE isVerified = 0 AND isFavorite = 1"</span>)
+LiveData&lt;List&lt;Word&gt;&gt; <span class="fn">getPersonalWords</span>();</pre>
+      <p>מסנן מילים אישיות: לא מאומתות (לא גלובליות) וסומנו כ-Favorite. זה ה"מילון האישי" של המשתמש.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">insert(Word) : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Insert</span>(onConflict = OnConflictStrategy.REPLACE)
+<span class="kw">void</span> <span class="fn">insert</span>(Word word);</pre>
+      <p><code>onConflict=REPLACE</code>: אם קיימת שורה עם אותו id — תוחלף. חשוב לסנכרון Firestore כדי לא לקבל שגיאת UNIQUE constraint.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">update(Word) : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Update</span>
+<span class="kw">void</span> <span class="fn">update</span>(Word word);</pre>
+      <p>Room מזהה את השורה לפי ה-<code>id</code> של ה-Word ומעדכן את כל שדות השורה. משמש בכל עדכון נתוני תרגול (correctAttempts, errorInQuiz וכד').</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">deleteUnmarkedGlobalWords() : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Query</span>(<span class="st">"DELETE FROM words_table WHERE isVerified = 0 AND isFavorite = 0"</span>)
+<span class="kw">void</span> <span class="fn">deleteUnmarkedGlobalWords</span>();</pre>
+      <p>מוחק מילים שאינן גלובליות (isVerified=0) ואינן אישיות (isFavorite=0). משמש בmigration חד-פעמי — ניקוי מילים "יתומות" שנשארו בDB ישן.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">deletePersonalWords() : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="an">@Query</span>(<span class="st">"DELETE FROM words_table WHERE isVerified = 0"</span>)
+<span class="kw">void</span> <span class="fn">deletePersonalWords</span>();</pre>
+      <p>מוחק את כל המילים שאינן גלובליות — כלומר את כל המילים האישיות של המשתמש. משמש ב-SettingsFragment בלחיצה על "אפס נתונים".</p>
+    </div>
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: WordDao.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע getAllWords() מחזיר LiveData ולא List?</div>
+    <div class="answer">כי Room מטמיע Observer Pattern: כשה-DAO מחזיר <code>LiveData</code>, Room שומר observer על הטבלה. כל פעם שמוכנסת/מעודכנת/נמחקת שורה — Room דוחף את הנתונים החדשים לכל ה-Observers. ה-Fragment לא צריך לשאול מחדש, לא צריך Polling, הUI מתעדכן אוטומטית. אם היה מחזיר <code>List</code>, ה-Fragment היה צריך לשאול שוב בכל שינוי — מורכבות וסיכון לBugs.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה OnConflict=REPLACE עושה בדיוק?</div>
+    <div class="answer">אם נוסיף Word עם id שכבר קיים בטבלה — Room מוחק את השורה הישנה ומכניס את החדשה. זה דורש זהירות: אם insertים דרך Firestore מביאים Word עם id=0 (כי בנינו אובייקט חדש), Room מייצר id חדש ולא מחליף. ה-REPLACE מגן מפני שגיאת UNIQUE constraint אבל לא כלי לעדכון — לזה יש @Update.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע ה-DAO הוא interface ולא class?</div>
+    <div class="answer">Room מייצר בזמן קומפילציה (Annotation Processing) את המימוש הקונקרטי של הממשק — קוד Java שמריץ SQL ומחזיר את הנתונים. המפתח כותב רק את ה-contract (ממשק + SQL). אם Room היה מחייב class, המפתח היה צריך לכתוב boilerplate קוד של גישה ל-SQLite — בדיוק מה ש-Room אמור להחליף.</div>
+  </div>
+</div>
+</section>
+
+<!-- WORD ROOM DATABASE -->
+<section id="word-db">
+<h2 class="section-title">WordRoomDatabase.java</h2>
+<p class="section-subtitle">שכבת הנתונים — הגדרת בסיס הנתונים</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge db">@Database</span>
+    <span class="class-badge">Singleton</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מחלקת singleton שמגדירה את בסיס הנתונים Room. מכריזה על כל ה-Entities ומספק את ה-DAO instances. מבטיחה שיש רק instance אחד של ה-DB באפליקציה כולה.
+  </div>
+
+  <pre><span class="an">@Database</span>(entities = {Word.class}, version = <span class="nu">3</span>)
+<span class="kw">public abstract class</span> <span class="ty">WordRoomDatabase</span> <span class="kw">extends</span> RoomDatabase {
+
+    <span class="kw">private static volatile</span> <span class="ty">WordRoomDatabase</span> INSTANCE; <span class="cm">// volatile!</span>
+
+    <span class="kw">public static</span> <span class="ty">WordRoomDatabase</span> <span class="fn">getDatabase</span>(Context context) {
+        <span class="kw">if</span> (INSTANCE == <span class="kw">null</span>) {                  <span class="cm">// בדיקה ראשונה</span>
+            <span class="kw">synchronized</span> (<span class="ty">WordRoomDatabase</span>.<span class="kw">class</span>) {
+                <span class="kw">if</span> (INSTANCE == <span class="kw">null</span>) {          <span class="cm">// בדיקה שנייה</span>
+                    INSTANCE = Room.databaseBuilder(
+                        context.getApplicationContext(),
+                        <span class="ty">WordRoomDatabase</span>.<span class="kw">class</span>,
+                        <span class="st">"word_database"</span>
+                    )
+                    .fallbackToDestructiveMigration()
+                    .build();
+                }
+            }
+        }
+        <span class="kw">return</span> INSTANCE;
+    }
+
+    <span class="kw">public abstract</span> <span class="ty">WordDao</span> <span class="fn">wordDao</span>();
+}</pre>
+
+  <div class="highlight-box">
+    <strong>Double-Checked Locking:</strong> שתי בדיקות <code>if (INSTANCE == null)</code>. הראשונה — ביצועים (לא נכנסים ל-synchronized אם כבר קיים). השנייה — בטיחות (Thread שמחכה על ה-lock לא ייצור instance נוסף).
+  </div>
+  <div class="highlight-box warning">
+    <strong>מדוע volatile?</strong> בלי <code>volatile</code>, ה-JVM יכול לשמור את הערך ב-CPU cache של Thread מסוים. Thread אחר יראה <code>null</code> גם אחרי ש-Thread ראשון כבר יצר את ה-instance. <code>volatile</code> מבטיח שהכתיבה לזיכרון נראית לכל ה-threads מיד.
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: WordRoomDatabase.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע Double-Checked Locking ולא synchronized על כל המתודה?</div>
+    <div class="answer">אם כל המתודה היתה synchronized, כל קריאה ל-<code>getDatabase()</code> — גם לאחר שה-instance כבר נוצר — היתה ממתינה ל-lock. זה bottleneck ביצועים. Double-Checked Locking: רק בפעם הראשונה (כשINSTANCE==null) נכנסים לסינכרון. אחר כך, כל קריאות קוראות ישירות מ-memory ללא נעילה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה עושה fallbackToDestructiveMigration?</div>
+    <div class="answer">כשגרסת ה-DB (version=3) לא תואמת את הDB הישן שעל המכשיר — Room לא יודע כיצד לשדרג את הסכמה. ללא fallback, האפליקציה קורסת. עם <code>fallbackToDestructiveMigration()</code> — Room מוחק את הDB הישן ומייצר חדש. <strong>מחיר:</strong> נתוני המשתמש הישנים אובדים. <strong>פתרון אמיתי:</strong> לכתוב Migration מפורש, אבל עבור שלב הפיתוח זה פתרון מקובל.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע abstractWordRoomDatabase abstract class ולא class רגיל?</div>
+    <div class="answer">Room מייצר בזמן קומפילציה את המחלקה הקונקרטית (WordRoomDatabase_Impl). המחלקה האבסטרקטית היא ה-contract: "כאן יש DAO מסוג WordDao". Room משלים את המימוש. אם היתה class רגיל — Room לא יכול היה לדרוס את המתודות.</div>
+  </div>
+</div>
+</section>
+
+<!-- WORD REPOSITORY -->
+<section id="word-repo">
+<h2 class="section-title">WordRepository.java</h2>
+<p class="section-subtitle">שכבת הנתונים — מתווך בין Room ל-Firestore</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge repo">Repository</span>
+    <span class="class-badge">Single Source of Truth</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> ה-Repository הוא מקור האמת היחיד לנתונים. מפשט עבור ה-ViewModel את הגישה לנתונים — ה-ViewModel לא יודע מאיפה מגיעים הנתונים (Room? Firestore?). מנהל את ThreadPool ל-DB ops ואת ממשק ה-Firestore.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td><code>wordDao</code></td><td>WordDao</td><td>גישה לטבלת Room</td></tr>
+    <tr><td><code>allWords</code></td><td>LiveData&lt;List&lt;Word&gt;&gt;</td><td>כל המילים — מה-DAO ישירות</td></tr>
+    <tr><td><code>personalWords</code></td><td>LiveData&lt;List&lt;Word&gt;&gt;</td><td>מילים אישיות בלבד</td></tr>
+    <tr><td><code>executorService</code></td><td>ExecutorService</td><td>Thread pool בן 4 threads לכל פעולות ה-DB</td></tr>
+    <tr><td><code>db</code></td><td>FirebaseFirestore</td><td>instance של Firestore</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">מתודות מרכזיות</div>
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">insert(Word) : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre>executorService.<span class="fn">execute</span>(() -> wordDao.<span class="fn">insert</span>(word));</pre>
+      <p>מריץ את ה-INSERT על background thread. Room דוחף אוטומטית עדכון ל-LiveData observers כשהשורה נכנסת.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">syncGlobalWordsFromFirestore() : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>אלגוריתם Insert-Only — ראה "סיפור הסנכרון" למעלה.</p>
+      <pre><span class="kw">public void</span> <span class="fn">syncGlobalWordsFromFirestore</span>() {
+    db.collection(<span class="st">"words"</span>).<span class="fn">get</span>()
+      .addOnSuccessListener(querySnap -> {
+          executorService.<span class="fn">execute</span>(() -> {
+              <span class="cm">// קבל מילים קיימות מ-Room (sync query)</span>
+              List&lt;Word&gt; existing = wordDao.<span class="fn">getAllWordsNow</span>();
+              Set&lt;String&gt; existingSet = <span class="kw">new</span> HashSet&lt;&gt;();
+              <span class="kw">for</span> (Word w : existing)
+                  existingSet.add(w.getEnglishWord().toLowerCase());
+
+              <span class="cm">// הכנס רק מילים חדשות</span>
+              <span class="kw">for</span> (DocumentSnapshot doc : querySnap.getDocuments()) {
+                  String eng = doc.getString(<span class="st">"englishWord"</span>);
+                  <span class="kw">if</span> (eng != <span class="kw">null</span> &&
+                      !existingSet.contains(eng.toLowerCase())) {
+                      wordDao.<span class="fn">insert</span>(<span class="fn">buildWordFromDoc</span>(doc));
+                  }
+              }
+          });
+      });
+}</pre>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">deletePersonalWords() / deleteUnmarkedGlobalWords()</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre>executorService.<span class="fn">execute</span>(() -> wordDao.<span class="fn">deletePersonalWords</span>());
+executorService.<span class="fn">execute</span>(() -> wordDao.<span class="fn">deleteUnmarkedGlobalWords</span>());</pre>
+      <p>שתי מתודות מחיקה. הראשונה — איפוס מילים אישיות. השנייה — ניקוי מילים "יתומות" (migration flag).</p>
+    </div>
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: WordRepository.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע ExecutorService עם 4 threads ולא Thread ישיר?</div>
+    <div class="answer">יצירת Thread חדש לכל פעולה יקרה בזיכרון וב-CPU — יצירת Thread עצמה לוקחת זמן ומשאבים. ExecutorService מנהל מאגר (pool) של 4 threads שנוצרו מראש. פעולת DB חדשה מוסיפה task לתור — thread פנוי לוקח אותו. 4 threads מספיקים לעומס DB טיפוסי ולא מכבידים על מעבד מכשיר מוביילי.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">למה ה-Repository הוא "Single Source of Truth"?</div>
+    <div class="answer">הRepository מחליט מאיפה הנתונים באים — Room, Firestore, או שניהם. ה-ViewModel לא יודע. אם מחר נחליף Room ב-SQLDelight, נשנה רק ב-Repository. ה-ViewModel וה-Fragment נשארים ללא שינוי. זה עיקרון Separation of Concerns — כל מחלקה אחראית על דבר אחד בלבד.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע syncGlobalWordsFromFirestore מבצע query סינכרוני ל-Room ב-background thread?</div>
+    <div class="answer">הפונקציה כבר רצה ב-background thread (executorService). ב-background thread, <strong>מותר</strong> לבצע query סינכרוני — זה בדיוק מה שאנחנו עושים עם <code>getAllWordsNow()</code> (query שמחזיר List ולא LiveData). לא ניתן להשתמש ב-LiveData כי ה-background thread לא יכול לObserve — LiveData מיועד ל-Main Thread.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== AUTH FLOW ===== -->
+
+<!-- SPLASH ACTIVITY -->
+<section id="splash">
+<h2 class="section-title">SplashActivity.java</h2>
+<p class="section-subtitle">אימות — מסך פתיחה</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge activity">Activity</span>
+    <span class="class-badge">Launcher</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך הפתיחה. מנהל את אנימציית הלוגו ובדיקת מצב ה-Authentication. רק כשגם האנימציה הסתיימה וגם בדיקת ה-Auth הסתיימה — מנווט ל-MainActivity (מחובר) או LoginActivity (לא מחובר).
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td><code>animDone</code></td><td>boolean</td><td>האם אנימציית הלוגו הסתיימה</td></tr>
+    <tr><td><code>authReady</code></td><td>boolean</td><td>האם בדיקת Firebase Auth הסתיימה</td></tr>
+  </table>
+  </div>
+  <pre><span class="cm">// אנימציה:</span>
+logoView.animate().alpha(<span class="nu">1f</span>).setDuration(<span class="nu">800</span>).withEndAction(() -> {
+    animDone = <span class="kw">true</span>;
+    <span class="fn">tryNavigate</span>();
+}).start();
+
+<span class="cm">// בדיקת Auth:</span>
+FirebaseUser user = FirebaseAuth.getInstance().<span class="fn">getCurrentUser</span>();
+authReady = <span class="kw">true</span>;
+<span class="fn">tryNavigate</span>();
+
+<span class="cm">// רק כשגם וגם:</span>
+<span class="kw">private void</span> <span class="fn">tryNavigate</span>() {
+    <span class="kw">if</span> (animDone && authReady) {
+        <span class="kw">if</span> (user != <span class="kw">null</span>) startActivity(MainActivity)
+        <span class="kw">else</span> startActivity(LoginActivity);
+        finish();
+    }
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: SplashActivity.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע שני Flags (animDone, authReady) ולא ניווט ישיר?</div>
+    <div class="answer">האנימציה והAuth בדיקה רצות <em>במקביל</em>. האנימציה לוקחת 800ms. בדיקת getCurrentUser() היא סינכרונית ומיידית (Firebase Auth שומר state בlocal). אם הAuth מסתיים לפני האנימציה ומנווט מיד — המשתמש רואה Flash של Splash ריק. אם מחכים רק לאנימציה — מה אם Auth לוקח יותר? שני הFlags מבטיחים שניהם הסתיימו לפני ניווט.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע finish() נקרא אחרי startActivity?</div>
+    <div class="answer">כדי שה-SplashActivity תוסר מה-Back Stack. אם לא קוראים <code>finish()</code>, לחיצת Back מ-MainActivity תחזיר את המשתמש ל-SplashScreen — חוויה שגויה. finish() מוציאה את ה-Activity מה-Stack ומאפשרת ל-GC לפנות אותה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה קורה אם getCurrentUser() מחזיר null?</div>
+    <div class="answer">המשמעות שאין משתמש מחובר — אין token תקף ב-FirebaseAuth local storage. האפליקציה מנווטת ל-LoginActivity. Firebase Auth שומר את מצב ה-Token ב-SharedPreferences של הDevice — ה-check הוא סינכרוני ומקומי, לא דורש internet.</div>
+  </div>
+</div>
+</section>
+
+<!-- LOGIN ACTIVITY -->
+<section id="login">
+<h2 class="section-title">LoginActivity.java</h2>
+<p class="section-subtitle">אימות — כניסה לחשבון</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge activity">Activity</span>
+    <span class="class-badge">Firebase Auth</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך כניסה עם Email/Password. מאמת מול Firebase Authentication. בהצלחה — עובר ל-MainActivity. בכישלון — מציג Toast עם הודעת שגיאה.
+  </div>
+  <pre><span class="fn">signInWithEmailAndPassword</span>(email, password)
+    .addOnCompleteListener(task -> {
+        <span class="kw">if</span> (task.isSuccessful()) {
+            startActivity(<span class="kw">new</span> Intent(<span class="kw">this</span>, MainActivity.<span class="kw">class</span>));
+            finish();
+        } <span class="kw">else</span> {
+            Toast.makeText(<span class="kw">this</span>,
+                task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    });</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — LoginActivity.java</div>
+  <div class="qa-block">
+    <div class="question">מה קורה אם המשתמש מכבה WiFi בזמן הlogin?</div>
+    <div class="answer">Firebase Auth מנסה לאמת מול השרת. ללא internet — האימות נכשל. <code>task.isSuccessful()</code> מחזיר false. <code>task.getException()</code> מחזיר FirebaseNetworkException עם הודעה. האפליקציה מציגה Toast עם הודעת השגיאה. <strong>שיפור אפשרי:</strong> לבדוק את סוג השגיאה ולהציג הודעה ידידותית ("בדוק חיבור לאינטרנט").</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע finish() אחרי מעבר ל-MainActivity?</div>
+    <div class="answer">כדי שלחיצת Back מ-MainActivity לא תחזיר את המשתמש ל-LoginActivity. אחרי כניסה מוצלחת, אנחנו רוצים שה-Back Stack יהיה נקי. finish() מסירה את LoginActivity מה-Stack.</div>
+  </div>
+</div>
+</section>
+
+<!-- REGISTER ACTIVITY -->
+<section id="register">
+<h2 class="section-title">RegisterActivity.java</h2>
+<p class="section-subtitle">אימות — הרשמה</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge activity">Activity</span>
+    <span class="class-badge">Firebase Auth</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך הרשמה. יוצר חשבון Firebase Authentication חדש עם Email/Password. בהצלחה — מנווט ל-MainActivity ומנקה את כל ה-Back Stack.
+  </div>
+  <pre><span class="fn">createUserWithEmailAndPassword</span>(email, password)
+    .addOnCompleteListener(task -> {
+        <span class="kw">if</span> (task.isSuccessful()) {
+            startActivity(<span class="kw">new</span> Intent(<span class="kw">this</span>, MainActivity.<span class="kw">class</span>));
+            finishAffinity(); <span class="cm">// מנקה את כל ה-Back Stack!</span>
+        }
+    });</pre>
+  <div class="highlight-box">
+    <strong>finishAffinity() vs finish():</strong> <code>finish()</code> מסיר רק את ה-Activity הנוכחית. <code>finishAffinity()</code> מסיר את כל ה-Activities ב-Task שיש להן אותו Affinity — כלומר גם את LoginActivity וגם את SplashActivity. המשתמש החדש לא יכול ללחוץ Back ולחזור למסך ההרשמה.
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — RegisterActivity.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע finishAffinity ולא finish פשוט?</div>
+    <div class="answer">סדר ה-Activities בBack Stack: SplashActivity → LoginActivity → RegisterActivity. אחרי הרשמה מוצלחת, נרצה Back Stack נקי. <code>finish()</code> — מסיר רק RegisterActivity, נשאר LoginActivity ו-SplashActivity. <code>finishAffinity()</code> — מסיר את כולם. Back Stack: MainActivity בלבד. Back מ-MainActivity → יוצא מהאפליקציה. זה ה-UX הנכון.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">האם Firebase שומר את המשתמש אחרי הרשמה?</div>
+    <div class="answer">כן — Firebase Auth שומר את ה-session ב-persistent storage (SharedPreferences מוצפן). בפתיחה הבאה של האפליקציה, SplashActivity יקרא <code>getCurrentUser()</code> → יחזיר את המשתמש החדש → יעבור ישירות ל-MainActivity ללא כניסה מחדש.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== MAIN APP ===== -->
+
+<!-- MAIN ACTIVITY -->
+<section id="main-activity">
+<h2 class="section-title">MainActivity.java</h2>
+<p class="section-subtitle">מסך ראשי — מעטפת ה-Single Activity</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge activity">Activity</span>
+    <span class="class-badge">Navigation Host</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> ה-Activity היחידה של החלק הראשי של האפליקציה. מכילה NavHostFragment שמנהל את כל ה-Fragments. מקשרת את BottomNavigationView עם NavController.
+  </div>
+  <pre><span class="cm">// onCreate:</span>
+NavHostFragment navHostFragment = (NavHostFragment)
+    getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+NavController navController = navHostFragment.getNavController();
+
+BottomNavigationView bottomNav = binding.bottomNavigation;
+NavigationUI.<span class="fn">setupWithNavController</span>(bottomNav, navController);</pre>
+  <div class="highlight-box">
+    <strong>Destinations (יעדי ניווט):</strong> Dashboard, MyWords, Practice, Statistics, Scan — כולם Fragments. Navigation Component מנהל את Back Stack ואנימציות המעבר.
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — MainActivity.java</div>
+  <div class="qa-block">
+    <div class="question">מה היתרון של Single Activity Architecture?</div>
+    <div class="answer">Activity ממשיכה לחיות כל עוד היא גלויה. מעבר בין Activities = יצירת חדשה + עצירת ישנה — גוזל זיכרון. Navigation Component עם Fragments: פחות overhead, אנימציות חלקות יותר, שיתוף ViewModel בין Fragments קל יותר, ניהול Back Stack אוטומטי.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה NavigationUI.setupWithNavController עושה?</div>
+    <div class="answer">מחבר בין הItemים של BottomNavigationView לבין destinations ב-nav_graph.xml לפי ה-IDs שלהם. כשמשתמש לוחץ על פריט — NavController מבצע navigate לDestination המתאים. NavigationUI גם מנהל את ה-selected state של הכפתורים אוטומטית בהתאם ל-destination הנוכחי.</div>
+  </div>
+</div>
+</section>
+
+<!-- DASHBOARD FRAGMENT -->
+<section id="dashboard">
+<h2 class="section-title">DashboardFragment.java</h2>
+<p class="section-subtitle">מסך ראשי — לוח הבית</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">Home Screen</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך הבית. מציג ברכה לפי שעה, "מילה היום", גרף פעילות שבועי, ורשימת טעויות אחרונות.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>מתודה</th><th>מה היא עושה</th></tr>
+    <tr><td><code>setupGreeting()</code></td><td>קורא <code>Calendar.HOUR_OF_DAY</code>. 6-11=בוקר, 12-17=צהריים, 18+=ערב. מציג ברכה מתאימה בעברית</td></tr>
+    <tr><td><code>setupWordOfDay()</code></td><td>צופה ב-LiveData של כל המילים → בוחר מילה רנדומלית → מציג</td></tr>
+    <tr><td><code>setupWeeklyActivity()</code></td><td>מחשב לכל אחד מ-7 הימים הרצף כמה מילים נוצרו (לפי creationTimestamp). מגדיר גובה View לכל עמודת ה-Bar Chart ידנית (ללא ספרייה)</td></tr>
+  </table>
+  </div>
+  <div class="highlight-box info">
+    <strong>גרף שבועי ללא ספרייה:</strong> כל "עמודה" בגרף היא View רגיל. הגובה מוגדר ב-code: <code>view.getLayoutParams().height = calculatedHeight; view.requestLayout()</code>. אין תלות ב-MPAndroidChart או ספרייה חיצונית.
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — DashboardFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע setupWordOfDay בוחרת מילה רנדומלית מה-LiveData ולא שומרת בDB?</div>
+    <div class="answer">מילת היום לא מוגדרת ב-Firestore — אין שרת שמחליט אותה. הבחירה היא לוקאלית וסטטיסטית. מספיק שהמשתמש רואה מילה אחרת כל יום. Random seed אפשרי מ-Calendar.DAY_OF_YEAR: <code>new Random(dayOfYear).nextInt(list.size())</code> — כך אותה מילה כל היום, שונה מחר.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע הגרף השבועי מחושב ב-Fragment ולא ב-ViewModel?</div>
+    <div class="answer">הגרף הוא לוגיקת תצוגה (presentation logic) — הוא תלוי בגובה פיקסלים של המסך וב-View heights. אין טעם לחשב זאת ב-ViewModel שאמור להיות עצמאי מ-UI. הנתונים (כמה מילים ביום) אפשר לחשב ב-ViewModel — אבל המרת הנתונים לגבה View היא ב-Fragment. כאן הם משולבים כי האפליקציה לא מבדילה.</div>
+  </div>
+</div>
+</section>
+
+
+<!-- ===== DICTIONARY ===== -->
+
+<!-- MY WORDS FRAGMENT -->
+<section id="my-words">
+<h2 class="section-title">MyWordsFragment.java</h2>
+<p class="section-subtitle">מילון — רשימת המילים</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">RecyclerView + Filter</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך המילון המלא. מציג רשימת מילים עם יכולות חיפוש, סינון לפי חלק דיבר ותגיות, אינדקס A-Z בצד, ו-FAB להוספת מילה. מחלק בין מצב "כל המילים" ל"מילים שלי".
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>רכיב UI</th><th>מטרה</th><th>מימוש</th></tr>
+    <tr><td>RecyclerView + WordListAdapter</td><td>רשימת מילים ממוינת A-Z</td><td>DiffUtil לעדכונים יעילים</td></tr>
+    <tr><td>Filter Chips</td><td>מעבר בין "כל המילים" ו"המילים שלי"</td><td>ChipGroup עם setOnCheckedStateChangeListener</td></tr>
+    <tr><td>A-Z Side Index</td><td>קפיצה מהירה לאות</td><td>LinearLayout עם TextViews + PopupWindow bubble</td></tr>
+    <tr><td>spinnerPOS / spinnerTags</td><td>סינון לפי חלק דיבר ותגית</td><td>AutoCompleteTextView עם ArrayAdapter</td></tr>
+    <tr><td>SearchView</td><td>חיפוש טקסט חופשי</td><td>onQueryTextChange → applyFilters()</td></tr>
+    <tr><td>FAB</td><td>הוספת מילה חדשה</td><td>showAddWordDialog() - MaterialAlertDialogBuilder</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">מתודות מרכזיות</div>
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">applyPersonalFilter() : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>מסנן מהרשימה הכוללת רק מילים שמקיימות: <code>isVerified=false AND isFavorite=true</code>.</p>
+      <pre><span class="kw">private</span> List&lt;Word&gt; <span class="fn">applyPersonalFilter</span>(List&lt;Word&gt; all) {
+    List&lt;Word&gt; result = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">for</span> (Word w : all) {
+        <span class="kw">if</span> (!w.isVerified() && w.isFavorite()) {
+            result.add(w);
+        }
+    }
+    <span class="kw">return</span> result;
+}</pre>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">showAddWordDialog() : void</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <pre><span class="kw">new</span> MaterialAlertDialogBuilder(requireContext())
+    .setTitle(<span class="st">"הוסף מילה חדשה"</span>)
+    .setView(dialogView)
+    .setPositiveButton(<span class="st">"הוסף"</span>, (dialog, which) -> {
+        Word word = <span class="kw">new</span> Word(english, hebrew, pos, example,
+                           hebrewExample, <span class="kw">false</span>,
+                           System.currentTimeMillis());
+        word.setFavorite(<span class="kw">true</span>);  <span class="cm">// מילה אישית!</span>
+        viewModel.<span class="fn">insert</span>(word);
+    })
+    .show();</pre>
+      <p>המילה האישית נוצרת עם <code>isVerified=false, isFavorite=true</code> — כך היא מופיעה ב"מילים שלי" ולא תימחק בסינון הגלובלי.</p>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span class="method-name">A-Z Index + PopupWindow</span>
+      <span class="accordion-arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>לכל אות A-Z — TextView בצד המסך. לחיצה מגנלת את ה-RecyclerView לאות הראשונה המתאימה ומציגה PopupWindow עם בועת הצגה של האות הנוכחית.</p>
+      <pre><span class="cm">// מציאת מיקום האות ב-RecyclerView:</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="nu">0</span>; i &lt; adapter.getItemCount(); i++) {
+    Word w = adapter.getItem(i);
+    <span class="kw">if</span> (w.getEnglishWord().toUpperCase().startsWith(letter)) {
+        layoutManager.<span class="fn">scrollToPositionWithOffset</span>(i, <span class="nu">0</span>);
+        <span class="kw">break</span>;
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: MyWordsFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מה DiffUtil ולמה חשוב בWordListAdapter?</div>
+    <div class="answer">DiffUtil הוא כלי של RecyclerView שמשווה רשימה ישנה לחדשה ומחשב את המינימום שינויים נדרשים (insertions, deletions, changes). בלי DiffUtil: כל עדכון LiveData גורם ל-<code>notifyDataSetChanged()</code> — RecyclerView מצייר מחדש את כל ה-items. עם DiffUtil: רק items ששינו מתעדכנים — ביצועים טובים יותר ואנימציות חלקות (fade-in/out לפריטים חדשים).</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע AutoCompleteTextView ל-spinner ולא Spinner רגיל?</div>
+    <div class="answer">Material Design 3 לא ממליץ על Spinner רגיל — הוא לא עוקב אחר עיצוב Material. <code>AutoCompleteTextView</code> עם <code>ExposedDropdownMenu</code> style הוא ה-Replacement: נראה כמו Dropdown אך תואם Material3 בצורה מלאה, תומך ב-RTL, ויש לו animations מובנות.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">כיצד הסינון עובד כשיש גם SearchView וגם Chip גם Spinner?</div>
+    <div class="answer">כל שינוי (חיפוש, chip, spinner) קורא מחדש ל-<code>applyFilters()</code>. הפונקציה מקבלת את רשימת המילים המלאה מה-LiveData, ומשתמשת בכל הפרמטרים הנוכחיים: מסנן לפי Chip (כל/אישי), לפי partOfSpeech, לפי tag, לפי search query. כל הפילטרים מוחלים ברצף.</div>
+  </div>
+</div>
+</section>
+
+<!-- MY WORDS VIEW MODEL -->
+<section id="my-words-vm">
+<h2 class="section-title">MyWordsViewModel.java</h2>
+<p class="section-subtitle">מילון — ViewModel</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge viewmodel">AndroidViewModel</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מנהל את הנתונים עבור MyWordsFragment. אחראי על migration חד-פעמי וthrottle של 24 שעות לסנכרון Firestore.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td><code>repository</code></td><td>WordRepository</td><td>גישה לנתונים</td></tr>
+    <tr><td><code>allWords</code></td><td>LiveData&lt;List&lt;Word&gt;&gt;</td><td>כל המילים (ממוינות A-Z)</td></tr>
+    <tr><td><code>personalWords</code></td><td>LiveData&lt;List&lt;Word&gt;&gt;</td><td>מילים אישיות בלבד</td></tr>
+    <tr><td><code>sharedPrefs</code></td><td>SharedPreferences</td><td>שמירת migration flag + timestamp סנכרון</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Migration Flag ו-Throttle — לוגיקה בConstructor</div>
+  <pre><span class="kw">public</span> <span class="fn">MyWordsViewModel</span>(@NonNull Application application) {
+    <span class="kw">super</span>(application);
+    repository = <span class="kw">new</span> WordRepository(application);
+    allWords = repository.<span class="fn">getAllWords</span>();
+    personalWords = repository.<span class="fn">getPersonalWords</span>();
+    sharedPrefs = application.<span class="fn">getSharedPreferences</span>(
+        <span class="st">"app_prefs"</span>, Context.MODE_PRIVATE);
+
+    <span class="cm">// Migration חד-פעמי:</span>
+    <span class="kw">boolean</span> migrated = sharedPrefs.<span class="fn">getBoolean</span>(
+        <span class="st">"personal_words_migration_v1"</span>, <span class="kw">false</span>);
+    <span class="kw">if</span> (!migrated) {
+        repository.<span class="fn">deleteUnmarkedGlobalWords</span>();
+        sharedPrefs.edit().<span class="fn">putBoolean</span>(
+            <span class="st">"personal_words_migration_v1"</span>, <span class="kw">true</span>).<span class="fn">apply</span>();
+    }
+
+    <span class="cm">// Throttle 24 שעות:</span>
+    <span class="kw">long</span> lastSync = sharedPrefs.<span class="fn">getLong</span>(<span class="st">"last_global_sync_ms"</span>, <span class="nu">0</span>);
+    <span class="kw">long</span> now = System.<span class="fn">currentTimeMillis</span>();
+    <span class="kw">if</span> (now - lastSync &gt; <span class="nu">24</span> * <span class="nu">60</span> * <span class="nu">60</span> * <span class="nu">1000L</span>) {
+        <span class="fn">syncFromCloud</span>();
+        sharedPrefs.edit().<span class="fn">putLong</span>(<span class="st">"last_global_sync_ms"</span>, now).<span class="fn">apply</span>();
+    }
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: MyWordsViewModel.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע AndroidViewModel ולא ViewModel רגיל?</div>
+    <div class="answer"><code>ViewModel</code> רגיל לא מקבל <code>Application</code> context. אנחנו צריכים Application context כדי: (1) לאתחל את Room database דרך <code>WordRoomDatabase.getDatabase(application)</code>. (2) לגשת ל-SharedPreferences. Application context בטוח — לא מחזיק reference ל-Activity שיכולה להיהרס בסיבוב מסך.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה migration_v1 עושה ולמה חד-פעמי?</div>
+    <div class="answer">בגרסה ישנה של האפליקציה, מילים גלובליות נשמרו עם <code>isVerified=false, isFavorite=false</code> — "מילים יתומות". בגרסה החדשה, מילים גלובליות מגיעות מ-Firestore עם <code>isVerified=true</code>. ה-migration מוחק את המילים הישנות (<code>deleteUnmarkedGlobalWords</code>) כדי לנקות ה-DB. הFlag מבטיח שהמחיקה קורית פעם אחת בלבד — אחרת בכל פתיחה נמחקות מילים.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע ViewModel לא חושף MutableLiveData ישירות?</div>
+    <div class="answer">עיקרון Encapsulation. אם ה-Fragment יכול לשנות את ה-MutableLiveData ישירות — הוא עוקף את ה-ViewModel. לכן ב-ViewModel: <code>private MutableLiveData&lt;X&gt; _data</code> (פרטי), ולחוץ חושפים רק <code>public LiveData&lt;X&gt; getData() { return _data; }</code>. כאן המקרה פשוט יותר — ה-LiveData מגיע ישירות מ-Room ולא ניתן לשינוי ממילא.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== PRACTICE ===== -->
+
+<!-- PRACTICE FRAGMENT -->
+<section id="practice">
+<h2 class="section-title">PracticeFragment.java</h2>
+<p class="section-subtitle">תרגול — תפריט הפעילויות</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">Practice Menu</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך תפריט התרגול. מציג 6 כרטיסי תרגול, כולל Badge עם מספר השגיאות הפתוחות. מציג XP header עם Level, Progress Bar וStreak.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>כרטיס תרגול</th><th>Fragment יעד</th><th>Badge?</th></tr>
+    <tr><td>חידון (Quiz)</td><td>QuizFragment</td><td>errorInQuiz count</td></tr>
+    <tr><td>כתיב (Spelling)</td><td>SpellingFragment</td><td>errorInSpelling count</td></tr>
+    <tr><td>פלאשקארדס (Flashcards)</td><td>FlashcardsFragment</td><td>errorInFlashcards count</td></tr>
+    <tr><td>חידון יומי (Daily Quiz)</td><td>QuizFragment (daily mode)</td><td>20 מילים/יום</td></tr>
+    <tr><td>סקירת שגיאות (Error Review)</td><td>QuizFragment (errors only)</td><td>—</td></tr>
+    <tr><td>מועדפים (Favorites)</td><td>MyWordsFragment (filtered)</td><td>—</td></tr>
+  </table>
+  </div>
+  <div class="highlight-box">
+    <strong>Badge חישוב:</strong> <code>observe(allWords)</code> → ספירת מילים עם <code>errorInQuiz=true</code> / <code>errorInSpelling=true</code> / <code>errorInFlashcards=true</code>. כל Badge מציג את המספר הרלוונטי.
+  </div>
+  <div class="highlight-box info">
+    <strong>XP Header (onResume):</strong> קורא <code>GamificationEngine.syncFromFirestore(this::updateXpUi)</code>. מעדכן Level, Progress bar, Streak. נקרא בכל כניסה למסך (onResume) לא רק ב-onCreate.
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — PracticeFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע syncFromFirestore נקרא ב-onResume ולא ב-onCreate?</div>
+    <div class="answer"><code>onCreate</code> נקרא רק כשה-Fragment נוצר לראשונה. אבל המשתמש יכול לעבור לQuiz, להרוויח XP, ולחזור ל-PracticeFragment — אז onCreate לא נקרא שוב, ה-XP לא יתעדכן. <code>onResume</code> נקרא בכל פעם שה-Fragment חוזר לקדמת הבמה — מבטיח שה-XP עדכני.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">כיצד Badge מתעדכן אוטומטית כשמשתמש מצליח בחידון?</div>
+    <div class="answer">QuizFragment מאפס את <code>word.setErrorInQuiz(false)</code> בתשובה נכונה ומבצע <code>viewModel.update(word)</code>. Room DB מתעדכן → Room דוחף עדכון ל-<code>LiveData&lt;List&lt;Word&gt;&gt;</code> → PracticeFragment observe() מקבל רשימה מעודכנת → Badge מחושב מחדש → Badge נעלם.</div>
+  </div>
+</div>
+</section>
+
+<!-- QUIZ FRAGMENT -->
+<section id="quiz">
+<h2 class="section-title">QuizFragment.java</h2>
+<p class="section-subtitle">תרגול — חידון רב-ברירה</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">Adaptive Algorithm</span>
+    <span class="class-badge engine">Gamification</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> חידון 4 אפשרויות בחירה. 20 שאלות בסשן. בוחר מילים בצורה אדפטיבית לפי רמת שליטה. מחבר עם GamificationEngine להוספת XP.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>קבוע / שדה</th><th>ערך</th><th>תפקיד</th></tr>
+    <tr><td>SESSION_SIZE</td><td>20</td><td>שאלות לסשן</td></tr>
+    <tr><td>questionList</td><td>List&lt;Word&gt;</td><td>20 מילים שנבחרו אדפטיבית</td></tr>
+    <tr><td>masterList</td><td>List&lt;Word&gt;</td><td>כל המילים — לבניית 3 תשובות שגויות</td></tr>
+    <tr><td>currentIndex</td><td>int</td><td>מיקום בשאלה הנוכחית</td></tr>
+    <tr><td>score</td><td>int</td><td>מונה תשובות נכונות בסשן</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">אלגוריתם 60/20/20 — בחירת מילים אדפטיבית</div>
+  <pre><span class="kw">private</span> List&lt;Word&gt; <span class="fn">buildQuestionList</span>(List&lt;Word&gt; all) {
+    List&lt;Word&gt; hard = <span class="kw">new</span> ArrayList&lt;&gt;();   <span class="cm">// Mastery 0-2</span>
+    List&lt;Word&gt; fresh = <span class="kw">new</span> ArrayList&lt;&gt;();  <span class="cm">// totalAttempts == 0</span>
+    List&lt;Word&gt; solid = <span class="kw">new</span> ArrayList&lt;&gt;();  <span class="cm">// Mastery 3-5</span>
+
+    <span class="kw">for</span> (Word w : all) {
+        <span class="kw">int</span> m = w.<span class="fn">getMasteryLevel</span>();
+        <span class="kw">if</span> (w.<span class="fn">getTotalAttempts</span>() == <span class="nu">0</span>) fresh.add(w);
+        <span class="kw">else if</span> (m &lt;= <span class="nu">2</span>) hard.add(w);
+        <span class="kw">else</span> solid.add(w);
+    }
+
+    Collections.<span class="fn">shuffle</span>(hard);
+    Collections.<span class="fn">shuffle</span>(fresh);
+    Collections.<span class="fn">shuffle</span>(solid);
+
+    List&lt;Word&gt; result = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="fn">addUpTo</span>(result, hard, (<span class="kw">int</span>)(SESSION_SIZE * <span class="nu">0.6</span>));  <span class="cm">// 12</span>
+    <span class="fn">addUpTo</span>(result, fresh, (<span class="kw">int</span>)(SESSION_SIZE * <span class="nu">0.2</span>)); <span class="cm">// 4</span>
+    <span class="fn">addUpTo</span>(result, solid, SESSION_SIZE - result.size()); <span class="cm">// נשאר</span>
+
+    <span class="kw">if</span> (result.size() &lt; SESSION_SIZE) {
+        <span class="cm">// ממלא מהנשאר אם אין מספיק</span>
+    }
+    Collections.<span class="fn">shuffle</span>(result);
+    <span class="kw">return</span> result;
+}</pre>
+  <div class="highlight-box">
+    <strong>למה 60/20/20?</strong> פסיכולוגיה של למידה: מילים שהמשתמש טועה בהן (Mastery 0-2) צריכות חזרה תכופה. מילים חדשות (0 ניסיונות) צריכות היכרות. מילים שנרכשו (3-5) צריכות תחזוקה. היחס מקסם למידה ומונע שעמום.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">זרימת תשובה נכונה</div>
+  <pre><span class="cm">// כשמשתמש בוחר תשובה נכונה:</span>
+<span class="kw">int</span> beforeMastery = currentWord.<span class="fn">getMasteryLevel</span>();
+currentWord.<span class="fn">setCorrectAttempts</span>(currentWord.<span class="fn">getCorrectAttempts</span>() + <span class="nu">1</span>);
+currentWord.<span class="fn">setTotalAttempts</span>(currentWord.<span class="fn">getTotalAttempts</span>() + <span class="nu">1</span>);
+currentWord.<span class="fn">setErrorInQuiz</span>(<span class="kw">false</span>);
+<span class="kw">int</span> afterMastery = currentWord.<span class="fn">getMasteryLevel</span>();
+
+GamificationEngine.<span class="fn">getInstance</span>(requireContext())
+    .<span class="fn">onCorrectAnswer</span>(beforeMastery, afterMastery);
+
+viewModel.<span class="fn">update</span>(currentWord);
+
+<span class="cm">// אנימציית +10 XP:</span>
+tvXpGain.<span class="fn">setVisibility</span>(View.VISIBLE);
+ObjectAnimator animator = ObjectAnimator.<span class="fn">ofFloat</span>(
+    tvXpGain, <span class="st">"translationY"</span>, <span class="nu">0f</span>, -<span class="nu">80f</span>);
+animator.<span class="fn">setDuration</span>(<span class="nu">800</span>);
+animator.<span class="fn">start</span>();
+
+<span class="cm">// מעבר לשאלה הבאה — לא Thread.sleep!</span>
+<span class="kw">new</span> Handler(Looper.<span class="fn">getMainLooper</span>())
+    .<span class="fn">postDelayed</span>(this::<span class="fn">loadNextQuestion</span>, <span class="nu">1000</span>);</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">דיאלוג תוצאה — showResultDialog()</div>
+  <pre><span class="cm">// MaterialCardView עם OvershootInterpolator:</span>
+card.<span class="fn">setScaleX</span>(<span class="nu">0f</span>);
+card.<span class="fn">setScaleY</span>(<span class="nu">0f</span>);
+card.animate()
+    .scaleX(<span class="nu">1f</span>).scaleY(<span class="nu">1f</span>)
+    .setInterpolator(<span class="kw">new</span> OvershootInterpolator())
+    .setDuration(<span class="nu">400</span>)
+    .start();</pre>
+  <p>מציג score, emoji (לפי אחוז הצלחה) ו"התחל שוב" / "חזור".</p>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: QuizFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע Handler.postDelayed ולא Thread.sleep בין שאלות?</div>
+    <div class="answer"><code>Thread.sleep(1000)</code> על Main Thread — קופא את ה-UI לשנייה שלמה. המשתמש לא יכול לגלול, ללחוץ, לפעיל. האפליקציה נראית "קפואה" ול-ANR Dialog יכול להופיע (App Not Responding). <code>Handler.postDelayed(runnable, 1000)</code> — מתזמן את ה-Runnable לרוץ על Main Thread אחרי 1000ms, אבל בינתיים ה-Main Thread חופשי לעבד events אחרים.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">כיצד נבנות 3 תשובות שגויות?</div>
+    <div class="answer">מה-<code>masterList</code> (כל המילים) מסירים את המילה הנכונה ומערבבים. לוקחים 3 ראשונות: <code>Collections.shuffle(masterListCopy); wrongOptions = masterListCopy.subList(0, 3)</code>. לאחר מכן יוצרים List עם 4 אפשרויות (נכונה + 3 שגויות) ומערבבים שוב לסדר אקראי.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה OvershootInterpolator?</div>
+    <div class="answer">Interpolator שמגדיר את קצב האנימציה. Overshoot = ה-View "מגזים" מעבר לערך הסופי ואז חוזר — אפקט קפיץ. לדוגמה: Scale 0→1 עם Overshoot עולה ל-1.2, ואז חוזר ל-1. נותן תחושת ניתוץ ומשחקיות לדיאלוג התוצאה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה קורה אם למשתמש יש פחות מ-20 מילים?</div>
+    <div class="answer">האלגוריתם מנסה למלא 20 שאלות. אם אין מספיק hard/fresh/solid — ה-SESSION_SIZE מוגבל לגודל הרשימה האמיתית. קוד המילוי ממשיך ולוקח מה שנשאר מכל קטגוריה. אם סה"כ יש 5 מילים — יהיו רק 5 שאלות.</div>
+  </div>
+</div>
+</section>
+
+<!-- SPELLING FRAGMENT -->
+<section id="spelling">
+<h2 class="section-title">SpellingFragment.java</h2>
+<p class="section-subtitle">תרגול — כתיב</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">TTS + Input</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> תרגול הכתיב — מוצגת התרגום לעברית ועל המשתמש לכתוב את המילה באנגלית. Text-to-Speech מדבר כל מילה טעינה. 15 מילים לסשן.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td>SESSION_SIZE</td><td>int (15)</td><td>מילים לסשן</td></tr>
+    <tr><td>currentAttempted</td><td>boolean</td><td>האם כבר נספר totalAttempts לשאלה הנוכחית</td></tr>
+    <tr><td>tts</td><td>TextToSpeech</td><td>instance של TTS לקריאת מילים</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">לוגיקת currentAttempted — מניעת Double-Counting</div>
+  <pre><span class="cm">// כשמשתמש מגיש תשובה:</span>
+String userInput = editText.<span class="fn">getText</span>().toString().trim();
+<span class="kw">if</span> (userInput.<span class="fn">equalsIgnoreCase</span>(currentWord.<span class="fn">getEnglishWord</span>())) {
+    <span class="cm">// נכון!</span>
+    currentWord.<span class="fn">setCorrectAttempts</span>(currentWord.<span class="fn">getCorrectAttempts</span>() + <span class="nu">1</span>);
+    <span class="kw">if</span> (!currentAttempted) {
+        currentWord.<span class="fn">setTotalAttempts</span>(currentWord.<span class="fn">getTotalAttempts</span>() + <span class="nu">1</span>);
+        currentAttempted = <span class="kw">true</span>;
+    }
+    currentWord.<span class="fn">setSpellingCorrect</span>(<span class="kw">true</span>);
+    currentWord.<span class="fn">setErrorInSpelling</span>(<span class="kw">false</span>);
+    GamificationEngine.<span class="fn">getInstance</span>(ctx)
+        .<span class="fn">onCorrectAnswer</span>(beforeMastery, afterMastery);
+    viewModel.<span class="fn">update</span>(currentWord);
+    <span class="fn">nextWord</span>();
+} <span class="kw">else</span> {
+    <span class="cm">// שגוי!</span>
+    <span class="kw">if</span> (!currentAttempted) {
+        currentWord.<span class="fn">setTotalAttempts</span>(currentWord.<span class="fn">getTotalAttempts</span>() + <span class="nu">1</span>);
+        currentAttempted = <span class="kw">true</span>; <span class="cm">// לא נספור שוב!</span>
+    }
+    currentWord.<span class="fn">setErrorInSpelling</span>(<span class="kw">true</span>);
+    <span class="cm">// הצג רמז, אל תעבור מילה</span>
+}</pre>
+  <div class="highlight-box">
+    <strong>currentAttempted flag:</strong> אם המשתמש ינסה "cat", "Cat", "CAT" — ה-totalAttempts יעלה רק פעם אחת. ברגע שה-flag true, לא נספרים ניסיונות נוספים. זה מאפשר ניסיונות מרובים ללא עונש כפול.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Text-to-Speech</div>
+  <pre><span class="cm">// אתחול:</span>
+tts = <span class="kw">new</span> TextToSpeech(context, status -> {
+    <span class="kw">if</span> (status == TextToSpeech.SUCCESS) {
+        tts.<span class="fn">setLanguage</span>(Locale.US);
+    }
+});
+
+<span class="cm">// בטעינת מילה:</span>
+tts.<span class="fn">speak</span>(currentWord.<span class="fn">getEnglishWord</span>(),
+         TextToSpeech.QUEUE_FLUSH, <span class="kw">null</span>, <span class="kw">null</span>);
+
+<span class="cm">// בonDestroy — חובה לשחרר!</span>
+<span class="kw">if</span> (tts != <span class="kw">null</span>) {
+    tts.<span class="fn">stop</span>();
+    tts.<span class="fn">shutdown</span>();
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: SpellingFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע currentAttempted flag נאפס לכל מילה חדשה?</div>
+    <div class="answer">ה-flag הוא per-question state. כשקוראים <code>nextWord()</code>, מאפסים: <code>currentAttempted = false</code>. כך כל מילה חדשה מתחילה עם flag נקי, ומאפשר לספור ניסיון ראשון מחדש. בלי האיפוס — אחרי מילה ראשונה, שום מילה נוספת לא תספור totalAttempts.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה QUEUE_FLUSH ב-TTS.speak?</div>
+    <div class="answer">TTS מנהל queue של הודעות לקריאה. QUEUE_FLUSH מנקה את כל ה-queue ומתחיל ישירות בהודעה החדשה. QUEUE_ADD היה מחכה עד שהקריאה הנוכחית תסתיים. QUEUE_FLUSH מתאים כאן כי אנחנו רוצים שהמילה החדשה תיאמר מיד, אפילו אם TTS באמצע אמירה של המילה הקודמת.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע חייבים tts.shutdown() ב-onDestroy?</div>
+    <div class="answer">TextToSpeech engine מחזיק connection לשירות TTS של Android (process נפרד). בלי shutdown — Connection נשאר פתוח גם אחרי שה-Fragment נהרס — Memory Leak ודליפת resources של IPC. <code>shutdown()</code> סוגר את ה-connection ומשחרר את ה-resources.</div>
+  </div>
+</div>
+</section>
+
+<!-- FLASHCARDS FRAGMENT -->
+<section id="flashcards">
+<h2 class="section-title">FlashcardsFragment.java</h2>
+<p class="section-subtitle">תרגול — פלאשקארדס</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">Animation + Gesture</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> כרטיסיות הפיכות — ה-Card מציג את המילה האנגלית. הקשה על הכרטיסייה הופכת אותה (flip animation) ומציגה את התרגום. Swipe שמאלה = שגוי, Swipe ימינה = נכון.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td>isFlipped</td><td>boolean</td><td>האם הכרטיסיה הפוכה כרגע</td></tr>
+    <tr><td>gestureDetector</td><td>GestureDetector</td><td>זיהוי swipe ימינה/שמאלה</td></tr>
+    <tr><td>layoutFront</td><td>View</td><td>צד אנגלית</td></tr>
+    <tr><td>layoutBack</td><td>View</td><td>צד עברית (rotationY=180°)</td></tr>
+    <tr><td>wordList</td><td>List&lt;Word&gt;</td><td>מילים ממוינות לפי Mastery (0 ראשון)</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">אנימציית הפיכת הכרטיסייה — flipCard()</div>
+  <pre><span class="kw">private void</span> <span class="fn">flipCard</span>() {
+    <span class="kw">float</span> startAngle = isFlipped ? <span class="nu">-180f</span> : <span class="nu">0f</span>;
+    <span class="kw">float</span> midAngle = isFlipped ? <span class="nu">-90f</span> : <span class="nu">90f</span>;
+
+    <span class="cm">// שלב 1: סיבוב מ-0 ל-90 (נעלם)</span>
+    AnimatorSet set = <span class="kw">new</span> AnimatorSet();
+    ObjectAnimator toMid = ObjectAnimator.<span class="fn">ofFloat</span>(
+        card, <span class="st">"rotationY"</span>, startAngle, midAngle);
+    toMid.<span class="fn">setDuration</span>(<span class="nu">150</span>);
+
+    toMid.<span class="fn">addListener</span>(<span class="kw">new</span> AnimatorListenerAdapter() {
+        <span class="kw">public void</span> <span class="fn">onAnimationEnd</span>(Animator a) {
+            <span class="cm">// מחליף תוכן בנקודת ה-90° (כרטיסייה "דקה")</span>
+            layoutFront.<span class="fn">setVisibility</span>(isFlipped ? View.VISIBLE : View.GONE);
+            layoutBack.<span class="fn">setVisibility</span>(isFlipped ? View.GONE : View.VISIBLE);
+
+            <span class="cm">// שלב 2: סיבוב מ-90 ל-0 (מופיע)</span>
+            ObjectAnimator toEnd = ObjectAnimator.<span class="fn">ofFloat</span>(
+                card, <span class="st">"rotationY"</span>, midAngle, <span class="kw">isFlipped</span> ? <span class="nu">0f</span> : -<span class="nu">180f</span>);
+            toEnd.<span class="fn">setDuration</span>(<span class="nu">150</span>).start();
+            isFlipped = !isFlipped;
+        }
+    });
+    set.<span class="fn">play</span>(toMid);
+    set.<span class="fn">start</span>();
+}</pre>
+  <div class="highlight-box">
+    <strong>Counter-rotation של layoutBack:</strong> כשה-card מסתובב 180°, כל תוכנו גם מסתובב — הטקסט יופיע מראה (mirrored). הפתרון: <code>layoutBack.setRotationY(180f)</code> בinit. כך כשה-card ב-180°, layoutBack הוא ב-180°+180°=360°=0° — כלומר לא מסובב מנקודת מבט המשתמש.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Swipe Detection + handleSwipe()</div>
+  <pre><span class="cm">// GestureDetector.SimpleOnGestureListener:</span>
+<span class="an">@Override</span>
+<span class="kw">public boolean</span> <span class="fn">onFling</span>(MotionEvent e1, MotionEvent e2,
+                        <span class="kw">float</span> vX, <span class="kw">float</span> vY) {
+    <span class="kw">float</span> dX = e2.getX() - e1.getX();
+    <span class="kw">if</span> (Math.<span class="fn">abs</span>(dX) &gt; Math.<span class="fn">abs</span>(vY)) {
+        <span class="kw">if</span> (dX &gt; <span class="nu">0</span>) <span class="fn">handleSwipe</span>(<span class="kw">true</span>);  <span class="cm">// ימינה = נכון</span>
+        <span class="kw">else</span> <span class="fn">handleSwipe</span>(<span class="kw">false</span>);         <span class="cm">// שמאלה = שגוי</span>
+    }
+    <span class="kw">return true</span>;
+}
+
+<span class="kw">private void</span> <span class="fn">handleSwipe</span>(<span class="kw">boolean</span> correct) {
+    <span class="kw">if</span> (correct) {
+        currentWord.<span class="fn">setCorrectAttempts</span>(... + <span class="nu">1</span>);
+        currentWord.<span class="fn">setErrorInFlashcards</span>(<span class="kw">false</span>);
+    } <span class="kw">else</span> {
+        currentWord.<span class="fn">setTotalAttempts</span>(... + <span class="nu">1</span>);
+        currentWord.<span class="fn">setErrorInFlashcards</span>(<span class="kw">true</span>);
+    }
+    viewModel.<span class="fn">update</span>(currentWord);
+    <span class="fn">nextCard</span>();
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: FlashcardsFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע layoutBack מקבל rotationY=180 מראש ולא בזמן האנימציה?</div>
+    <div class="answer">layoutBack מוגדר ב-XML או ב-onCreate עם <code>rotationY=180°</code>. כך הוא תמיד "counter-rotated". כשה-card container ב-0° — layoutBack (שמוסתר) ב-180° = מסובב, לא נראה. כשה-card ב-180° — layoutBack ב-360°=0° = ישר. האנימציה רק מסובבת את ה-container — הCounter-rotation קבוע ולא חלק מהאנימציה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע orderByPriority מציב Mastery 0 ראשון?</div>
+    <div class="answer">מילים עם Mastery 0 הן אלה שהמשתמש לא שולט בהן. הצגתן ראשון מבטיחה שהמשתמש מתעמק בחולשותיו בתחילת הסשן — כשהריכוז גבוה. Mastery 5 מגיע בסוף, לחזרה קלה שמסיימת בהצלחה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה ההבדל בין correctAttempts++ ב-Flashcards לעומת Quiz?</div>
+    <div class="answer">ב-Quiz: גם correctAttempts וגם totalAttempts עולים יחד בתשובה נכונה. ב-Flashcards: Swipe ימין מעלה correctAttempts בלבד (+ totalAttempts). Swipe שמאל מעלה totalAttempts בלבד. כל swipe = ניסיון אחד — אין "בחירה מרובה". לכן totalAttempts לא עולה שוב בswipe ימין.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SCAN ===== -->
+<section id="scan">
+<h2 class="section-title">ScanFragment.java</h2>
+<p class="section-subtitle">סריקה — OCR עם CameraX ו-ML Kit</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">CameraX</span>
+    <span class="class-badge dao">ML Kit OCR</span>
+    <span class="class-badge engine">ML Kit Translate</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך הסריקה. מאפשר למשתמש לצלם טקסט (ספר/מסמך) → OCR מזהה מילים → ML Kit מתרגם → משתמש בוחר מילים לשמירה. שני מצבי UI: CAPTURE (מצלמה חיה) ו-REVIEW (תמונה סרוקה).
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>שדה</th><th>סוג</th><th>תפקיד</th></tr>
+    <tr><td>imageCapture</td><td>ImageCapture</td><td>CameraX UseCase לצילום תמונה</td></tr>
+    <tr><td>preview</td><td>Preview</td><td>CameraX UseCase לתצוגה חיה</td></tr>
+    <tr><td>recognizer</td><td>TextRecognizer</td><td>ML Kit OCR engine</td></tr>
+    <tr><td>translator</td><td>Translator</td><td>ML Kit EN→HE translator</td></tr>
+    <tr><td>scannedBitmap</td><td>Bitmap</td><td>התמונה שצולמה (מסובבת לפי EXIF)</td></tr>
+    <tr><td>isBookMode</td><td>boolean</td><td>מצב ספר (word boxes) vs טקסט חופשי</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">CameraX Setup — שני UseCases</div>
+  <pre><span class="cm">// ב-startCamera():</span>
+Preview preview = <span class="kw">new</span> Preview.Builder().build();
+preview.<span class="fn">setSurfaceProvider</span>(binding.previewView.<span class="fn">getSurfaceProvider</span>());
+
+imageCapture = <span class="kw">new</span> ImageCapture.Builder()
+    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+    .build();
+
+ProcessCameraProvider cameraProvider = ...;
+cameraProvider.<span class="fn">bindToLifecycle</span>(
+    <span class="fn">getViewLifecycleOwner</span>(),
+    CameraSelector.DEFAULT_BACK_CAMERA,
+    preview,
+    imageCapture);</pre>
+  <div class="highlight-box info">
+    <strong>bindToLifecycle:</strong> CameraX מחובר לLifecycle של ה-Fragment. כשה-Fragment מושהה (onPause) — המצלמה מופסקת אוטומטית. כשחוזרים (onResume) — מתחדשת. ללא ניהול ידני של פתיחה/סגירה.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">loadRotatedBitmap() — תיקון סיבוב EXIF</div>
+  <pre><span class="kw">private</span> Bitmap <span class="fn">loadRotatedBitmap</span>(File file) {
+    Bitmap bitmap = BitmapFactory.<span class="fn">decodeFile</span>(file.getAbsolutePath());
+    ExifInterface exif = <span class="kw">new</span> ExifInterface(file.getAbsolutePath());
+    <span class="kw">int</span> orientation = exif.<span class="fn">getAttributeInt</span>(
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_NORMAL);
+
+    <span class="kw">int</span> degrees = <span class="nu">0</span>;
+    <span class="kw">switch</span> (orientation) {
+        <span class="kw">case</span> ORIENTATION_ROTATE_90:  degrees = <span class="nu">90</span>;  <span class="kw">break</span>;
+        <span class="kw">case</span> ORIENTATION_ROTATE_180: degrees = <span class="nu">180</span>; <span class="kw">break</span>;
+        <span class="kw">case</span> ORIENTATION_ROTATE_270: degrees = <span class="nu">270</span>; <span class="kw">break</span>;
+    }
+
+    <span class="kw">if</span> (degrees == <span class="nu">0</span>) <span class="kw">return</span> bitmap;
+    Matrix m = <span class="kw">new</span> Matrix();
+    m.<span class="fn">setRotate</span>(degrees);
+    <span class="kw">return</span> Bitmap.<span class="fn">createBitmap</span>(bitmap, <span class="nu">0</span>, <span class="nu">0</span>,
+        bitmap.getWidth(), bitmap.getHeight(), m, <span class="kw">true</span>);
+}</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">extractWordBoxes() — מצב ספר</div>
+  <pre><span class="cm">// ML Kit מחזיר Text עם היררכיה:</span>
+<span class="cm">// Text → TextBlock[] → Line[] → Element[]</span>
+<span class="kw">for</span> (Text.TextBlock block : result.<span class="fn">getTextBlocks</span>()) {
+    <span class="kw">for</span> (Text.Line line : block.<span class="fn">getLines</span>()) {
+        <span class="kw">for</span> (Text.Element element : line.<span class="fn">getElements</span>()) {
+            Rect bbox = element.<span class="fn">getBoundingBox</span>();
+            <span class="kw">if</span> (bbox != <span class="kw">null</span> && bbox.width() &gt; <span class="nu">0</span>) {
+                <span class="cm">// חיתוך של bounding box מה-Bitmap</span>
+                Bitmap wordBmp = Bitmap.<span class="fn">createBitmap</span>(
+                    scannedBitmap,
+                    Math.<span class="fn">max</span>(<span class="nu">0</span>, bbox.left),
+                    Math.<span class="fn">max</span>(<span class="nu">0</span>, bbox.top),
+                    Math.<span class="fn">min</span>(bbox.width(), scannedBitmap.getWidth()-bbox.left),
+                    Math.<span class="fn">min</span>(bbox.height(), scannedBitmap.getHeight()-bbox.top)
+                );
+                scannedWords.add(<span class="kw">new</span> ScannedWord(element.<span class="fn">getText</span>(), wordBmp));
+            }
+        }
+    }
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: ScanFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע ML Kit Translate צריך downloadModelIfNeeded לפני translate?</div>
+    <div class="answer">מודל התרגום EN→HE כבד (כ-30MB). הוא לא כלול ב-APK — ייחנק את גודל ה-APK. Firebase ML Kit מוריד אותו בפעם הראשונה שצריך. <code>downloadModelIfNeeded()</code> בודק האם המודל כבר קיים — אם כן, ממשיך ישירות. אם לא — מוריד. לאחר ההורדה הראשונה, כל התרגומים עובדים Offline.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה ההבדל בין CAPTURE mode ל-REVIEW mode?</div>
+    <div class="answer">CAPTURE: PreviewView גלוי, כפתור "צלם" גלוי, שאר UI מוסתר. REVIEW: PreviewView מוסתר, ImageView עם התמונה הסרוקה גלוי, כפתורי "אשר"/"צלם שוב"/"שמור" גלויים. המעבר קורה ב-<code>switchToReviewMode()</code> שמשנה את ה-visibility של כל ה-views הרלוונטיים.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע חיתוך BoundingBox מ-Bitmap ולא שמירת הטקסט בלבד?</div>
+    <div class="answer">ה-UX: במצב ספר, המשתמש רואה thumbnail של כל מילה (תמונה קטנה של המילה המסורקת) ולידה התרגום. זה מאפשר לאמת שה-OCR זיהה נכון. אם המשתמש רואה רק טקסט ויש שגיאת OCR (לדוגמה, "cat" זוהה כ-"oat") — הוא יכול לזהות ולא לשמור את המילה השגויה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">כיצד CameraX שונה מ-Camera2 API ישיר?</div>
+    <div class="answer">Camera2 API הוא ברמה נמוכה מאוד — ניהול ידני של CameraDevice, CameraCaptureSession, Surface, Callbacks. עשרות שורות לפתיחת מצלמה בסיסית. CameraX הוא Wrapper מעל Camera2 עם Use Case pattern: מגדיר "מה אני רוצה" (Preview, Capture) ו-CameraX מנהל את ה-How. Lifecycle-aware = לא צריך לנהל open/close ידנית.</div>
+  </div>
+</div>
+</section>
+
+<!-- GRAPHIC OVERLAY -->
+<section id="graphic-overlay">
+<h2 class="section-title">GraphicOverlay.java</h2>
+<p class="section-subtitle">סריקה — שכבת Overlay על המצלמה</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Custom View</span>
+    <span class="class-badge">Canvas Drawing</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> View מותאם אישית המצוייר מעל ה-PreviewView של המצלמה. מציג boxes צבעוניים (Bounding Boxes) על אלמנטי טקסט שזוהו בזמן אמת ב-Live Detection.
+  </div>
+  <pre><span class="kw">public class</span> <span class="ty">GraphicOverlay</span> <span class="kw">extends</span> View {
+    <span class="kw">private final</span> List&lt;Graphic&gt; graphics = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="fn">add</span>(Graphic graphic) {
+        <span class="kw">synchronized</span> (<span class="kw">this</span>) { graphics.add(graphic); }
+    }
+
+    <span class="kw">public void</span> <span class="fn">clear</span>() {
+        <span class="kw">synchronized</span> (<span class="kw">this</span>) { graphics.clear(); }
+        <span class="fn">postInvalidate</span>();
+    }
+
+    <span class="an">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">onDraw</span>(Canvas canvas) {
+        <span class="kw">super</span>.<span class="fn">onDraw</span>(canvas);
+        <span class="kw">for</span> (Graphic g : graphics) g.<span class="fn">draw</span>(canvas);
+    }
+}</pre>
+  <div class="highlight-box warning">
+    <strong>synchronized:</strong> הGraphics מתווספים מ-CameraX background thread, ו-onDraw רץ על Main Thread. ה-synchronized מגן מפני ConcurrentModificationException.
+  </div>
+</div>
+</section>
+
+<!-- ===== GAMIFICATION ===== -->
+<section id="gamification-engine">
+<h2 class="section-title">GamificationEngine.java</h2>
+<p class="section-subtitle">גמיפיקציה — מנוע XP ורמות</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge engine">Singleton</span>
+    <span class="class-badge">SharedPrefs + Firestore</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> Singleton המנהל את מערכת ה-XP, Level, ו-Streak. כותב כפולה (Dual-Write) — גם SharedPreferences (מיידי, לוקאלי) וגם Firestore (ענן, לסנכרון בין מכשירים).
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>קבוע</th><th>ערך</th><th>משמעות</th></tr>
+    <tr><td>XP_CORRECT</td><td>10</td><td>XP לכל תשובה נכונה</td></tr>
+    <tr><td>XP_MASTERY_BONUS</td><td>100</td><td>בונוס XP להשגת Mastery 5</td></tr>
+    <tr><td>XP_MODULE_COMPLETE</td><td>50</td><td>XP לסיום סשן תרגול</td></tr>
+    <tr><td>PREFS_NAME</td><td>"gamification_prefs"</td><td>שם קובץ SharedPreferences</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Double-Checked Locking Singleton</div>
+  <pre><span class="kw">private static volatile</span> GamificationEngine instance;
+
+<span class="kw">public static</span> GamificationEngine <span class="fn">getInstance</span>(Context context) {
+    <span class="kw">if</span> (instance == <span class="kw">null</span>) {
+        <span class="kw">synchronized</span> (GamificationEngine.<span class="kw">class</span>) {
+            <span class="kw">if</span> (instance == <span class="kw">null</span>) {
+                instance = <span class="kw">new</span> GamificationEngine(
+                    context.getApplicationContext());
+            }
+        }
+    }
+    <span class="kw">return</span> instance;
+}</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">onCorrectAnswer(beforeMastery, afterMastery)</div>
+  <pre><span class="kw">public void</span> <span class="fn">onCorrectAnswer</span>(<span class="kw">int</span> beforeMastery, <span class="kw">int</span> afterMastery) {
+    <span class="kw">int</span> xpGained = XP_CORRECT; <span class="cm">// +10 תמיד</span>
+
+    <span class="cm">// בונוס שליטה מלאה:</span>
+    <span class="kw">if</span> (beforeMastery &lt; <span class="nu">5</span> && afterMastery == <span class="nu">5</span>) {
+        xpGained += XP_MASTERY_BONUS; <span class="cm">// +100!</span>
+    }
+
+    totalXp += xpGained;
+    level = <span class="fn">calculateLevel</span>(totalXp);
+
+    <span class="fn">saveToSharedPrefs</span>();
+    <span class="fn">saveToFirestore</span>();
+}
+
+<span class="kw">private int</span> <span class="fn">calculateLevel</span>(<span class="kw">int</span> xp) {
+    <span class="kw">return</span> (<span class="kw">int</span>) Math.<span class="fn">floor</span>(Math.<span class="fn">sqrt</span>(xp / <span class="nu">100.0</span>)) + <span class="nu">1</span>;
+}</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">חישוב Progress Bar — XP בתוך הרמה</div>
+  <pre><span class="cm">// XP threshold להתחלת רמה נוכחית:</span>
+<span class="kw">int</span> <span class="fn">getXpForLevel</span>(<span class="kw">int</span> level) {
+    <span class="kw">return</span> (level - <span class="nu">1</span>) * (level - <span class="nu">1</span>) * <span class="nu">100</span>;
+}
+
+<span class="cm">// XP שנצבר בתוך הרמה הנוכחית:</span>
+<span class="kw">public int</span> <span class="fn">getXpWithinLevel</span>() {
+    <span class="kw">return</span> totalXp - <span class="fn">getXpForLevel</span>(level);
+}
+
+<span class="cm">// כמה XP בטווח הרמה הנוכחית:</span>
+<span class="kw">public int</span> <span class="fn">getXpRangeOfLevel</span>() {
+    <span class="kw">return</span> <span class="fn">getXpForLevel</span>(level + <span class="nu">1</span>) - <span class="fn">getXpForLevel</span>(level);
+}</pre>
+  <div class="highlight-box">
+    <strong>דוגמה:</strong> totalXp=250. Level = floor(sqrt(250/100))+1 = floor(1.58)+1 = 2+1 = 3? לא, floor(sqrt(2.5))=floor(1.58)=1 → Level=2. XP_for_Level2=100, XP_for_Level3=400. XpWithinLevel=250-100=150. XpRange=400-100=300. Progress = 150/300 = 50%.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">syncFromFirestore(callback) + saveToFirestore()</div>
+  <pre><span class="kw">public void</span> <span class="fn">syncFromFirestore</span>(Runnable callback) {
+    String uid = FirebaseAuth.getInstance()
+        .getCurrentUser().getUid();
+    firestore.collection(<span class="st">"users"</span>).document(uid)
+        .get()
+        .addOnSuccessListener(doc -> {
+            <span class="kw">if</span> (doc.exists()) {
+                totalXp = doc.getLong(<span class="st">"totalXp"</span>).intValue();
+                level = doc.getLong(<span class="st">"level"</span>).intValue();
+                streak = doc.getLong(<span class="st">"streak"</span>).intValue();
+                lastActiveDate = doc.getString(<span class="st">"lastActiveDate"</span>);
+                <span class="fn">saveToSharedPrefs</span>();
+            }
+            <span class="cm">// callback על Main Thread:</span>
+            <span class="kw">new</span> Handler(Looper.<span class="fn">getMainLooper</span>())
+                .<span class="fn">post</span>(callback);
+        });
+}
+
+<span class="kw">public void</span> <span class="fn">saveToFirestore</span>() {
+    Map&lt;String, Object&gt; data = <span class="kw">new</span> HashMap&lt;&gt;();
+    data.put(<span class="st">"totalXp"</span>, totalXp);
+    data.put(<span class="st">"level"</span>, level);
+    data.put(<span class="st">"streak"</span>, streak);
+    data.put(<span class="st">"lastActiveDate"</span>, lastActiveDate);
+    firestore.collection(<span class="st">"users"</span>).document(uid)
+        .<span class="fn">set</span>(data, SetOptions.<span class="fn">merge</span>());
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: GamificationEngine.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע Dual-Write (SharedPrefs + Firestore) ולא רק Firestore?</div>
+    <div class="answer">Firestore async: קריאה לערך XP מ-Firestore לוקחת זמן (round-trip לענן). אם ה-UI חיכה רק ל-Firestore, היה delay בכל הצגת Level/XP. SharedPreferences הוא מיידי ולוקאלי. האסטרטגיה: עדכן SharedPrefs מיד (optimistic update) + שלח ל-Firestore ב-background. UI מציג מה ב-SharedPrefs. סנכרון מ-Firestore ב-onResume מבטיח עדכניות.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע callback נקרא על Main Thread ב-syncFromFirestore?</div>
+    <div class="answer">Firestore callbacks מגיעים על Main Thread כבר — אבל לעתים נרצה לוודא. הCallback הוא בדרך כלל עדכון UI (updateXpUi). עדכון UI חייב להיות על Main Thread. שימוש ב-<code>new Handler(Looper.getMainLooper()).post(callback)</code> מבטיח זאת, גם אם בעתיד נשנה את המנגנון.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מתי בדיוק מתקבל בונוס ה-+100 XP?</div>
+    <div class="answer">רק כש-<code>beforeMastery &lt; 5 AND afterMastery == 5</code>. כלומר: המילה עברה לשליטה מלאה (Mastery 5) בפעם הזאת. <strong>לא</strong> כל פעם שMastery=5 (אחרת היה בונוס על כל תשובה נכונה במילה שנרכשה). <code>beforeMastery &lt; 5</code> מוודא שלא ניתן בונוס חוזר על מילה שכבר הייתה ב-5.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה SetOptions.merge() עושה ב-saveToFirestore?</div>
+    <div class="answer"><code>set(data)</code> בלי options — מחליף את כל ה-document בנתונים החדשים (שדות שאינם ב-data נמחקים). <code>set(data, SetOptions.merge())</code> — רק שדות שקיימים ב-data יעודכנו; שדות אחרים ב-document נשמרים. שימושי אם document ה-user מכיל שדות נוספים (כמו profile photo URL) שאנחנו לא רוצים להחליף.</div>
+  </div>
+</div>
+</section>
+
+<!-- STREAK MANAGER -->
+<section id="streak-manager">
+<h2 class="section-title">StreakManager.java</h2>
+<p class="section-subtitle">גמיפיקציה — ניהול Streak יומי</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge manager">Manager</span>
+    <span class="class-badge">Date Logic</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מנהל את ה-Streak (רצף ימים) של המשתמש. נקרא בכל פתיחת אפליקציה מ-SplashActivity. מחשב את הפרש הימים בין הכניסה האחרונה לכיום.
+  </div>
+  <pre><span class="kw">public static int</span> <span class="fn">computeStreak</span>(String lastDate, String today) {
+    <span class="kw">if</span> (lastDate == <span class="kw">null</span>) <span class="kw">return</span> <span class="nu">1</span>; <span class="cm">// יום ראשון</span>
+
+    <span class="kw">long</span> daysDiff = <span class="fn">daysBetween</span>(lastDate, today);
+
+    <span class="kw">if</span> (daysDiff == <span class="nu">0</span>) {
+        <span class="kw">return</span> currentStreak; <span class="cm">// אותו יום — אל תשנה</span>
+    } <span class="kw">else if</span> (daysDiff == <span class="nu">1</span>) {
+        <span class="kw">return</span> currentStreak + <span class="nu">1</span>; <span class="cm">// יום רצוף!</span>
+    } <span class="kw">else</span> {
+        <span class="kw">return</span> <span class="nu">1</span>; <span class="cm">// יותר מיום — איפוס לאחד</span>
+    }
+}
+
+<span class="kw">private static long</span> <span class="fn">daysBetween</span>(String d1, String d2) {
+    SimpleDateFormat sdf = <span class="kw">new</span> SimpleDateFormat(<span class="st">"yyyy-MM-dd"</span>, Locale.US);
+    Date date1 = sdf.<span class="fn">parse</span>(d1);
+    Date date2 = sdf.<span class="fn">parse</span>(d2);
+    <span class="kw">long</span> diff = date2.getTime() - date1.getTime();
+    <span class="kw">return</span> TimeUnit.DAYS.<span class="fn">convert</span>(diff, TimeUnit.MILLISECONDS);
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — StreakManager.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע לא להשתמש ב-Calendar.DAY_OF_YEAR לחישוב הפרש ימים?</div>
+    <div class="answer"><code>DAY_OF_YEAR</code> עובד בתוך שנה אחת. אם המשתמש השתמש ב-31 לדצמבר ופתח ב-1 לינואר — <code>DAY_OF_YEAR</code> יחזיר 364 (הפרש שגוי). <code>TimeUnit.DAYS.convert(diff, MILLISECONDS)</code> מחשב הפרש אמיתי ב-milliseconds ומחלק — עובד נכון גם בחצי שנה.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה קורה אם המשתמש משנה את שעון המכשיר לאחור?</div>
+    <div class="answer">נקודת תורפה ידועה. אם יגדיר את התאריך אחורה יום — ה-daysDiff יהיה שלילי. ה-computeStreak יחזיר 1 (איפוס). ניתן להוסיף guard: <code>if (daysDiff &lt; 0) return 1</code>. אלטרנטיבה: להשתמש ב-Firestore Server Timestamp שאי אפשר לשנות לוקאלית — אבל מחייב internet בכל פתיחה.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== STATISTICS ===== -->
+<section id="statistics">
+<h2 class="section-title">StatisticsFragment.java</h2>
+<p class="section-subtitle">מידע — מסך הסטטיסטיקות</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">Dual Data Sources</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מציג XP/Level/Streak מ-GamificationEngine ונתוני שליטה/דיוק מ-Room LiveData. מסנכרן עם Firestore בכל onResume. מציג דירוג 7-שלבי.
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>רכיב UI</th><th>מקור נתונים</th><th>עדכון</th></tr>
+    <tr><td>XP / Level</td><td>GamificationEngine (SharedPrefs)</td><td>onResume → syncFromFirestore</td></tr>
+    <tr><td>Streak</td><td>GamificationEngine</td><td>onResume</td></tr>
+    <tr><td>Progress Bar XP</td><td>getXpWithinLevel() / getXpRangeOfLevel()</td><td>onResume</td></tr>
+    <tr><td>מילים שנרכשו</td><td>Room LiveData → calculateMastery()</td><td>אוטומטי (LiveData)</td></tr>
+    <tr><td>דיוק (Accuracy %)</td><td>Room LiveData</td><td>אוטומטי</td></tr>
+    <tr><td>דירוג (Rank)</td><td>חישוב לפי % שליטה</td><td>עם LiveData</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">calculateMastery(words) — חישוב סטטיסטיקות</div>
+  <pre><span class="kw">private void</span> <span class="fn">calculateMastery</span>(List&lt;Word&gt; words) {
+    <span class="kw">int</span> total = words.size();
+    <span class="kw">int</span> mastered = <span class="nu">0</span>;
+    <span class="kw">long</span> totalCorrect = <span class="nu">0</span>, totalAttempts = <span class="nu">0</span>;
+
+    <span class="kw">for</span> (Word w : words) {
+        <span class="kw">if</span> (w.<span class="fn">getCorrectAttempts</span>() &gt;= <span class="nu">3</span>) mastered++;
+        totalCorrect += w.<span class="fn">getCorrectAttempts</span>();
+        totalAttempts += w.<span class="fn">getTotalAttempts</span>();
+    }
+
+    <span class="kw">int</span> masteryPct = total == <span class="nu">0</span> ? <span class="nu">0</span> : mastered * <span class="nu">100</span> / total;
+    <span class="kw">int</span> accuracy = totalAttempts == <span class="nu">0</span> ? <span class="nu">0</span> :
+        (<span class="kw">int</span>)(totalCorrect * <span class="nu">100</span> / totalAttempts);
+
+    <span class="fn">updateRank</span>(masteryPct, mastered);
+}</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">updateRank — 7 דרגות</div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>% שליטה</th><th>דרגה</th><th>שם</th></tr>
+    <tr><td>&lt; 5%</td><td>🌱</td><td>מתחיל</td></tr>
+    <tr><td>5-19%</td><td>📖</td><td>תלמיד</td></tr>
+    <tr><td>20-39%</td><td>⭐</td><td>מתקדם</td></tr>
+    <tr><td>40-59%</td><td>🎖</td><td>אלוף</td></tr>
+    <tr><td>60-79%</td><td>👑</td><td>נסיך</td></tr>
+    <tr><td>80-94%</td><td>🏆</td><td>מלך</td></tr>
+    <tr><td>95%+</td><td>💎</td><td>אגדה</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — זאב פריימן: StatisticsFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע שני מקורות נתונים ולא אחד?</div>
+    <div class="answer">XP/Level/Streak הם "גלובליים" — מיועדים לסנכרון בין מכשירים → שמורים ב-Firestore. נתוני המילים (correctAttempts) הם לוקאליים לחלוטין — שמורים ב-Room. הפרדה זו הגיונית: גם בלי internet, ה-Statistics עובד (מ-SharedPrefs + Room). ה-Firestore sync הוא best-effort ב-onResume.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה הגדרת "מולשם" (mastered) בחישוב?</div>
+    <div class="answer">המחלקה מגדירה mastered = <code>correctAttempts &gt;= 3</code>. זוהי הגדרה שרירותית שנבחרה בפיתוח — 3 פעמים נכון = נרכשה. ניתן לשנות לMastery level: <code>word.getMasteryLevel() &gt;= 3</code>. ההבדל: getMasteryLevel תלוי גם ב-totalAttempts (דיוק), correctAttempts&gt;=3 הוא ספירה פשוטה יותר.</div>
+  </div>
+</div>
+</section>
+
+<!-- SETTINGS FRAGMENT -->
+<section id="settings">
+<h2 class="section-title">SettingsFragment.java</h2>
+<p class="section-subtitle">הגדרות — מסך ההגדרות</p>
+
+<div class="card">
+  <div class="class-header">
+    <span class="class-badge fragment">Fragment</span>
+    <span class="class-badge">SharedPreferences</span>
+  </div>
+  <div class="class-desc">
+    <strong>תפקיד:</strong> מסך הגדרות. מאפשר הגדרת יעד יומי, הפעלת/כיבוי TTS, ואיפוס נתונים מלא (XP + מילים אישיות).
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>קבוע</th><th>ערך</th><th>שימוש</th></tr>
+    <tr><td>PREFS_SETTINGS</td><td>"settings_prefs"</td><td>שם קובץ SharedPreferences</td></tr>
+    <tr><td>KEY_DAILY_GOAL</td><td>"daily_goal"</td><td>יעד מילים יומי (ברירת מחדל: 10)</td></tr>
+    <tr><td>KEY_TTS_ENABLED</td><td>"tts_enabled"</td><td>האם TTS מופעל</td></tr>
+  </table>
+  </div>
+  <pre><span class="cm">// resetProgress() — איפוס מלא:</span>
+<span class="kw">private void</span> <span class="fn">resetProgress</span>() {
+    <span class="cm">// 1. מחק נתוני גמיפיקציה לוקאליים:</span>
+    SharedPreferences gamPrefs = context.<span class="fn">getSharedPreferences</span>(
+        GamificationEngine.PREFS_NAME, Context.MODE_PRIVATE);
+    gamPrefs.edit().<span class="fn">clear</span>().<span class="fn">apply</span>();
+
+    <span class="cm">// 2. אפס ב-Firestore:</span>
+    Map&lt;String, Object&gt; reset = <span class="kw">new</span> HashMap&lt;&gt;();
+    reset.put(<span class="st">"totalXp"</span>, <span class="nu">0</span>);
+    reset.put(<span class="st">"level"</span>, <span class="nu">1</span>);
+    reset.put(<span class="st">"streak"</span>, <span class="nu">0</span>);
+    firestore.collection(<span class="st">"users"</span>).document(uid)
+        .<span class="fn">set</span>(reset, SetOptions.<span class="fn">merge</span>());
+
+    <span class="cm">// 3. מחק מילים אישיות מ-Room:</span>
+    viewModel.<span class="fn">deletePersonalWords</span>();
+}</pre>
+</div>
+
+<div class="card examiner">
+  <div class="card-title">פינת הבוחן — SettingsFragment.java</div>
+  <div class="qa-block">
+    <div class="question">מדוע הקבועים PREFS_SETTINGS, KEY_DAILY_GOAL הם PUBLIC?</div>
+    <div class="answer">כדי שמחלקות אחרות (SpellingFragment, QuizFragment) יוכלו לקרוא את ההגדרות בלי hardcoded strings. <code>SettingsFragment.KEY_TTS_ENABLED</code> — רק מחלקה אחת מגדירה את ה-key, כולן משתמשות בה. אם נרצה לשנות את שם ה-key, נשנה רק במקום אחד. זה עיקרון DRY (Don't Repeat Yourself).</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מה Slider (1-50) ולמה לא EditText?</div>
+    <div class="answer">Material3 Slider מגביל את הקלט לטווח מוגדר (1-50) — המשתמש לא יכול להכניס ערך שגוי. EditText עם מספר — המשתמש יכול להכניס 0, -5, "abc". Slider גם מספק UX ויזואלי: המשתמש רואה את הטווח ואת מיקומו. עם stepSize=1 — ערכים שלמים בלבד.</div>
+  </div>
+  <div class="qa-block">
+    <div class="question">מדוע "סנכרן עכשיו" קיים כפתור נפרד?</div>
+    <div class="answer">ה-throttle של 24 שעות מונע סנכרון אוטומטי תכוף. אבל מפתח/משתמש מתקדם עשוי לרצות לסנכרן מיד (לדוגמה, אחרי שהאדמין הוסיף מילים חדשות). הכפתור קורא ל-<code>viewModel.syncFromCloud()</code> ומדלג על הthrottle בלחיצה ידנית.</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== KEY CONCEPTS ===== -->
+<section id="key-concepts">
+<h2 class="section-title">עקרונות ארכיטקטורה — לבוחן</h2>
+<p class="section-subtitle">10 שאלות ותשובות מרכזיות על עיצוב המערכת</p>
+
+<div class="card info">
+  <div class="card-title">מדוע AndroidViewModel ולא ViewModel?</div>
+  <p>ה-ViewModel הרגיל לא מקבל Application context. אנחנו צריכים Application context ל: (1) Room.databaseBuilder — יצירת DB. (2) SharedPreferences — קריאת/כתיבת הגדרות. Application context בטוח — חי כמו האפליקציה עצמה, לא קשור ל-Activity שנהרסת בסיבוב מסך. שימוש ב-Activity context ב-ViewModel = Memory Leak בטוח.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע LiveData מ-Room ולא List רגיל?</div>
+  <p>LiveData + Room = Observer Pattern מובנה. Room מחזיק Observer על הטבלה. שינוי בטבלה → Room דוחף נתונים חדשים → LiveData מעדכן → Fragment מקבל → RecyclerView מצייר מחדש. ללא זה: Fragment היה צריך לשאול מחדש בכל שינוי (Polling) — גוזל סוללה, מורכב לתחזוקה, ומועד לבאגים.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע אלגוריתם Insert-Only בסנכרון?</div>
+  <p>מחיקה+הכנסה מחדש = איפוס <code>correctAttempts, totalAttempts, errorInQuiz</code> וכל נתוני התרגול. המשתמש יאבד את כל ההתקדמות שלו. Insert-Only מוסיף רק מילים שעוד לא קיימות — נתוני המשתמש הקיימים נשמרים לעולם. זה ה-bug הגדול שתוקן בגרסה הנוכחית (עם throttle 24 שעות).</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע Double-Checked Locking ב-Singleton?</div>
+  <p>Singleton רגיל עם synchronized על כל getMtodה — כל קריאה ממתינה ל-lock גם כשinstance כבר קיים. DCL: בדיקה ראשונה בלי lock (מהיר), בדיקה שנייה עם lock (בטוח). volatile מבטיח visibility בין threads — בלי volatile, JVM instruction reordering עלול לגרום ל-Thread לקרוא instance לא מוגדר לחלוטין.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע binding=null ב-onDestroyView?</div>
+  <p>Fragment object חי יותר מה-View שלו. כשה-View נהרס (onDestroyView) — ה-Fragment עדיין חי (בback stack). ViewBinding מחזיק reference לכל ה-Views. אם לא מנקים → binding מחזיק → Views לא יכולים להישחרר על ידי GC → Memory Leak. בכל חזרה לFragment = View חדש + binding חדש. הכלל: <code>binding = null</code> ב-onDestroyView תמיד.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע Handler.postDelayed ולא Thread.sleep?</div>
+  <p>Thread.sleep() על Main Thread — קופא את Looper. לא מעבד Events, לא מצייר UI, לא מגיב ל-Touch. אחרי 5 שניות → ANR Dialog. Handler.postDelayed() — מוסיף Message לLooper עם delay. ה-Looper ממשיך לעבד Events אחרים בינתיים. אחרי delay — מריץ ה-Runnable. UI זורם, UX חלק.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע ExifInterface לתיקון תמונת מצלמה?</div>
+  <p>Camera sensor מצלם בlandscape (לכן הרזולוציה גבוהה). כשמחזיקים טלפון ב-portrait ומצלמים, החומרה מוסיפה EXIF metadata: "סובב תמונה זו 90°". ImageView רגיל לא קורא EXIF — מציג בlandscape (מסובב). ExifInterface קורא את הsorientation → Matrix מסובב → Bitmap נכון.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע throttle 24 שעות לסנכרון Firestore?</div>
+  <p>כל ניווט ל-MyWordsFragment (ב-bottom nav) הפעיל onCreate → ViewModel נוצר מחדש → syncFromCloud() נקרא. כל sync = download של 1902 documents מFirestore + כתיבתם ל-Room. עם מחיקה+הכנסה (הbug הקודם) = איפוס נתוני תרגול. Throttle מגביל ל-1 פעם ב-24 שעות — חוסך bandwidth, מגן על נתונים, שיפור ביצועים.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">מדוע ExecutorService עם 4 threads?</div>
+  <p>Room מאסר גישה מMain Thread (throws IllegalStateException). Thread pool מנהל 4 threads שנוצרו מראש — יעילים יותר מיצירת Thread חדש לכל פעולה. 4 threads = מספיק לpractice modules שמריצים מספר DB writes בסשן, לא יותר מדי שלא יכביד על CPU מוביילי.</p>
+</div>
+
+<div class="card info">
+  <div class="card-title">למה 60/20/20 ב-Quiz?</div>
+  <p>Spaced Repetition: מילים קשות (Mastery 0-2) צריכות חזרה תכופה — 60%. מילים חדשות (0 ניסיונות) צריכות היכרות ראשונית — 20%. מילים שנרכשו (3-5) צריכות maintenance לטווח ארוך — 20%. מחקר פסיכולוגי של למידה מראה שזוהי חלוקה אופטימלית לשימור ומידת למידה.</p>
+</div>
+</section>
+
+<!-- ===== GLOSSARY ===== -->
+<section id="glossary">
+<h2 class="section-title">מילון מונחים טכניים</h2>
+<p class="section-subtitle">הגדרות למונחים שיכולים לעלות בבחינה</p>
+
+<div class="card">
+  <div class="glossary-item">
+    <div class="glossary-term">MVVM</div>
+    <div class="glossary-def">Model-View-ViewModel — ארכיטקטורה המפרידה UI (Fragment/Activity), לוגיקה עסקית (ViewModel), ונתונים (Model/Repository)</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">LiveData</div>
+    <div class="glossary-def">Lifecycle-aware observable data holder. מעדכן Observers רק כשה-lifecycle פעיל. מגן מפני crashes כשFragment לא גלוי</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Room</div>
+    <div class="glossary-def">Android persistence library — Wrapper מעל SQLite. מספק type-safety, compile-time SQL verification, LiveData integration</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">DAO (Data Access Object)</div>
+    <div class="glossary-def">Interface המגדיר SQL queries. Room מייצר את המימוש בזמן קומפילציה (Annotation Processing)</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ViewBinding</div>
+    <div class="glossary-def">מייצר type-safe binding class לכל XML layout. מאפשר גישה ישירה ל-Views ללא findViewById. בטוח מ-NullPointerException</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">AndroidViewModel</div>
+    <div class="glossary-def">ViewModel שמקבל Application context. שורד rotations, back stack. Application context בטוח לשמירה לאורך זמן</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ExecutorService</div>
+    <div class="glossary-def">Thread pool manager. מנהל מאגר threads מוכנים לביצוע tasks. יעיל יותר מיצירת Thread חדש לכל משימה</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Firestore</div>
+    <div class="glossary-def">Firebase NoSQL cloud database. Document-oriented. Real-time updates. Authentication integrated</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">CameraX</div>
+    <div class="glossary-def">Jetpack camera library. Lifecycle-aware. Use Case based (Preview, Capture, Analysis). Wraps Camera2 API</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ML Kit OCR</div>
+    <div class="glossary-def">Google on-device text recognition. אין צורך בinternet. מחזיר TextBlock/Line/Element עם Bounding Boxes</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ML Kit Translate</div>
+    <div class="glossary-def">Google translation library. מוריד מודל פעם אחת (~30MB), לאחר מכן עובד offline. EN→HE ב-EasyLex</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ExifInterface</div>
+    <div class="glossary-def">קורא metadata של תמונות (JPEG). מכיל orientation (סיבוב) שמצלמות מוסיפות. חיוני לתצוגה נכונה</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Double-Checked Locking</div>
+    <div class="glossary-def">Thread-safe Singleton pattern. שתי בדיקות null: אחת מחוץ ל-synchronized (ביצועים), אחת בתוך (בטיחות) + volatile</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Navigation Component</div>
+    <div class="glossary-def">Jetpack library לניהול ניווט בין Fragments. Back Stack אוטומטי, Safe Args לdata passing, nav_graph.xml ויזואלי</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Mastery Level</div>
+    <div class="glossary-def">ציון 0-5 המחשב שליטה במילה: min(5, floor(correctAttempts/(totalAttempts+1)×5))</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">SharedPreferences</div>
+    <div class="glossary-def">מנגנון אחסון key-value פשוט של Android. מתאים לhגדרות, flags, timestamps. לא מתאים לנתונים גדולים/מורכבים</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Singleton</div>
+    <div class="glossary-def">Design pattern המבטיח instance אחד בלבד. ב-GamificationEngine ו-WordRoomDatabase — למנוע conflict בין instances</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Lifecycle-aware</div>
+    <div class="glossary-def">מודע למחזור חיי Fragment/Activity. לא פועל כשה-UI לא גלוי. מגן מ-crashes ו-Memory Leaks</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Dual-Write</div>
+    <div class="glossary-def">אסטרטגיית כתיבה כפולה: כותב גם לוקאלית (מיידי, SharedPrefs) וגם לענן (Firestore). מבטיח מהירות UX + persistence</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Insert-Only Sync</div>
+    <div class="glossary-def">אלגוריתם סנכרון שמוסיף רק שורות חדשות, לא מוחק/מעדכן קיימות. מגן על נתוני תרגול המשתמש</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Spaced Repetition</div>
+    <div class="glossary-def">שיטת לימוד המציגה חומר בפרקי זמן גדלים. מילים קשות — תכופות. נרכשות — נדירות. 60/20/20 מימוש בסיסי</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">DiffUtil</div>
+    <div class="glossary-def">כלי RecyclerView המשווה רשימות ומחשב minimal diff. מאפשר אנימציות item-level ומונע ציור מחדש של כל הרשימה</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">GestureDetector</div>
+    <div class="glossary-def">Android class לזיהוי gestures (tap, fling, long-press). SimpleOnGestureListener לreference מינימלי</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">TextToSpeech (TTS)</div>
+    <div class="glossary-def">Android API להמרת טקסט לדיבור. תומך ב-locales שונות. דורש shutdown() לשחרור resources</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ObjectAnimator</div>
+    <div class="glossary-def">Android animation class. מאניים property של View (translationY, alpha, scaleX). ניתן לשרשור עם AnimatorSet</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">volatile (Java)</div>
+    <div class="glossary-def">מבטיח שכתיבה לmemory נראית לכל threads מיד. מונע CPU cache של thread מחסום לראות ערך מיושן</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">fallbackToDestructiveMigration</div>
+    <div class="glossary-def">Room strategy: אם schema הDB השתנה ואין Migration מוגדר — מחק DB ישן ויצור חדש. מאבד נתונים קיימים</div>
+  </div>
+</div>
+</section>
+
+<!-- FINAL EXAM TIPS -->
+<section id="exam-tips">
+<div class="card examiner" style="margin-top:40px;">
+  <div class="card-title">טיפים אחרונים לפני המבחן עם זאב פריימן</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+    <div style="background:#1a1505;padding:14px;border-radius:8px;border:1px solid #d97706;">
+      <div style="color:#fbbf24;font-weight:700;margin-bottom:8px;">הכן תשובות ל:</div>
+      <ul style="color:#d1d5db;font-size:0.87rem;line-height:1.8;padding-right:16px;">
+        <li>ארכיטקטורת MVVM — תרשים</li>
+        <li>נוסחת Mastery</li>
+        <li>נוסחת Level</li>
+        <li>Insert-Only Sync — למה?</li>
+        <li>binding=null — למה?</li>
+        <li>Handler vs Thread.sleep</li>
+        <li>volatile + DCL Singleton</li>
+        <li>60/20/20 — למה?</li>
+        <li>EXIF — מה זה?</li>
+        <li>Firestore Dual-Write</li>
+      </ul>
+    </div>
+    <div style="background:#0c1a2e;padding:14px;border-radius:8px;border:1px solid #2563eb;">
+      <div style="color:#60a5fa;font-weight:700;margin-bottom:8px;">נוסחאות לזכור:</div>
+      <div style="font-family:monospace;font-size:0.85rem;color:#a5d6ff;line-height:2.2;">
+        <div>Mastery = min(5, floor(C/(T+1) × 5))</div>
+        <div>Level = floor(sqrt(XP/100)) + 1</div>
+        <div>XP_next = Level² × 100</div>
+        <div>Accuracy = correctAttempts/totalAttempts</div>
+        <div>+10 XP נכון | +100 XP mastery=5</div>
+        <div>+50 XP סיום סשן</div>
+        <div>24h throttle לסנכרון</div>
+        <div>DB: word_database, version 3</div>
+        <div>Threads: ExecutorService 4</div>
+        <div>Session: Quiz=20, Spell=15</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+</main>
+</div>
+
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button> onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ===== ACCORDION =====
+function toggleAccordion(header) {
+  var item = header.parentElement;
+  item.classList.toggle('open');
+}
+
+// ===== SIDEBAR SEARCH =====
+document.getElementById('sidebar-search').addEventListener('input', function() {
+  var q = this.value.toLowerCase();
+  var links = document.querySelectorAll('#nav-links a');
+  links.forEach(function(link) {
+    var text = link.textContent.toLowerCase();
+    link.style.display = text.includes(q) ? 'block' : 'none';
+  });
+  if (!q) {
+    document.querySelectorAll('.nav-group').forEach(function(g) { g.style.display = 'block'; });
+  } else {
+    document.querySelectorAll('.nav-group').forEach(function(g) { g.style.display = 'none'; });
+  }
+});
+
+// ===== ACTIVE SECTION HIGHLIGHT =====
+var sections = document.querySelectorAll('section[id]');
+var navLinks = document.querySelectorAll('#nav-links a');
+
+window.addEventListener('scroll', function() {
+  var scrollY = window.pageYOffset;
+  var current = '';
+  sections.forEach(function(section) {
+    var top = section.offsetTop - 80;
+    if (scrollY >= top) current = section.id;
+  });
+  navLinks.forEach(function(link) {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+  });
+
+  // Scroll to top button
+  document.getElementById('scroll-top').style.display = scrollY > 400 ? 'block' : 'none';
+});
+
+// ===== SMOOTH SCROLL FOR SIDEBAR LINKS =====
+navLinks.forEach(function(link) {
+  link.addEventListener('click', function(e) {
+    var href = this.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      var target = document.getElementById(href.slice(1));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- גרף ניווט נפרד למורה/מנהל מוסד — 3 טאבים בלבד (כיתות/פרופיל/עוד),
+     לא 5 הטאבים של התלמיד. MainActivity מחליף אליו את הגרף הפעיל
+     (navController.setGraph) אחרי שה-role מזוהה כ-teacher/principal —
+     ר' MainActivity.java. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/teacher_nav_graph"
+    app:startDestination="@id/navigation_teacher_dashboard">
+
+    <!-- כיתות — "הבית" של המורה. אותה מחלקה בדיוק כמו הכניסה הראשונית. -->
+    <fragment
+        android:id="@+id/navigation_teacher_dashboard"
+        android:name="com.example.easylex.ui.teacher.TeacherDashboardFragment"
+        android:label="כיתות"
+        tools:layout="@layout/fragment_teacher_dashboard">
+        <action
+            android:id="@+id/action_navigation_teacher_dashboard_to_navigation_class_detail"
+            app:destination="@id/navigation_class_detail" />
+    </fragment>
+
+    <!-- מסך כיתה — לשוניות תלמידים/משימות (משימה 0.14). נפתח מכרטיס כיתה,
+         לא דרך ה-bottom nav. -->
+    <fragment
+        android:id="@+id/navigation_class_detail"
+        android:name="com.example.easylex.ui.teacher.ClassDetailFragment"
+        android:label="כיתה"
+        tools:layout="@layout/fragment_class_detail" />
+
+    <!-- פרופיל — ממחזרים את ProfileFragment הקיים, אותו id בדיוק כמו
+         בגרף התלמיד (nav_graph.xml). כולל את action ההגדרות הקיים
+         ב-ProfileFragment.java, כדי שכפתור "הגדרות" לא יקרוס כאן. -->
+    <fragment android:id="@+id/navigation_profile"
+        android:name="com.example.easylex.ui.profile.ProfileFragment"
+        android:label="פרופיל">
+        <action
+            android:id="@+id/action_navigation_profile_to_navigation_settings"
+            app:destination="@id/navigation_settings" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.easylex.ui.settings.SettingsFragment"
+        android:label="הגדרות"
+        tools:layout="@layout/fragment_settings" />
+
+    <!-- עוד — PrincipalDashboardFragment (שלב 2): דשבורד מוסדי למנהל
+         (role=="principal"), placeholder "בקרוב" כרגיל למורה. אותו id/label
+         כמו קודם — מורה לא רואה שינוי כלשהו. -->
+    <fragment
+        android:id="@+id/navigation_more_placeholder"
+        android:name="com.example.easylex.ui.teacher.PrincipalDashboardFragment"
+        android:label="עוד"
+        tools:layout="@layout/fragment_principal_dashboard">
+        <action
+            android:id="@+id/action_navigation_more_placeholder_to_navigation_class_detail"
+            app:destination="@id/navigation_class_detail" />
+    </fragment>
+
+</navigation>

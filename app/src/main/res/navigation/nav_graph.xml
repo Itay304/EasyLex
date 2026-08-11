@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_home">
+
+    <!-- Dashboard — new home screen -->
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.easylex.ui.home.DashboardFragment"
+        android:label="בית"
+        tools:layout="@layout/fragment_dashboard">
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_word_list"
+            app:destination="@id/navigation_word_list" />
+        <action
+            android:id="@+id/action_home_to_quiz"
+            app:destination="@id/navigation_quiz" />
+        <action
+            android:id="@+id/action_home_to_flashcards"
+            app:destination="@id/navigation_flashcards" />
+        <action
+            android:id="@+id/action_home_to_spelling"
+            app:destination="@id/navigation_spelling" />
+        <action
+            android:id="@+id/action_home_to_word_lists"
+            app:destination="@id/navigation_word_lists" />
+    </fragment>
+
+    <!-- Word list (previously "home") — navigated from Dashboard -->
+    <fragment
+        android:id="@+id/navigation_word_list"
+        android:name="com.example.easylex.ui.mywords.MyWordsFragment"
+        android:label="המילון שלי"
+        tools:layout="@layout/fragment_my_words" />
+
+    <!-- Word lists browser — download additional word lists from Firestore -->
+    <fragment
+        android:id="@+id/navigation_word_lists"
+        android:name="com.example.easylex.ui.wordlists.WordListsFragment"
+        android:label="רשימות מילים"
+        tools:layout="@layout/fragment_word_lists" />
+
+    <!-- Join institution as teacher (join code) — reached from LoginActivity/RegisterActivity
+         via MainActivity's EXTRA_OPEN_JOIN_INSTITUTION, not from the bottom nav. -->
+    <fragment
+        android:id="@+id/navigation_join_institution"
+        android:name="com.example.easylex.ui.institution.JoinInstitutionFragment"
+        android:label="הצטרפות למוסד"
+        tools:layout="@layout/fragment_join_institution" />
+
+    <!-- הערה: navigation_teacher_dashboard הוסר מכאן — למורה/מנהל יש עכשיו
+         גרף נפרד לגמרי (teacher_nav_graph.xml), לא נתיב בתוך גרף התלמיד.
+         ר' MainActivity.java (switchToTeacherNavigation). -->
+
+    <!-- Join class as student (join code) — reached from LoginActivity/RegisterActivity
+         via MainActivity's EXTRA_OPEN_JOIN_CLASS, not from the bottom nav (משימה 0.10). -->
+    <fragment
+        android:id="@+id/navigation_join_class"
+        android:name="com.example.easylex.ui.institution.JoinClassFragment"
+        android:label="הצטרפות לכיתה"
+        tools:layout="@layout/fragment_join_class" />
+
+    <fragment
+        android:id="@+id/navigation_practice"
+        android:name="com.example.easylex.ui.practice.PracticeFragment"
+        android:label="תרגול"
+        tools:layout="@layout/fragment_practice">
+        <action
+            android:id="@+id/action_navigation_practice_to_flashcardsFragment"
+            app:destination="@id/navigation_flashcards" />
+        <action
+            android:id="@+id/action_navigation_practice_to_quizFragment"
+            app:destination="@id/navigation_quiz" />
+        <action
+            android:id="@+id/action_navigation_practice_to_spellingFragment"
+            app:destination="@id/navigation_spelling" />
+    </fragment>
+
+    <fragment android:id="@+id/navigation_scan"
+        android:name="com.example.easylex.ui.scan.ScanFragment"
+        android:label="סריקה" />
+
+    <!-- "המשימות שלי" (משימה 0.15). לא בטאב bottom-nav — BottomNavigationView
+         תומך במקסימום 5 פריטים (מגבלה קשיחה של Android; ניסיון קודם להוסיף
+         כטאב שישי קרס את MainActivity עם IllegalArgumentException בכל כניסה
+         לאפליקציה, ר' docs/error). נגישה רק דרך כרטיס "המשימות שלי" בדשבורד
+         (DashboardFragment.cardMyAssignments) — אותו דפוס בדיוק כמו
+         navigation_word_list ("המילון שלי", גם הוא לא בטאב). תלמיד עצמאי (אין
+         institutionId) רואה מסך "הצטרף לכיתה" בתוך המסך עצמו — ר'
+         StudentAssignmentsFragment.java. -->
+    <fragment
+        android:id="@+id/navigation_assignments"
+        android:name="com.example.easylex.ui.assignments.StudentAssignmentsFragment"
+        android:label="משימות"
+        tools:layout="@layout/fragment_student_assignments">
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_quiz"
+            app:destination="@id/navigation_quiz" />
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_flashcards"
+            app:destination="@id/navigation_flashcards" />
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_spelling"
+            app:destination="@id/navigation_spelling" />
+    </fragment>
+
+    <fragment android:id="@+id/navigation_statistics"
+        android:name="com.example.easylex.ui.statistics.StatisticsFragment"
+        android:label="סטטיסטיקה" />
+
+    <fragment android:id="@+id/navigation_profile"
+        android:name="com.example.easylex.ui.profile.ProfileFragment"
+        android:label="פרופיל">
+        <action
+            android:id="@+id/action_navigation_profile_to_navigation_settings"
+            app:destination="@id/navigation_settings" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.easylex.ui.settings.SettingsFragment"
+        android:label="הגדרות"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/navigation_admin"
+        android:name="com.example.easylex.ui.admin.AdminEditFragment"
+        android:label="ניהול מילים"
+        tools:layout="@layout/fragment_admin_edit" />
+
+    <fragment
+        android:id="@+id/navigation_flashcards"
+        android:name="com.example.easylex.ui.practice.FlashcardsFragment"
+        android:label="כרטיסיות" />
+
+    <fragment
+        android:id="@+id/navigation_quiz"
+        android:name="com.example.easylex.ui.practice.QuizFragment"
+        android:label="מבחן" />
+
+    <fragment
+        android:id="@+id/navigation_spelling"
+        android:name="com.example.easylex.ui.practice.SpellingFragment"
+        android:label="אלוף האיות" />
+
+</navigation>

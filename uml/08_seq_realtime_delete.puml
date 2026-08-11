@@ -1,0 +1,41 @@
+@startuml 08_Seq_RealtimeDelete
+title מחיקה בזמן אמת — Admin → Firestore → כל המכשירים
+
+skinparam defaultFontSize 13
+skinparam sequence {
+  ArrowColor #B71C1C
+  ParticipantBackgroundColor #FFEBEE
+  ParticipantBorderColor #C62828
+  NoteBackgroundColor #FFFDE7
+  NoteBorderColor #F9A825
+}
+
+actor "מנהל" as Admin
+actor "משתמש" as User
+participant "AdminEditFragment" as AEF
+participant "Firestore" as FS
+participant "WordRepository\n(Listener)" as Repo
+participant "Room DB" as DB
+participant "LiveData" as LD
+participant "Fragments" as UI
+
+note over Repo
+  startGlobalDeleteListener()
+  MetadataChanges.EXCLUDE
+  (שינויי שרת בלבד)
+end note
+
+Admin -> AEF : החלקת מילה
+AEF -> AEF : removeItem(pos) — UI מיידי
+AEF -> FS : document(docId).delete()
+AEF --> Admin : Snackbar "נמחקה — בטל"
+
+FS -> Repo : DocumentChange.REMOVED
+Repo -> DB : deleteVerifiedWordByEnglish()
+DB --> LD : trigger
+LD --> UI : onChanged(list)
+UI --> User : המילה נעלמת מהמסך
+
+note over Admin, User : כל זה תוך < 1 שניה
+
+@enduml

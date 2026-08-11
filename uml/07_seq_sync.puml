@@ -1,0 +1,52 @@
+@startuml 07_Seq_Sync
+title סנכרון Firestore — Throttle 24h + מחיקה דו-כיוונית
+
+skinparam defaultFontSize 13
+skinparam sequence {
+  ArrowColor #1B5E20
+  ParticipantBackgroundColor #E8F5E9
+  ParticipantBorderColor #2E7D32
+  NoteBackgroundColor #FFFDE7
+  NoteBorderColor #F9A825
+}
+
+participant "MyWordsViewModel" as VM
+participant "SharedPreferences" as SP
+participant "WordRepository" as Repo
+participant "Firestore" as FS
+participant "ExecutorService" as BG
+participant "Room DB" as DB
+
+VM -> SP : getLong("last_global_sync_ms")
+SP --> VM : lastSync
+
+alt עברו > 24 שעות
+  VM -> SP : save(now)
+  VM -> Repo : syncGlobalWordsFromFirestore()
+
+  Repo -> FS : words collection .get()
+  FS --> Repo : כל המסמכים
+
+  Repo -> BG : execute()
+
+  BG -> DB : getVerifiedEnglishWords()
+  DB --> BG : roomList
+
+  note over BG
+    firestoreSet = {englishWord, ...}
+    roomSet = {englishWord, ...}
+  end note
+
+  loop מילה חדשה (ב-Firestore, לא ב-Room)
+    BG -> DB : insert(word, isVerified=true)
+  end
+
+  loop מילה מחוקה (ב-Room, לא ב-Firestore)
+    BG -> DB : deleteVerifiedWordByEnglish(eng)
+  end
+
+else טרם עברו 24 שעות
+  VM -> VM : דלג על סנכרון
+end
+
+@enduml

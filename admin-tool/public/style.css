@@ -1,0 +1,208 @@
+:root {
+  --green: #2e7d32;
+  --turquoise: #00897b;
+  --grey-light: #f5f5f5;
+  --yellow: #fff3b0;
+  --border: #ddd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--grey-light);
+  margin: 0;
+  padding: 24px;
+  color: #222;
+}
+
+header h1 {
+  margin: 0 0 4px;
+  color: var(--green);
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: #555;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 13px;
+  color: #555;
+}
+
+.field input[type="text"] {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 180px;
+}
+
+button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--green);
+  color: #fff;
+}
+
+button.secondary {
+  background: var(--turquoise);
+  color: #fff;
+}
+
+.status {
+  padding: 10px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.status.info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.status.success {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.status.error {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  transition: width 0.2s ease;
+}
+
+.table-wrap {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  padding: 8px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: right;
+  vertical-align: middle;
+}
+
+th {
+  background: var(--green);
+  color: #fff;
+  position: sticky;
+  top: 0;
+}
+
+tr.duplicate td {
+  background: var(--yellow);
+}
+
+td input[type="text"] {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+td input[type="text"]:focus {
+  border-color: var(--turquoise);
+  background: #fff;
+  outline: none;
+}
+
+td input[type="number"] {
+  width: 60px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px;
+  font-size: 13px;
+}
+
+td input[type="number"]:focus {
+  border-color: var(--turquoise);
+  background: #fff;
+  outline: none;
+}
+
+td.checkbox-cell {
+  text-align: center;
+}
+
+.delete-btn {
+  background: #c62828;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #777;
+  padding: 24px;
+}

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F2F5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Progress card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView
+                    android:id="@+id/tvAdminProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="מילות הבנק: 0  (מאומתות: 0)"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/green_dark" />
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/adminProgressBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:indicatorColor="@color/green_dark"
+                    app:trackColor="#E0E0E0"
+                    app:trackThickness="8dp"
+                    app:trackCornerRadius="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- List selector — chooses which word_lists/{id}/words is being edited -->
+        <Spinner
+            android:id="@+id/adminListSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/search_background"
+            android:padding="10dp" />
+
+        <!-- Search bar -->
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/adminSearchView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:background="@drawable/search_background"
+            app:iconifiedByDefault="false"
+            app:queryHint="חפש מילה…" />
+
+        <!-- Scrollable dictionary list — paddingBottom leaves room for FAB -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/adminRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:paddingBottom="80dp"
+            android:clipToPadding="false" />
+
+    </LinearLayout>
+
+    <!-- FAB: add a new word to the bank -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddWord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        android:contentDescription="הוסף מילה"
+        app:srcCompat="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/green_dark"
+        app:tint="@android:color/white" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

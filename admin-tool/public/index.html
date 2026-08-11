@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EasyLex – כלי אדמין למילים</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>EasyLex – ניהול מילים</h1>
+    <p class="subtitle">כלי מקומי לטעינת מילים מקובץ JSON והעלאתן ל-Firestore</p>
+  </header>
+
+  <section class="toolbar">
+    <div class="field">
+      <label for="listIdInput">שם רשימה (List ID)</label>
+      <input type="text" id="listIdInput" list="listOptions" placeholder="לדוגמה: band_2_full_list" />
+      <datalist id="listOptions"></datalist>
+    </div>
+
+    <div class="field">
+      <label for="fileInput">קובץ words_output.json</label>
+      <input type="file" id="fileInput" accept="application/json,.json" />
+    </div>
+
+    <button id="refreshListsBtn" class="secondary">רענן רשימות</button>
+    <button id="refreshDupBtn" class="secondary" disabled>בדוק כפילויות מחדש</button>
+    <button id="selectAllBtn" class="secondary" disabled>סמן הכל</button>
+    <button id="deselectAllBtn" class="secondary" disabled>בטל סימון הכל</button>
+    <button id="uploadBtn" class="primary" disabled>העלה ל-Firebase</button>
+  </section>
+
+  <section id="statusBar" class="status hidden"></section>
+
+  <section id="progressWrap" class="progress-wrap hidden">
+    <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+    <span id="progressText"></span>
+  </section>
+
+  <section class="table-wrap">
+    <table id="wordsTable">
+      <thead>
+        <tr>
+          <th>כלול</th>
+          <th>מילה באנגלית</th>
+          <th>חלק דיבר</th>
+          <th>תרגום לעברית</th>
+          <th>משפט לדוגמה</th>
+          <th>משפט לדוגמה בעברית</th>
+          <th>רמת קושי</th>
+          <th>תגיות</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="wordsTableBody"></tbody>
+    </table>
+    <p id="emptyMsg" class="empty-msg">טרם נטען קובץ. בחר קובץ JSON כדי להתחיל.</p>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

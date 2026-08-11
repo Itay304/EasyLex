@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyLex — אלגוריתמים חכמים</title>
+<style>
+  :root {
+    --green:   #2E7D32;
+    --green-l: #4CAF50;
+    --teal:    #00695C;
+    --teal-l:  #26A69A;
+    --bg:      #F5F5F5;
+    --card:    #FFFFFF;
+    --code-bg: #1E1E2E;
+    --code-fg: #CDD6F4;
+    --border:  #E0E0E0;
+    --tag-bg:  #E8F5E9;
+    --tag-fg:  #1B5E20;
+    --accent:  #FF6F00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: #212121;
+    direction: rtl;
+    line-height: 1.7;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
+    color: white;
+    padding: 48px 40px 36px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  }
+  .site-header h1 { font-size: 2.6rem; letter-spacing: 1px; }
+  .site-header p  { font-size: 1.1rem; opacity: .85; margin-top: 8px; }
+  .badge-row { display: flex; justify-content: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  .badge {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: .85rem;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    max-width: 960px;
+    margin: 32px auto 0;
+    padding: 0 20px;
+  }
+  .toc-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 14px;
+    padding-right: 4px;
+  }
+  .toc-group { margin-bottom: 20px; }
+  .toc-group-label {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-right: 4px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .toc-item {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-right: 4px solid var(--green-l);
+    box-shadow: 0 2px 6px rgba(0,0,0,.07);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    text-decoration: none;
+    color: #212121;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .9rem;
+  }
+  .toc-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.13); }
+  .toc-item .toc-num {
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem; font-weight: bold; flex-shrink: 0;
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ── GROUP HEADING ── */
+  .group-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 48px 0 20px;
+  }
+  .group-heading h2 {
+    font-size: 1.3rem;
+    color: #1A1A1A;
+    font-weight: bold;
+  }
+  .group-bar {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to left, transparent, var(--green-l));
+    border-radius: 2px;
+  }
+  .group-icon {
+    font-size: 1.5rem;
+  }
+
+  /* ── SECTION ── */
+  .algo-section {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 18px 28px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+  }
+  .section-header h3 { font-size: 1.2rem; color: #1A1A1A; }
+  .section-header .subtitle { font-size: .88rem; color: #666; margin-top: 2px; }
+  .section-body { padding: 22px 28px; }
+
+  /* ── FILE TAG ── */
+  .file-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .file-tag {
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: .82rem;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #A5D6A7;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  /* ── EXPLAIN ── */
+  .explain {
+    background: #F9FBE7;
+    border-right: 4px solid var(--teal-l);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: .95rem;
+    color: #263238;
+  }
+  .explain b { color: var(--teal); }
+
+  /* ── FORMULA BOX ── */
+  .formula {
+    background: #E8EAF6;
+    border-right: 4px solid #3949AB;
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    color: #1A237E;
+    direction: ltr;
+    text-align: center;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-wrap { margin-bottom: 16px; }
+  .code-label {
+    background: #2D2D3F;
+    color: #89B4FA;
+    font-family: 'Courier New', monospace;
+    font-size: .78rem;
+    padding: 6px 16px;
+    border-radius: 8px 8px 0 0;
+    display: flex; justify-content: space-between;
+    align-items: center;
+  }
+  .code-label .lang-badge {
+    background: var(--green);
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: .72rem;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: .87rem;
+    line-height: 1.65;
+    border-radius: 0 0 8px 8px;
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* ── SYNTAX COLORS ── */
+  .kw   { color: #CBA6F7; }
+  .ty   { color: #89DCEB; }
+  .str  { color: #A6E3A1; }
+  .num  { color: #FAB387; }
+  .cm   { color: #6C7086; font-style: italic; }
+  .fn   { color: #89B4FA; }
+  .ann  { color: #F38BA8; }
+  .var  { color: #CDD6F4; }
+
+  /* ── STEP LIST ── */
+  .steps { counter-reset: step; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 8px;
+    font-size: .95rem;
+  }
+  .steps li::before {
+    content: counter(step);
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem; font-weight: bold; flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 10px 0 16px; }
+  th { background: var(--green); color: white; padding: 10px 14px; text-align: right; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #F9F9F9; }
+
+  /* ── BACK TO TOP ── */
+  .back-top {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    color: var(--green);
+    font-size: .85rem;
+    text-decoration: none;
+    padding: 8px;
+  }
+  .back-top:hover { text-decoration: underline; }
+
+  /* Section number colors */
+  .c1  { background: #1565C0; }
+  .c2  { background: #2E7D32; }
+  .c3  { background: #6A1B9A; }
+  .c4  { background: #E65100; }
+  .c5  { background: #AD1457; }
+  .c6  { background: #00695C; }
+  .c7  { background: #F57F17; }
+  .c8  { background: #37474F; }
+  .c9  { background: #1565C0; }
+  .c10 { background: #558B2F; }
+  .c11 { background: #6A1B9A; }
+  .c12 { background: #4527A0; }
+  .c13 { background: #00838F; }
+  .c14 { background: #BF360C; }
+  .c15 { background: #283593; }
+  .c16 { background: #4E342E; }
+  .c17 { background: #880E4F; }
+  .c18 { background: #1B5E20; }
+  .c19 { background: #E65100; }
+  .c20 { background: #37474F; }
+
+  .divider { height: 1px; background: var(--border); margin: 18px 0; }
+</style>
+</head>
+<body id="top">
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════════════ -->
+<header class="site-header">
+  <h1>⚙️ EasyLex — אלגוריתמים חכמים</h1>
+  <p>20 אלגוריתמים חכמים המופעלים מאחורי הקלעים של האפליקציה</p>
+  <div class="badge-row">
+    <span class="badge">Java · Android</span>
+    <span class="badge">Room + Firestore</span>
+    <span class="badge">ML Kit OCR</span>
+    <span class="badge">Adaptive Learning</span>
+    <span class="badge">Gamification</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ TOC ══════════════════════════════════════ -->
+<nav class="toc" id="toc">
+  <div class="toc-title">📋 תוכן עניינים</div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה א — למידה אדפטיבית</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#a1"><span class="toc-num">1</span> רמת שליטה (Mastery)</a>
+      <a class="toc-item" href="#a2"><span class="toc-num">2</span> בחירה אדפטיבית 60/20/20 — שאלון</a>
+      <a class="toc-item" href="#a3"><span class="toc-num">3</span> בחירה אדפטיבית 60/20/20 — כתיב</a>
+      <a class="toc-item" href="#a4"><span class="toc-num">4</span> סדר עדיפות — כרטיסיות</a>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה ב — גיימיפיקציה ו-XP</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#b1"><span class="toc-num">5</span> חישוב XP + בונוס שליטה</a>
+      <a class="toc-item" href="#b2"><span class="toc-num">6</span> נוסחת רמה (sqrt)</a>
+      <a class="toc-item" href="#b3"><span class="toc-num">7</span> פעילות שבועית</a>
+      <a class="toc-item" href="#b4"><span class="toc-num">8</span> חישוב רצף יומי (Streak)</a>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה ג — סטטיסטיקות ודשבורד</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#c1"><span class="toc-num">9</span> אחוז שליטה + דיוק</a>
+      <a class="toc-item" href="#c2"><span class="toc-num">10</span> 7 רמות דירוג</a>
+      <a class="toc-item" href="#c3"><span class="toc-num">11</span> התקדמות אתגר יומי</a>
+      <a class="toc-item" href="#c4"><span class="toc-num">12</span> מילה יומית (DAY_OF_YEAR)</a>
+      <a class="toc-item" href="#c5"><span class="toc-num">13</span> גרף פעילות שבועית</a>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה ד — סנכרון נתונים</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#d1"><span class="toc-num">14</span> סנכרון Diff דו-כיווני</a>
+      <a class="toc-item" href="#d2"><span class="toc-num">15</span> האזנה למחיקות בזמן אמת</a>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה ה — עיבוד תמונה ו-OCR</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#e1"><span class="toc-num">16</span> תיקון סיבוב EXIF</a>
+      <a class="toc-item" href="#e2"><span class="toc-num">17</span> חיתוך חכם של תמונה</a>
+      <a class="toc-item" href="#e3"><span class="toc-num">18</span> חילוץ מילים מתבנית ●</a>
+    </div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-label">קבוצה ו — ניהול רשימות</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#f1"><span class="toc-num">19</span> כפילויות + מיון מילים</a>
+      <a class="toc-item" href="#f2"><span class="toc-num">20</span> ספירת שגיאה יחידה</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════ MAIN ═════════════════════════════════════ -->
+<main class="main">
+
+<!-- ══════════════════════ GROUP A: ADAPTIVE LEARNING ═══════════════════ -->
+<div class="group-heading">
+  <span class="group-icon">🧠</span>
+  <h2>קבוצה א — למידה אדפטיבית</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 1: MASTERY ─────────────────────────────────────────────────────── -->
+<section class="algo-section" id="a1">
+  <div class="section-header">
+    <div class="section-num c1">1</div>
+    <div>
+      <h3>רמת שליטה (Mastery Level)</h3>
+      <div class="subtitle">מדד 0–5 המבטא כמה טוב המשתמש יודע מילה</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 Word.java · שורה 215</span>
+    </div>
+    <div class="explain">
+      כל מילה מקבלת ציון <b>Mastery</b> בין 0 (לא יודע) ל-5 (שולט לחלוטין).<br>
+      הנוסחה: <b>M = min(5, floor(correctAttempts / (totalAttempts + 1) × 5))</b><br>
+      ה-<b>+1</b> במכנה מונע חלוקה באפס כשהמילה עדיין לא נוסתה כלל.<br>
+      הערך משמש <b>כל</b> אלגוריתם הבחירה האדפטיבית לחלוקה לקבוצות.
+    </div>
+    <div class="formula">M = min(5, &lfloor; correctAttempts / (totalAttempts + 1) &times; 5 &rfloor;)</div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>Word.java — getMasteryLevel()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">public</span> <span class="ty">int</span> <span class="fn">getMasteryLevel</span>() {
+    <span class="kw">return</span> Math.<span class="fn">min</span>(<span class="num">5</span>, (<span class="ty">int</span>) Math.<span class="fn">floor</span>(
+        (<span class="ty">double</span>) correctAttempts / (totalAttempts + <span class="num">1</span>) * <span class="num">5</span>
+    ));
+}</pre>
+    </div>
+    <table>
+      <tr><th>correctAttempts</th><th>totalAttempts</th><th>Mastery</th><th>פירוש</th></tr>
+      <tr><td>0</td><td>0</td><td>0</td><td>מילה חדשה</td></tr>
+      <tr><td>3</td><td>10</td><td>1</td><td>קשה — מוצגת בעדיפות</td></tr>
+      <tr><td>8</td><td>10</td><td>3</td><td>טוב</td></tr>
+      <tr><td>10</td><td>10</td><td>4</td><td>מצוין</td></tr>
+      <tr><td>≥ correctAttempts גבוה</td><td>—</td><td>5</td><td>שולט — בונוס 100 XP</td></tr>
+    </table>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 2: QUIZ 60/20/20 ────────────────────────────────────────────────── -->
+<section class="algo-section" id="a2">
+  <div class="section-header">
+    <div class="section-num c2">2</div>
+    <div>
+      <h3>בחירה אדפטיבית 60/20/20 — שאלון</h3>
+      <div class="subtitle">בוחר 20 מילות תרגול לפי יחס קשה/חדש/חזק + Daily Seed</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 QuizFragment.java · שורות 169–235</span>
+    </div>
+    <div class="explain">
+      <b>שלב 1 — סינון לפי מצב:</b> DAILY / MISTAKES / PERSONAL / CATEGORY<br>
+      ב-DAILY הרשימה מעורבבת עם <b>Seed = currentTimeMillis / 86400000</b> — כך שכל שאלוני יום אחד זהים.<br>
+      <b>שלב 2 — חלוקה לשלוש קבוצות:</b>
+      60% מילים קשות (Mastery 0–2) · 20% מילות חדשות (0 ניסיונות) · 20% חזקות (Mastery 3–5).<br>
+      אם קבוצה קטנה מהדרוש — ממלאים מהנותרים. מבטיח שהמשתמש תמיד מתאמן על החלש שלו.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>QuizFragment.java — prepareQuiz() [קטע נבחר]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">// Daily seed — same shuffle all day</span>
+<span class="kw">if</span> (type.<span class="fn">equals</span>(<span class="str">"DAILY"</span>)) {
+    pool.<span class="fn">addAll</span>(allMasterWords);
+    <span class="ty">long</span> seed = System.<span class="fn">currentTimeMillis</span>() / (<span class="num">1000</span> * <span class="num">60</span> * <span class="num">60</span> * <span class="num">24</span>);
+    Collections.<span class="fn">shuffle</span>(pool, <span class="kw">new</span> <span class="ty">Random</span>(seed));
+}
+
+<span class="cm">// ── 60 / 20 / 20 partition ────────────────────────</span>
+<span class="ty">List&lt;Word&gt;</span> hardWords  = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// Mastery 0-2</span>
+<span class="ty">List&lt;Word&gt;</span> newWords   = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// 0 attempts</span>
+<span class="ty">List&lt;Word&gt;</span> solidWords = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// Mastery 3-5</span>
+
+<span class="kw">for</span> (<span class="ty">Word</span> w : pool) {
+    <span class="kw">if</span> (w.<span class="fn">getTotalAttempts</span>() == <span class="num">0</span>)    newWords.<span class="fn">add</span>(w);
+    <span class="kw">else if</span> (w.<span class="fn">getMasteryLevel</span>() &lt;= <span class="num">2</span>) hardWords.<span class="fn">add</span>(w);
+    <span class="kw">else</span>                               solidWords.<span class="fn">add</span>(w);
+}
+
+<span class="ty">int</span> wantHard  = (<span class="ty">int</span>) Math.<span class="fn">round</span>(total * <span class="num">0.60</span>); <span class="cm">// 12 מתוך 20</span>
+<span class="ty">int</span> wantNew   = (<span class="ty">int</span>) Math.<span class="fn">round</span>(total * <span class="num">0.20</span>); <span class="cm">// 4</span>
+<span class="ty">int</span> wantSolid = total - wantHard - wantNew;      <span class="cm">// 4</span>
+
+<span class="fn">addUpTo</span>(selected, hardWords,  wantHard);
+<span class="fn">addUpTo</span>(selected, newWords,   wantNew);
+<span class="fn">addUpTo</span>(selected, solidWords, wantSolid);</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 3: SPELLING 60/20/20 ────────────────────────────────────────────── -->
+<section class="algo-section" id="a3">
+  <div class="section-header">
+    <div class="section-num c3">3</div>
+    <div>
+      <h3>בחירה אדפטיבית 60/20/20 — כתיב</h3>
+      <div class="subtitle">גרסת SpellingFragment עם session של 15 מילים</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 SpellingFragment.java · שורות 182–215</span>
+    </div>
+    <div class="explain">
+      <b>זהה בעיקרו לאלגוריתם השאלון</b>, אך מגביל ל-<b>15 מילים</b> (SESSION_SIZE=15).<br>
+      אין Daily Seed — הסשן תמיד אקראי לחלוטין.<br>
+      אחרי הבחירה הסופית מבוצע <b>shuffle נוסף</b> על הרשימה המורכבת, כדי שסדר הקבוצות לא ניכר.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>SpellingFragment.java — selectAdaptiveWords()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private</span> <span class="ty">List&lt;Word&gt;</span> <span class="fn">selectAdaptiveWords</span>(<span class="ty">List&lt;Word&gt;</span> pool, <span class="ty">int</span> total) {
+    <span class="ty">List&lt;Word&gt;</span> hard  = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+    <span class="ty">List&lt;Word&gt;</span> newW  = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+    <span class="ty">List&lt;Word&gt;</span> solid = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+
+    <span class="kw">for</span> (<span class="ty">Word</span> w : pool) {
+        <span class="kw">if</span> (w.<span class="fn">getTotalAttempts</span>() == <span class="num">0</span>)    newW.<span class="fn">add</span>(w);
+        <span class="kw">else if</span> (w.<span class="fn">getMasteryLevel</span>() &lt;= <span class="num">2</span>) hard.<span class="fn">add</span>(w);
+        <span class="kw">else</span>                               solid.<span class="fn">add</span>(w);
+    }
+    Collections.<span class="fn">shuffle</span>(hard);
+    Collections.<span class="fn">shuffle</span>(newW);
+    Collections.<span class="fn">shuffle</span>(solid);
+
+    <span class="ty">int</span> count     = Math.<span class="fn">min</span>(pool.<span class="fn">size</span>(), total);
+    <span class="ty">int</span> wantHard  = (<span class="ty">int</span>) Math.<span class="fn">round</span>(count * <span class="num">0.60</span>);
+    <span class="ty">int</span> wantNew   = (<span class="ty">int</span>) Math.<span class="fn">round</span>(count * <span class="num">0.20</span>);
+    <span class="ty">int</span> wantSolid = count - wantHard - wantNew;
+
+    <span class="cm">// Fill + final shuffle to hide group order</span>
+    Collections.<span class="fn">shuffle</span>(selected);
+    <span class="kw">return</span> selected;
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 4: FLASHCARDS PRIORITY ORDER ───────────────────────────────────── -->
+<section class="algo-section" id="a4">
+  <div class="section-header">
+    <div class="section-num c4">4</div>
+    <div>
+      <h3>סדר עדיפות — כרטיסיות</h3>
+      <div class="subtitle">קשות → חדשות → חזקות, ערבוב בתוך כל קבוצה</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 FlashcardsFragment.java · שורות 247–270</span>
+    </div>
+    <div class="explain">
+      בניגוד לשאלון שבוחר <b>כמות</b> — כאן הכרטיסיות מוצגות <b>בסדר עדיפות</b>: קשות ראשונות.<br>
+      כך המשתמש מתמודד עם החומר הקשה בתחילת הסשן, כשהקשב שלו מרבי.<br>
+      ערבוב בתוך כל קבוצה מונע שינון מיכני לפי סדר קבוע.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>FlashcardsFragment.java — orderByPriority()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private</span> <span class="ty">List&lt;Word&gt;</span> <span class="fn">orderByPriority</span>(<span class="ty">List&lt;Word&gt;</span> pool) {
+    <span class="ty">List&lt;Word&gt;</span> hard  = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// Mastery ≤ 2</span>
+    <span class="ty">List&lt;Word&gt;</span> newW  = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// 0 ניסיונות</span>
+    <span class="ty">List&lt;Word&gt;</span> solid = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>(); <span class="cm">// Mastery 3–5</span>
+
+    <span class="kw">for</span> (<span class="ty">Word</span> w : pool) {
+        <span class="kw">if</span>      (w.<span class="fn">getTotalAttempts</span>() == <span class="num">0</span>) newW.<span class="fn">add</span>(w);
+        <span class="kw">else if</span> (w.<span class="fn">getMasteryLevel</span>()  &lt;= <span class="num">2</span>) hard.<span class="fn">add</span>(w);
+        <span class="kw">else</span>                               solid.<span class="fn">add</span>(w);
+    }
+    Collections.<span class="fn">shuffle</span>(hard);   <span class="cm">// ערבוב בתוך קבוצה</span>
+    Collections.<span class="fn">shuffle</span>(newW);
+    Collections.<span class="fn">shuffle</span>(solid);
+
+    <span class="cm">// הרכבת הרשימה: קשות → חדשות → חזקות</span>
+    <span class="ty">List&lt;Word&gt;</span> ordered = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+    ordered.<span class="fn">addAll</span>(hard);
+    ordered.<span class="fn">addAll</span>(newW);
+    ordered.<span class="fn">addAll</span>(solid);
+    <span class="kw">return</span> ordered;
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ GROUP B: GAMIFICATION ═══════════════════════════ -->
+<div class="group-heading">
+  <span class="group-icon">🏆</span>
+  <h2>קבוצה ב — גיימיפיקציה ו-XP</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 5: XP + MASTERY BONUS ──────────────────────────────────────────── -->
+<section class="algo-section" id="b1">
+  <div class="section-header">
+    <div class="section-num c5">5</div>
+    <div>
+      <h3>חישוב XP + בונוס שליטה</h3>
+      <div class="subtitle">+10 XP לכל תשובה נכונה; +100 XP בונוס כשמגיעים ל-Mastery 5</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 GamificationEngine.java · שורות 127–137</span>
+    </div>
+    <div class="explain">
+      כל תשובה נכונה בשאלון או כתיב = <b>10 XP</b>.<br>
+      אם המילה עלתה ל-Mastery 5 <b>בדיוק בניסיון הזה</b> (ולא הייתה 5 קודם) — בונוס של <b>100 XP</b>.<br>
+      בדיקת "לפני ואחרי" מונעת כפל בונוס כשמילה נשארת ב-5.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>GamificationEngine.java — onCorrectAnswer()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">public void</span> <span class="fn">onCorrectAnswer</span>(<span class="ty">Word</span> wordBefore, <span class="ty">Word</span> wordAfter) {
+    <span class="ty">int</span> gained = XP_CORRECT_ANSWER; <span class="cm">// 10 XP</span>
+
+    <span class="cm">// בונוס רק כשחוצים מ-&lt;5 ל-5</span>
+    <span class="kw">if</span> (wordAfter.<span class="fn">getMasteryLevel</span>()  == <span class="num">5</span>
+     &amp;&amp; wordBefore.<span class="fn">getMasteryLevel</span>() &lt;  <span class="num">5</span>) {
+        gained += XP_WORD_MASTERED; <span class="cm">// +100 XP</span>
+    }
+    <span class="fn">recordDailyActivity</span>();
+    <span class="fn">addXp</span>(gained);
+    <span class="fn">checkStreak</span>();
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 6: LEVEL FORMULA ───────────────────────────────────────────────── -->
+<section class="algo-section" id="b2">
+  <div class="section-header">
+    <div class="section-num c6">6</div>
+    <div>
+      <h3>נוסחת רמה — עקומה ריבועית</h3>
+      <div class="subtitle">L = floor(√(XP/100)) + 1 — כל רמה דורשת יותר XP</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 GamificationEngine.java · שורות 280–282</span>
+    </div>
+    <div class="explain">
+      הרמה עולה לפי <b>שורש ריבועי</b> — כך עלייה בין רמות נמוכות מהירה, ורמות גבוהות דורשות מאמץ גדל.<br>
+      <b>L = floor(√(XP / 100)) + 1</b><br>
+      רמה 1: 0 XP · רמה 2: 100 · רמה 3: 400 · רמה 4: 900 · רמה 5: 1600 XP...
+    </div>
+    <div class="formula">L = &lfloor; &radic;(XP / 100) &rfloor; + 1</div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>GamificationEngine.java — computeLevel()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private static</span> <span class="ty">int</span> <span class="fn">computeLevel</span>(<span class="ty">int</span> xp) {
+    <span class="kw">return</span> (<span class="ty">int</span>) Math.<span class="fn">floor</span>(Math.<span class="fn">sqrt</span>(xp / <span class="num">100.0</span>)) + <span class="num">1</span>;
+}</pre>
+    </div>
+    <table>
+      <tr><th>XP</th><th>רמה</th><th>XP לרמה הבאה</th></tr>
+      <tr><td>0</td><td>1</td><td>100</td></tr>
+      <tr><td>100</td><td>2</td><td>300 נוספים</td></tr>
+      <tr><td>400</td><td>3</td><td>500 נוספים</td></tr>
+      <tr><td>900</td><td>4</td><td>700 נוספים</td></tr>
+      <tr><td>1600</td><td>5</td><td>900 נוספים</td></tr>
+    </table>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 7: WEEKLY ACTIVITY ────────────────────────────────────────────── -->
+<section class="algo-section" id="b3">
+  <div class="section-header">
+    <div class="section-num c7">7</div>
+    <div>
+      <h3>פעילות שבועית — 7 ימים אחורה</h3>
+      <div class="subtitle">מחשב מספר תשובות נכונות לכל אחד מ-7 הימים האחרונים</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 GamificationEngine.java · שורות 173–183</span>
+    </div>
+    <div class="explain">
+      לכל יום נשמר מונה תשובות נכונות ב-SharedPreferences תחת מפתח <b>"daily_correct_yyyy-MM-dd"</b>.<br>
+      getWeeklyActivity() בונה מערך int[7] — index 0 = לפני 6 ימים, index 6 = היום.<br>
+      משמש לגרף העמודות בדשבורד.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>GamificationEngine.java — getWeeklyActivity()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">public</span> <span class="ty">int[]</span> <span class="fn">getWeeklyActivity</span>() {
+    <span class="ty">int[]</span> result = <span class="kw">new</span> <span class="ty">int</span>[<span class="num">7</span>];
+    <span class="ty">Calendar</span> cal = Calendar.<span class="fn">getInstance</span>();
+    <span class="ty">SimpleDateFormat</span> sdf = <span class="kw">new</span> <span class="ty">SimpleDateFormat</span>(<span class="str">"yyyy-MM-dd"</span>, Locale.US);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">7</span>; i++) {
+        <span class="ty">Calendar</span> day = (<span class="ty">Calendar</span>) cal.<span class="fn">clone</span>();
+        day.<span class="fn">add</span>(Calendar.DAY_OF_YEAR, -(<span class="num">6</span> - i));  <span class="cm">// i=0 → לפני 6 ימים</span>
+        result[i] = prefs.<span class="fn">getInt</span>(KEY_DAILY_CORRECT_PREFIX
+                    + sdf.<span class="fn">format</span>(day.<span class="fn">getTime</span>()), <span class="num">0</span>);
+    }
+    <span class="kw">return</span> result;
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 8: STREAK ─────────────────────────────────────────────────────── -->
+<section class="algo-section" id="b4">
+  <div class="section-header">
+    <div class="section-num c8">8</div>
+    <div>
+      <h3>חישוב רצף יומי (Streak)</h3>
+      <div class="subtitle">בדיקת daysDiff — אותו יום / יום רצוף / איפוס</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 StreakManager.java · שורות 89–110</span>
+    </div>
+    <div class="explain">
+      הרצף נשמר ב-Firestore: <b>users/{uid}.streak</b> + <b>lastActiveDate</b>.<br>
+      ה-logic: חישוב daysDiff בין תאריך הפעילות האחרון ל-"היום".<br>
+      <b>0 ימים</b> = אותו יום (לא מעדכן). <b>1 יום</b> = רצוף (streak++). <b>&gt;1 ימים</b> = שבירה (reset ל-1).
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>StreakManager.java — computeStreak() + daysDiff()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private static</span> <span class="ty">int</span> <span class="fn">computeStreak</span>(
+        <span class="ty">String</span> lastDateStr, <span class="ty">int</span> currentStreak, <span class="ty">String</span> today) {
+    <span class="kw">if</span> (lastDateStr == <span class="kw">null</span> || lastDateStr.<span class="fn">isEmpty</span>())
+        <span class="kw">return</span> <span class="num">1</span>;            <span class="cm">// פעם ראשונה</span>
+    <span class="ty">long</span> diffDays = <span class="fn">daysDiff</span>(lastDateStr, today);
+    <span class="kw">if</span> (diffDays == <span class="num">0</span>) <span class="kw">return</span> currentStreak;      <span class="cm">// אותו יום</span>
+    <span class="kw">if</span> (diffDays == <span class="num">1</span>) <span class="kw">return</span> currentStreak + <span class="num">1</span>;   <span class="cm">// רצוף</span>
+    <span class="kw">return</span> <span class="num">1</span>;                                      <span class="cm">// שבירה — reset</span>
+}
+
+<span class="kw">private static</span> <span class="ty">long</span> <span class="fn">daysDiff</span>(<span class="ty">String</span> dateA, <span class="ty">String</span> dateB) {
+    <span class="ty">Date</span> a = DATE_FMT.<span class="fn">parse</span>(dateA);
+    <span class="ty">Date</span> b = DATE_FMT.<span class="fn">parse</span>(dateB);
+    <span class="ty">long</span> diffMs = Math.<span class="fn">abs</span>(b.<span class="fn">getTime</span>() - a.<span class="fn">getTime</span>());
+    <span class="kw">return</span> TimeUnit.MILLISECONDS.<span class="fn">toDays</span>(diffMs);
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ GROUP C: STATISTICS & DASHBOARD ═══════════════ -->
+<div class="group-heading">
+  <span class="group-icon">📊</span>
+  <h2>קבוצה ג — סטטיסטיקות ודשבורד</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 9: MASTERY % + ACCURACY ───────────────────────────────────────── -->
+<section class="algo-section" id="c1">
+  <div class="section-header">
+    <div class="section-num c9">9</div>
+    <div>
+      <h3>אחוז שליטה + דיוק</h3>
+      <div class="subtitle">masteryPct ו-accuracy מחושבים על כל מסד הנתונים</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 StatisticsFragment.java · שורות 140–168</span>
+    </div>
+    <div class="explain">
+      <b>אחוז שליטה:</b> כמה מילים "נכבשו" (correctAttempts ≥ 3) חלקי סה"כ מילים × 100.<br>
+      <b>דיוק:</b> סך כל הנכונים חלקי סך כל הניסיונות × 100 — מייצג ביצועים כוללים.<br>
+      הפעולות צוברות long (לא int) כדי לא להגיע לoverflow על 1902 מילים × ניסיונות רבים.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>StatisticsFragment.java — calculateMastery()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">int</span> total = words.<span class="fn">size</span>(), mastered = <span class="num">0</span>;
+<span class="ty">long</span> totalAttempts = <span class="num">0</span>, correctAttempts = <span class="num">0</span>;
+
+<span class="kw">for</span> (<span class="ty">Word</span> w : words) {
+    <span class="kw">if</span> (w.<span class="fn">getCorrectAttempts</span>() &gt;= <span class="num">3</span>) mastered++;  <span class="cm">// "נכבשה"</span>
+    totalAttempts   += w.<span class="fn">getTotalAttempts</span>();
+    correctAttempts += w.<span class="fn">getCorrectAttempts</span>();
+}
+
+<span class="ty">float</span> masteryPct = total &gt; <span class="num">0</span>
+    ? (mastered * <span class="num">100.0f</span>) / total : <span class="num">0f</span>;
+<span class="ty">float</span> accuracy = totalAttempts &gt; <span class="num">0</span>
+    ? (correctAttempts * <span class="num">100.0f</span>) / totalAttempts : <span class="num">0f</span>;</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 10: RANK TIERS ─────────────────────────────────────────────────── -->
+<section class="algo-section" id="c2">
+  <div class="section-header">
+    <div class="section-num c10">10</div>
+    <div>
+      <h3>7 רמות דירוג</h3>
+      <div class="subtitle">מ-🌱 מתחיל עד 💎 אגדה, לפי אחוז שליטה</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 StatisticsFragment.java · שורות 183–197</span>
+    </div>
+    <div class="explain">
+      הדירוג מבוסס אך ורק על <b>אחוז השליטה</b> (masteryPct) ומוצג בכרטיס דירוג עם אמוג'י, תואר ותיאור מוטיבציוני.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>StatisticsFragment.java — updateRank()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">if</span>      (pct &lt;  <span class="num">5</span> ) { emoji=<span class="str">"🌱"</span>; title=<span class="str">"מתחיל"</span>;  desc=<span class="str">"המסע זה עתה החל!"</span>; }
+<span class="kw">else if</span> (pct &lt; <span class="num">20</span> ) { emoji=<span class="str">"📖"</span>; title=<span class="str">"תלמיד"</span>;  desc=<span class="str">"אתה לומד, המשך כך!"</span>; }
+<span class="kw">else if</span> (pct &lt; <span class="num">40</span> ) { emoji=<span class="str">"⭐"</span>; title=<span class="str">"מתקדם"</span>;  desc=<span class="str">"ביצועים מרשימים!"</span>; }
+<span class="kw">else if</span> (pct &lt; <span class="num">60</span> ) { emoji=<span class="str">"🎖"</span>; title=<span class="str">"אלוף"</span>;   desc=<span class="str">"הכרת מילים רבות!"</span>; }
+<span class="kw">else if</span> (pct &lt; <span class="num">80</span> ) { emoji=<span class="str">"👑"</span>; title=<span class="str">"נסיך"</span>;   desc=<span class="str">"בקיאות מרשימה!"</span>; }
+<span class="kw">else if</span> (pct &lt; <span class="num">95</span> ) { emoji=<span class="str">"🏆"</span>; title=<span class="str">"מלך"</span>;    desc=<span class="str">"שליטה מעולה!"</span>; }
+<span class="kw">else</span>               { emoji=<span class="str">"💎"</span>; title=<span class="str">"אגדה"</span>;   desc=<span class="str">"אין לך מתחרים!"</span>; }</pre>
+    </div>
+    <table>
+      <tr><th>אמוג'י</th><th>תואר</th><th>טווח שליטה</th></tr>
+      <tr><td>🌱</td><td>מתחיל</td><td>פחות מ-5%</td></tr>
+      <tr><td>📖</td><td>תלמיד</td><td>5–19%</td></tr>
+      <tr><td>⭐</td><td>מתקדם</td><td>20–39%</td></tr>
+      <tr><td>🎖</td><td>אלוף</td><td>40–59%</td></tr>
+      <tr><td>👑</td><td>נסיך</td><td>60–79%</td></tr>
+      <tr><td>🏆</td><td>מלך</td><td>80–94%</td></tr>
+      <tr><td>💎</td><td>אגדה</td><td>95–100%</td></tr>
+    </table>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 11: DAILY CHALLENGE ────────────────────────────────────────────── -->
+<section class="algo-section" id="c3">
+  <div class="section-header">
+    <div class="section-num c11">11</div>
+    <div>
+      <h3>התקדמות אתגר יומי</h3>
+      <div class="subtitle">progress bar = dailyCorrect × 100 / dailyGoal</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 DashboardFragment.java · שורות 121–142</span>
+    </div>
+    <div class="explain">
+      <b>אתגר 1:</b> כמה מילים תרגלת היום? יעד נשלף מ-Settings (ברירת מחדל 10).<br>
+      <b>אתגר 2:</b> כמה מילים לומדת? — כל מילה עם ≥1 תשובה נכונה נחשבת "לומדת".<br>
+      ה-progress bar מחושב: <b>min(100, dailyCorrect × 100 / dailyGoal)</b> — עוצר ב-100%.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>DashboardFragment.java — setupDailyChallenges()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">int</span> dailyGoal    = prefs.<span class="fn">getInt</span>(KEY_DAILY_GOAL, <span class="num">10</span>);
+<span class="ty">int</span> dailyCorrect = gamification.<span class="fn">getDailyCorrectCount</span>();
+binding.progressChallenge1.<span class="fn">setProgress</span>(
+    dailyGoal &gt; <span class="num">0</span> ? Math.<span class="fn">min</span>(<span class="num">100</span>, dailyCorrect * <span class="num">100</span> / dailyGoal) : <span class="num">0</span>
+);
+
+<span class="cm">// Challenge 2: כמה מילים עם ≥1 תשובה נכונה</span>
+<span class="ty">int</span> learned = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="ty">Word</span> w : words) <span class="kw">if</span> (w.<span class="fn">getCorrectAttempts</span>() &gt;= <span class="num">1</span>) learned++;
+binding.progressChallenge2.<span class="fn">setProgress</span>(
+    total == <span class="num">0</span> ? <span class="num">0</span> : (<span class="ty">int</span>)(learned * <span class="num">100L</span> / total)
+);</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 12: WORD OF DAY ────────────────────────────────────────────────── -->
+<section class="algo-section" id="c4">
+  <div class="section-header">
+    <div class="section-num c12">12</div>
+    <div>
+      <h3>מילה יומית — DAY_OF_YEAR % size</h3>
+      <div class="subtitle">מילה שונה בכל יום, ללא צורך ב-Firestore</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 DashboardFragment.java · שורה 106</span>
+    </div>
+    <div class="explain">
+      בלי כל רנדומיזציה מורכבת — פשוט לוקחים את <b>מספר היום בשנה mod גודל המאגר</b>.<br>
+      תוצאה: מילה שונה בכל יום, <b>אחידה לכל המשתמשים</b>, ומתחזרת בשנה הבאה.<br>
+      אלגוריתם O(1) ללא תלות ברשת.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>DashboardFragment.java — setupWordOfDay()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">int</span> idx = Calendar.<span class="fn">getInstance</span>()
+              .<span class="fn">get</span>(Calendar.DAY_OF_YEAR)
+              % words.<span class="fn">size</span>();   <span class="cm">// 1–365 mod גודל המאגר</span>
+<span class="ty">Word</span> w = words.<span class="fn">get</span>(idx);</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 13: WEEKLY BAR CHART ────────────────────────────────────────────── -->
+<section class="algo-section" id="c5">
+  <div class="section-header">
+    <div class="section-num c13">13</div>
+    <div>
+      <h3>גרף עמודות שבועי — בניה דינמית</h3>
+      <div class="subtitle">גובה עמודה = (ערך / מקסימום) × 56dp</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 DashboardFragment.java · שורות 144–174</span>
+    </div>
+    <div class="explain">
+      הגרף נבנה ב-<b>Java code בלבד</b> (ללא ספריית גרפים).<br>
+      תחילה מוצא את <b>maxVal</b> — הערך הגדול ביותר בשבוע, משמש לסקלה.<br>
+      גובה כל עמודה: <b>barH = (weekly[i] / maxVal) × 56dp</b> — מינימום 5dp.<br>
+      היום (index 6) מודגש בטורקיז; שאר הימים — ירוק בהיר.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>DashboardFragment.java — setupWeeklyActivity() [קטע]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">int</span>[] weekly = gamification.<span class="fn">getWeeklyActivity</span>();
+<span class="ty">int</span> maxVal = <span class="num">1</span>;
+<span class="kw">for</span> (<span class="ty">int</span> v : weekly) <span class="kw">if</span> (v &gt; maxVal) maxVal = v;
+
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">7</span>; i++) {
+    <span class="ty">int</span> barH = weekly[i] == <span class="num">0</span>
+        ? <span class="fn">dpToPx</span>(<span class="num">5</span>)
+        : Math.<span class="fn">max</span>(<span class="fn">dpToPx</span>(<span class="num">5</span>),
+              (<span class="ty">int</span>)(weekly[i] * <span class="num">1f</span> / maxVal * <span class="fn">dpToPx</span>(<span class="num">56</span>)));
+
+    <span class="cm">// היום = טורקיז, שאר = ירוק בהיר</span>
+    barBg.<span class="fn">setColor</span>(i == <span class="num">6</span>
+        ? Color.<span class="fn">parseColor</span>(<span class="str">"#00BFA5"</span>)
+        : Color.<span class="fn">parseColor</span>(<span class="str">"#B2DFDB"</span>));
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ GROUP D: DATA SYNC ════════════════════════════ -->
+<div class="group-heading">
+  <span class="group-icon">🔄</span>
+  <h2>קבוצה ד — סנכרון נתונים</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 14: TWO-WAY DIFF SYNC ─────────────────────────────────────────── -->
+<section class="algo-section" id="d1">
+  <div class="section-header">
+    <div class="section-num c14">14</div>
+    <div>
+      <h3>סנכרון Diff דו-כיווני — Firestore ↔ Room</h3>
+      <div class="subtitle">Set comparison: מוסיף חדשות, מוחק הוסרות, לא נוגע בקיימות</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 WordRepository.java · שורות 173–217</span>
+    </div>
+    <div class="explain">
+      בכל הפעלה של האפליקציה מתבצע סנכרון של מסד הנתונים הגלובלי:<br>
+      <b>שלב א:</b> שלוף כל המילים מ-Firestore → HashSet.<br>
+      <b>שלב ב:</b> שלוף כל המילים הקיימות ב-Room → HashSet.<br>
+      <b>שלב ג:</b> הוסף מ-Firestore את מה שאינו ב-Room.<br>
+      <b>שלב ד:</b> מחק מ-Room את מה שאינו ב-Firestore (מנהל הסיר).<br>
+      נתוני תרגול (correctAttempts וכו') <b>לא נדרסים</b> — נשמרים.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>WordRepository.java — syncGlobalWordsFromFirestore() [4 שלבים]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">// שלב א — Firestore → Set</span>
+<span class="ty">Set&lt;String&gt;</span>  firestoreSet   = <span class="kw">new</span> <span class="ty">HashSet&lt;&gt;</span>();
+<span class="ty">List&lt;Word&gt;</span>   firestoreWords = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+<span class="kw">for</span> (QueryDocumentSnapshot doc : snapshots) {
+    <span class="ty">Word</span> w = doc.<span class="fn">toObject</span>(<span class="ty">Word</span>.class);
+    firestoreSet.<span class="fn">add</span>(w.<span class="fn">getEnglishWord</span>());
+    firestoreWords.<span class="fn">add</span>(w);
+}
+
+<span class="cm">// שלב ב — Room → Set</span>
+<span class="ty">List&lt;String&gt;</span> roomVerified = mWordDao.<span class="fn">getVerifiedEnglishWords</span>();
+<span class="ty">Set&lt;String&gt;</span>  existingSet  = <span class="kw">new</span> <span class="ty">HashSet&lt;&gt;</span>(roomVerified);
+
+<span class="cm">// שלב ג — הוסף חדשות</span>
+<span class="kw">for</span> (<span class="ty">Word</span> w : firestoreWords)
+    <span class="kw">if</span> (!existingSet.<span class="fn">contains</span>(w.<span class="fn">getEnglishWord</span>())) mWordDao.<span class="fn">insert</span>(w);
+
+<span class="cm">// שלב ד — מחק הוסרות</span>
+<span class="kw">for</span> (<span class="ty">String</span> eng : roomVerified)
+    <span class="kw">if</span> (!firestoreSet.<span class="fn">contains</span>(eng)) mWordDao.<span class="fn">deleteVerifiedWordByEnglish</span>(eng);</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 15: REAL-TIME DELETE LISTENER ─────────────────────────────────── -->
+<section class="algo-section" id="d2">
+  <div class="section-header">
+    <div class="section-num c15">15</div>
+    <div>
+      <h3>האזנה למחיקות בזמן אמת</h3>
+      <div class="subtitle">Firestore SnapshotListener — רק REMOVED, ללא cache</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 WordRepository.java · שורות 236–255</span>
+    </div>
+    <div class="explain">
+      כשמנהל מוחק מילה מ-Firestore — האפליקציה שמה לב <b>מיד</b> ומוחקת מ-Room גם.<br>
+      <b>MetadataChanges.EXCLUDE</b> = מתעלמים מאירועי cache מקומי, רק שינויי שרת אמיתיים.<br>
+      מטפלים <b>רק ב-REMOVED</b> — ADDED ו-MODIFIED מטופלים בסנכרון הרגיל.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>WordRepository.java — startGlobalDeleteListener()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre>mDeleteListener = FirebaseFirestore.<span class="fn">getInstance</span>()
+    .collection(<span class="str">"word_lists"</span>).document(<span class="str">"band_2_full_list"</span>)
+    .collection(<span class="str">"words"</span>)
+    .<span class="fn">addSnapshotListener</span>(MetadataChanges.EXCLUDE,
+        (snapshots, error) -&gt; {
+            databaseWriteExecutor.<span class="fn">execute</span>(() -&gt; {
+                <span class="kw">for</span> (DocumentChange change :
+                        snapshots.<span class="fn">getDocumentChanges</span>()) {
+                    <span class="kw">if</span> (change.<span class="fn">getType</span>()
+                            == DocumentChange.Type.REMOVED) {
+                        <span class="ty">Word</span> w = change.<span class="fn">getDocument</span>()
+                                .<span class="fn">toObject</span>(<span class="ty">Word</span>.class);
+                        mWordDao.<span class="fn">deleteVerifiedWordByEnglish</span>(
+                                w.<span class="fn">getEnglishWord</span>());
+                    }
+                }
+            });
+        });</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ GROUP E: IMAGE & OCR ══════════════════════════ -->
+<div class="group-heading">
+  <span class="group-icon">📷</span>
+  <h2>קבוצה ה — עיבוד תמונה ו-OCR</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 16: EXIF ROTATION ─────────────────────────────────────────────── -->
+<section class="algo-section" id="e1">
+  <div class="section-header">
+    <div class="section-num c16">16</div>
+    <div>
+      <h3>תיקון סיבוב EXIF</h3>
+      <div class="subtitle">קריאת tag EXIF → Matrix.postRotate → Bitmap חדש</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 ScanFragment.java · שורות 614–631</span>
+    </div>
+    <div class="explain">
+      מצלמות אנדרואיד שומרות את התמונה בסיבוב הפיזי ומציינות את הכיוון ב-<b>tag EXIF</b>.<br>
+      בלי תיקון — OCR "רואה" תמונה הפוכה ומדייק פחות.<br>
+      הפתרון: קרא את tag → צור Matrix עם postRotate → createBitmap עם המטריצה.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>ScanFragment.java — loadRotatedBitmap()</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">ExifInterface</span> exif = <span class="kw">new</span> <span class="ty">ExifInterface</span>(file.<span class="fn">getAbsolutePath</span>());
+<span class="ty">int</span> orientation = exif.<span class="fn">getAttributeInt</span>(
+    ExifInterface.TAG_ORIENTATION,
+    ExifInterface.ORIENTATION_NORMAL);
+
+<span class="ty">Matrix</span> matrix = <span class="kw">new</span> <span class="ty">Matrix</span>();
+<span class="kw">switch</span> (orientation) {
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_90:  matrix.<span class="fn">postRotate</span>(<span class="num">90</span>);  <span class="kw">break</span>;
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_180: matrix.<span class="fn">postRotate</span>(<span class="num">180</span>); <span class="kw">break</span>;
+    <span class="kw">case</span> ExifInterface.ORIENTATION_ROTATE_270: matrix.<span class="fn">postRotate</span>(<span class="num">270</span>); <span class="kw">break</span>;
+    <span class="kw">default</span>: <span class="kw">return</span> bitmap; <span class="cm">// כבר בכיוון הנכון</span>
+}
+<span class="ty">Bitmap</span> rotated = Bitmap.<span class="fn">createBitmap</span>(
+    bitmap, <span class="num">0</span>, <span class="num">0</span>, bitmap.<span class="fn">getWidth</span>(), bitmap.<span class="fn">getHeight</span>(),
+    matrix, <span class="kw">true</span>);
+bitmap.<span class="fn">recycle</span>(); <span class="cm">// פנה זיכרון</span>
+<span class="kw">return</span> rotated;</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 17: SMART IMAGE CROP ────────────────────────────────────────────── -->
+<section class="algo-section" id="e2">
+  <div class="section-header">
+    <div class="section-num c17">17</div>
+    <div>
+      <h3>חיתוך חכם של תמונה — pageBounds</h3>
+      <div class="subtitle">מחשב את גבולות הטקסט בפועל ומתמקד רק שם</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 ScanFragment.java · שורות 438–469</span>
+    </div>
+    <div class="explain">
+      ב-Book Scan mode: המצלמה לוכדת עמוד שלם, אבל רק שורות עם <b>● / •</b> מעניינות.<br>
+      האלגוריתם מחשב <b>union</b> של כל bounding boxes של בלוקים עם bullet → <b>pageBounds</b>.<br>
+      אם אין bulleted blocks — לוקחים את כל הטקסט.<br>
+      כך GraphicOverlay יודע לצבוע רק את האזור הרלוונטי.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>ScanFragment.java — recognizeText() [חישוב pageBounds]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">Rect</span> pageBounds = <span class="kw">null</span>;
+<span class="kw">for</span> (Text.TextBlock block : result.<span class="fn">getTextBlocks</span>()) {
+    <span class="kw">if</span> (!<span class="fn">blockHasBulletLine</span>(block)) <span class="kw">continue</span>;
+    <span class="ty">Rect</span> bb = block.<span class="fn">getBoundingBox</span>();
+    <span class="kw">if</span> (bb != <span class="kw">null</span>) {
+        <span class="kw">if</span> (pageBounds == <span class="kw">null</span>) pageBounds = <span class="kw">new</span> <span class="ty">Rect</span>(bb);
+        <span class="kw">else</span> pageBounds.<span class="fn">union</span>(bb); <span class="cm">// מרחיב את המלבן</span>
+    }
+}
+<span class="cm">// Fallback: כל הטקסט אם אין bullets</span>
+<span class="kw">if</span> (pageBounds == <span class="kw">null</span>) {
+    <span class="kw">for</span> (Text.TextBlock block : result.<span class="fn">getTextBlocks</span>()) {
+        <span class="ty">Rect</span> bb = block.<span class="fn">getBoundingBox</span>();
+        <span class="kw">if</span> (bb != <span class="kw">null</span>) {
+            <span class="kw">if</span> (pageBounds == <span class="kw">null</span>) pageBounds = <span class="kw">new</span> <span class="ty">Rect</span>(bb);
+            <span class="kw">else</span> pageBounds.<span class="fn">union</span>(bb);
+        }
+    }
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 18: OCR BULLET PATTERN ────────────────────────────────────────── -->
+<section class="algo-section" id="e3">
+  <div class="section-header">
+    <div class="section-num c18">18</div>
+    <div>
+      <h3>חילוץ מילים מתבנית ●</h3>
+      <div class="subtitle">● word (pos): definition — חיפוש סוגריים/נקודותיים לחיתוך שם המילה</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 ScanFragment.java · שורות 538–570</span>
+    </div>
+    <div class="explain">
+      הספר שנסרק כולל שורות בתבנית <b>● word (part-of-speech): definition</b>.<br>
+      <ol class="steps">
+        <li>מחפש שורות עם ● או • (מוודא שזה לא עברית)</li>
+        <li>מוצא את מיקום הסוגר <b>(</b> ואת <b>:</b> — לוקח את ה-min ביניהם</li>
+        <li>גוזר את שם המילה: substring בין ● ל-min</li>
+        <li>אם יש סוגריים — מחלץ גם את חלק הדיבר (pos)</li>
+      </ol>
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>ScanFragment.java — extractWordBoxes() [קטע]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">int</span> bulletIdx = lineText.<span class="fn">indexOf</span>(<span class="str">'●'</span>);
+<span class="kw">if</span> (bulletIdx == -<span class="num">1</span>) bulletIdx = lineText.<span class="fn">indexOf</span>(<span class="str">'•'</span>);
+
+<span class="ty">int</span> parenIdx = lineText.<span class="fn">indexOf</span>(<span class="str">'('</span>, bulletIdx + <span class="num">1</span>);
+<span class="ty">int</span> colonIdx = lineText.<span class="fn">indexOf</span>(<span class="str">':'</span>, bulletIdx + <span class="num">1</span>);
+
+<span class="cm">// לוקחים את המינימום בין הסוגר לנקודותיים</span>
+<span class="ty">int</span> endIdx;
+<span class="kw">if</span>      (parenIdx == -<span class="num">1</span>)  endIdx = colonIdx;
+<span class="kw">else if</span> (colonIdx == -<span class="num">1</span>) endIdx = parenIdx;
+<span class="kw">else</span>                      endIdx = Math.<span class="fn">min</span>(parenIdx, colonIdx);
+
+<span class="cm">// שם המילה</span>
+<span class="ty">String</span> targetPhrase = lineText.<span class="fn">substring</span>(bulletIdx + <span class="num">1</span>, endIdx).<span class="fn">trim</span>();
+
+<span class="cm">// חלק הדיבר מבין הסוגריים</span>
+<span class="kw">if</span> (parenIdx != -<span class="num">1</span>) {
+    <span class="ty">int</span> closeParen = lineText.<span class="fn">indexOf</span>(<span class="str">')'</span>, parenIdx + <span class="num">1</span>);
+    <span class="ty">String</span> pos = lineText.<span class="fn">substring</span>(parenIdx + <span class="num">1</span>, closeParen).<span class="fn">trim</span>();
+}</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ GROUP F: LIST MANAGEMENT ═════════════════════ -->
+<div class="group-heading">
+  <span class="group-icon">📋</span>
+  <h2>קבוצה ו — ניהול רשימות</h2>
+  <div class="group-bar"></div>
+</div>
+
+<!-- ─── 19: DEDUPLICATION + SORT ──────────────────────────────────────── -->
+<section class="algo-section" id="f1">
+  <div class="section-header">
+    <div class="section-num c19">19</div>
+    <div>
+      <h3>הסרת כפילויות + מיון אלפביתי</h3>
+      <div class="subtitle">HashSet + toLowerCase+trim → keep first, sort A-Z</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 MyWordsFragment.java · שורות 182–200</span>
+    </div>
+    <div class="explain">
+      Room עשוי להחזיר מילים כפולות (מסנכרונים חוזרים). HashSet מבוסס <b>toLowerCase+trim</b> מסנן אותן.<br>
+      שיטת <b>seen.add(key)</b> מחזירה false אם כבר קיים — כך שומרים רק את ההופעה הראשונה.<br>
+      לאחר מכן מיון אלפביתי case-insensitive עם Comparator.
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>MyWordsFragment.java — setupViewModel() observer</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="ty">List&lt;Word&gt;</span> cleanList = <span class="kw">new</span> <span class="ty">ArrayList&lt;&gt;</span>();
+<span class="ty">Set&lt;String&gt;</span> seen = <span class="kw">new</span> <span class="ty">HashSet&lt;&gt;</span>();
+
+<span class="kw">for</span> (<span class="ty">Word</span> w : words) {
+    <span class="kw">if</span> (w.<span class="fn">getEnglishWord</span>() != <span class="kw">null</span>) {
+        <span class="ty">String</span> key = w.<span class="fn">getEnglishWord</span>()
+                       .<span class="fn">toLowerCase</span>().<span class="fn">trim</span>();
+        <span class="kw">if</span> (seen.<span class="fn">add</span>(key))   <span class="cm">// add() מחזיר false אם כבר קיים</span>
+            cleanList.<span class="fn">add</span>(w);
+    }
+}
+
+Collections.<span class="fn">sort</span>(cleanList, (w1, w2) ->
+    w1.<span class="fn">getEnglishWord</span>().<span class="fn">compareToIgnoreCase</span>(
+    w2.<span class="fn">getEnglishWord</span>()));</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ─── 20: SINGLE ERROR COUNT ────────────────────────────────────────── -->
+<section class="algo-section" id="f2">
+  <div class="section-header">
+    <div class="section-num c20">20</div>
+    <div>
+      <h3>ספירת שגיאה יחידה — currentAttempted flag</h3>
+      <div class="subtitle">מונע ירידת Mastery מרובה על אותה מילה</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="file-tags">
+      <span class="file-tag">📄 SpellingFragment.java · שורות 289–299</span>
+    </div>
+    <div class="explain">
+      בתרגיל כתיב המשתמש יכול לנסות שוב ושוב — ללא הגבלה.<br>
+      אבל <b>totalAttempts</b> יעלה רק בניסיון הראשון הלא-נכון (<b>currentAttempted = false</b>).<br>
+      ניסיונות נוספים לא "מענישים" את Mastery — כי המטרה ללמד, לא לאכזב.<br>
+      ה-flag מאופס לכל מילה חדשה ב-showWord().
+    </div>
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>SpellingFragment.java — check() [ענף שגיאה]</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">if</span> (!currentAttempted) {
+    word.<span class="fn">setErrorInSpelling</span>(<span class="kw">true</span>);
+    word.<span class="fn">setTotalAttempts</span>(
+        word.<span class="fn">getTotalAttempts</span>() + <span class="num">1</span>); <span class="cm">// מוריד Mastery</span>
+    viewModel.<span class="fn">update</span>(word);
+    currentAttempted = <span class="kw">true</span>; <span class="cm">// לא נספור שגיאות נוספות</span>
+}
+<span class="cm">// הצגת שם המילה הנכון בגדול — עזרה לשינון</span>
+tvError.<span class="fn">setText</span>(<span class="str">"✗  "</span> + word.<span class="fn">getEnglishWord</span>());
+tvError.<span class="fn">setVisibility</span>(View.VISIBLE);</pre>
+    </div>
+    <a href="#top" class="back-top">↑ חזרה לתחילת העמוד</a>
+  </div>
+</section>
+
+<!-- ══════════════════════ FOOTER ════════════════════════════════════════ -->
+<div style="text-align:center; color:#888; font-size:.85rem; margin-top:40px; padding-bottom:40px;">
+  EasyLex v1.1 · Java · Android · Room + Firestore · 20 אלגוריתמים
+</div>
+
+</main>
+</body>
+</html>

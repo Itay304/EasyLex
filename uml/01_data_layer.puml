@@ -1,0 +1,142 @@
+@startuml 01_Data_Layer
+title שכבת הנתונים — Data Layer
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  HeaderBackgroundColor #1565C0
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #1565C0
+
+
+class Word <<Entity>> {
+  - id : int
+  - englishWord : String
+  - hebrewTranslation : String
+  - partOfSpeech : String
+  - exampleSentence : String
+  - hebrewExample : String
+  - tags : String
+  - creationTimestamp : long
+  - correctAttempts : int
+  - totalAttempts : int
+  - spellingCorrect : int
+  - isFavorite : boolean
+  - isVerified : boolean
+  - errorInQuiz : boolean
+  - errorInSpelling : boolean
+  - errorInFlashcards : boolean
+  ==constructors==
+  + Word()
+  ==getters / setters==
+  + getId() : int
+  + setId(int)
+  + getEnglishWord() : String
+  + setEnglishWord(String)
+  + getHebrewTranslation() : String
+  + setHebrewTranslation(String)
+  + getPartOfSpeech() : String
+  + setPartOfSpeech(String)
+  + getExampleSentence() : String
+  + setExampleSentence(String)
+  + getHebrewExample() : String
+  + setHebrewExample(String)
+  + getTags() : String
+  + setTags(String)
+  + getCreationTimestamp() : long
+  + setCreationTimestamp(long)
+  + getCorrectAttempts() : int
+  + setCorrectAttempts(int)
+  + getTotalAttempts() : int
+  + setTotalAttempts(int)
+  + getSpellingCorrect() : int
+  + setSpellingCorrect(int)
+  + isFavorite() : boolean
+  + setFavorite(boolean)
+  + isVerified() : boolean
+  + setVerified(boolean)
+  + isErrorInQuiz() : boolean
+  + setErrorInQuiz(boolean)
+  + isErrorInSpelling() : boolean
+  + setErrorInSpelling(boolean)
+  + isErrorInFlashcards() : boolean
+  + setErrorInFlashcards(boolean)
+  ==logic==
+  + getMasteryLevel() : int
+}
+note right of Word
+  Mastery = min(5,
+  floor(correct/(total+1)×5))
+  tableName = "words_table"
+end note
+
+interface WordDao <<Dao>> {
+  + insert(Word)
+  + update(Word)
+  + delete(Word)
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + getVerifiedEnglishWords() : List<String>
+  + deleteUnmarkedGlobalWords()
+  + deletePersonalWords()
+  + deleteVerifiedWordByEnglish(String)
+  + deleteVerifiedWords()
+  + deleteAllWords()
+  + resetAllWordProgress()
+}
+
+class WordRoomDatabase <<Database>> {
+  - {static} INSTANCE : volatile WordRoomDatabase
+  ==
+  + {abstract} wordDao() : WordDao
+  + {static} getDatabase(Context) : WordRoomDatabase
+}
+note right of WordRoomDatabase
+  Singleton
+  Double-Checked Locking
+  version = 3
+  fallbackToDestructiveMigration
+end note
+
+class WordRepository {
+  - mWordDao : WordDao
+  - mAllWords : LiveData<List<Word>>
+  - mDeleteListener : ListenerRegistration
+  - {static} NUMBER_OF_THREADS : int
+  + {static} databaseWriteExecutor : ExecutorService
+  ==
+  + WordRepository(Application)
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + insert(Word)
+  + update(Word)
+  + delete(Word)
+  + deleteAll()
+  + deleteUnmarkedGlobalWords()
+  + deletePersonalWords()
+  + resetAllWordProgress(Runnable)
+  + syncGlobalWordsFromFirestore(Runnable)
+  + startGlobalDeleteListener()
+  + stopGlobalDeleteListener()
+  + replaceAllWords(List<Word>)
+}
+note right of WordRepository
+  Repository Pattern
+  sync = insert new + delete removed
+  Listener: REMOVED events only
+  → מחיקה בזמן אמת בכל מכשיר
+end note
+
+WordRoomDatabase --> WordDao : יוצר
+WordRepository --> WordDao : משתמש
+WordRepository ..> WordRoomDatabase : getDatabase()
+
+@enduml

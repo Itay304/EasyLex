@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyLex — פיצ'רים טכניים</title>
+<style>
+  :root {
+    --green:   #2E7D32;
+    --green-l: #4CAF50;
+    --teal:    #00695C;
+    --teal-l:  #26A69A;
+    --bg:      #F5F5F5;
+    --card:    #FFFFFF;
+    --code-bg: #1E1E2E;
+    --code-fg: #CDD6F4;
+    --border:  #E0E0E0;
+    --tag-bg:  #E8F5E9;
+    --tag-fg:  #1B5E20;
+    --accent:  #FF6F00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: #212121;
+    direction: rtl;
+    line-height: 1.7;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
+    color: white;
+    padding: 48px 40px 36px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  }
+  .site-header h1 { font-size: 2.6rem; letter-spacing: 1px; }
+  .site-header p  { font-size: 1.1rem; opacity: .85; margin-top: 8px; }
+  .badge-row { display: flex; justify-content: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  .badge {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: .85rem;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    max-width: 900px;
+    margin: 32px auto 0;
+    padding: 0 20px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .toc-item {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-right: 4px solid var(--green-l);
+    box-shadow: 0 2px 6px rgba(0,0,0,.07);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    text-decoration: none;
+    color: #212121;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toc-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.13); }
+  .toc-item .toc-num {
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: bold; flex-shrink: 0;
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ── SECTION ── */
+  .feature-section {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    margin-bottom: 40px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 20px 28px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 1.35rem; color: #1A1A1A; }
+  .section-header .subtitle { font-size: .9rem; color: #666; margin-top: 3px; }
+  .section-body { padding: 24px 28px; }
+
+  /* ── FILE TAG ── */
+  .file-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .file-tag {
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: .82rem;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #A5D6A7;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .file-tag .icon { font-size: .9rem; }
+
+  /* ── EXPLAIN ── */
+  .explain {
+    background: #F9FBE7;
+    border-right: 4px solid var(--teal-l);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: .95rem;
+    color: #263238;
+  }
+  .explain b { color: var(--teal); }
+
+  /* ── CODE BLOCK ── */
+  .code-wrap { margin-bottom: 18px; }
+  .code-label {
+    background: #2D2D3F;
+    color: #89B4FA;
+    font-family: 'Courier New', monospace;
+    font-size: .78rem;
+    padding: 6px 16px;
+    border-radius: 8px 8px 0 0;
+    display: flex; justify-content: space-between;
+    align-items: center;
+  }
+  .code-label .lang-badge {
+    background: var(--green);
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: .72rem;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: .88rem;
+    line-height: 1.65;
+    border-radius: 0 0 8px 8px;
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* ── SYNTAX COLORS ── */
+  .kw   { color: #CBA6F7; }   /* keyword */
+  .ty   { color: #89DCEB; }   /* type */
+  .str  { color: #A6E3A1; }   /* string */
+  .num  { color: #FAB387; }   /* number */
+  .cm   { color: #6C7086; font-style: italic; } /* comment */
+  .fn   { color: #89B4FA; }   /* function */
+  .ann  { color: #F38BA8; }   /* annotation */
+  .var  { color: #CDD6F4; }   /* variable */
+
+  /* ── STEP LIST ── */
+  .steps { counter-reset: step; padding-right: 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: .95rem;
+  }
+  .steps li::before {
+    content: counter(step);
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem; font-weight: bold; flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 12px 0 18px; }
+  th { background: var(--green); color: white; padding: 10px 14px; text-align: right; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #F9F9F9; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* ── BACK TO TOP ── */
+  .back-top {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    color: var(--green);
+    font-size: .85rem;
+    text-decoration: none;
+    padding: 8px;
+  }
+  .back-top:hover { text-decoration: underline; }
+
+  /* colors per section */
+  .c1 { background: #1565C0; }
+  .c2 { background: #2E7D32; }
+  .c3 { background: #6A1B9A; }
+  .c4 { background: #E65100; }
+  .c5 { background: #00695C; }
+  .c6 { background: #AD1457; }
+  .c7 { background: #558B2F; }
+  .c8 { background: #4527A0; }
+
+  .c1h { border-top: 4px solid #1565C0; }
+  .c2h { border-top: 4px solid #2E7D32; }
+  .c3h { border-top: 4px solid #6A1B9A; }
+  .c4h { border-top: 4px solid #E65100; }
+  .c5h { border-top: 4px solid #00695C; }
+  .c6h { border-top: 4px solid #AD1457; }
+  .c7h { border-top: 4px solid #558B2F; }
+  .c8h { border-top: 4px solid #4527A0; }
+
+  @media(max-width:600px) {
+    .site-header h1 { font-size: 1.8rem; }
+    .section-body { padding: 16px; }
+    pre { font-size: .78rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header" id="top">
+  <h1>⚡ EasyLex — פיצ'רים טכניים</h1>
+  <p>תיעוד קוד לפיתוח אנדרואיד — Java · MVVM · Room · Firebase</p>
+  <div class="badge-row">
+    <span class="badge">Java</span>
+    <span class="badge">Android SDK 34</span>
+    <span class="badge">Firebase Firestore</span>
+    <span class="badge">ML Kit</span>
+    <span class="badge">CameraX</span>
+    <span class="badge">Room 2.6.1</span>
+  </div>
+</header>
+
+<!-- TOC -->
+<nav class="toc">
+  <div class="toc-grid">
+    <a class="toc-item" href="#rtl">
+      <span class="toc-num">1</span>
+      <span>RTL — כיוון טקסט</span>
+    </a>
+    <a class="toc-item" href="#wordcard">
+      <span class="toc-num">2</span>
+      <span>מלבן כרטיס מילה</span>
+    </a>
+    <a class="toc-item" href="#addword">
+      <span class="toc-num">3</span>
+      <span>הוספת מילים אישיות</span>
+    </a>
+    <a class="toc-item" href="#winlose">
+      <span class="toc-num">4</span>
+      <span>ניצחון / הפסד</span>
+    </a>
+    <a class="toc-item" href="#flashcenter">
+      <span class="toc-num">5</span>
+      <span>פלאשקארדס ממורכזים</span>
+    </a>
+    <a class="toc-item" href="#tts">
+      <span class="toc-num">6</span>
+      <span>שמיעת מילה (TTS)</span>
+    </a>
+    <a class="toc-item" href="#spellingerror">
+      <span class="toc-num">7</span>
+      <span>תשובה גדולה בטעות</span>
+    </a>
+    <a class="toc-item" href="#rank">
+      <span class="toc-num">8</span>
+      <span>דירוג ביחס ליעד</span>
+    </a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ════════════════════════════════════════════════════
+     1. RTL
+════════════════════════════════════════════════════ -->
+<section class="feature-section c1h" id="rtl">
+  <div class="section-header">
+    <span class="section-num c1">1</span>
+    <div>
+      <h2>RTL — תמיכה בכיוון עברית</h2>
+      <div class="subtitle">הגדרה ברמת האפליקציה + תיקון ספציפי בכרטיס המנהל</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>מה הבעיה?</b><br>
+      אנדרואיד תומך ב-RTL (ימין לשמאל) ברמת האפליקציה.
+      אבל כשכרטיס מציג <b>גם עברית וגם אנגלית</b> — מערכת ה-RTL הפכה את הכיוון:
+      האנגלית הופיעה מימין במקום משמאל.
+      הפתרון: <b>layoutDirection="ltr"</b> על ה-LinearLayout הפנימי בלבד.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">📄</span>AndroidManifest.xml</span>
+      <span class="file-tag"><span class="icon">📄</span>item_admin_word_card.xml</span>
+      <span class="file-tag"><span class="icon">📄</span>list_item_word.xml</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>AndroidManifest.xml — הגדרה גלובלית</span>
+        <span class="lang-badge">XML</span>
+      </div>
+      <pre><span class="cm">&lt;!-- הפעלת תמיכה ב-RTL לכל האפליקציה --&gt;</span>
+<span class="kw">&lt;application</span>
+    <span class="var">android:supportsRtl=</span><span class="str">"true"</span>
+    <span class="var">android:layoutDirection=</span><span class="str">"rtl"</span>
+    <span class="var">...</span> <span class="kw">/&gt;</span></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>item_admin_word_card.xml — תיקון LTR בתוך RTL</span>
+        <span class="lang-badge">XML</span>
+      </div>
+      <pre><span class="cm">&lt;!-- בלי זה: אנגלית מימין, עברית משמאל — הפוך ממה שרצינו --&gt;</span>
+<span class="kw">&lt;LinearLayout</span>
+    <span class="var">android:orientation=</span><span class="str">"horizontal"</span>
+    <span class="var">android:layoutDirection=</span><span class="str">"ltr"</span> <span class="cm">&lt;!-- LTR: אנגלית תמיד שמאל --&gt;</span>
+    <span class="var">android:layout_width=</span><span class="str">"match_parent"</span>
+    <span class="var">android:layout_height=</span><span class="str">"wrap_content"</span><span class="kw">&gt;</span>
+
+    <span class="cm">&lt;!-- אנגלית + חלק הדיבר — תמיד בצד שמאל --&gt;</span>
+    <span class="kw">&lt;TextView</span> <span class="var">android:id=</span><span class="str">"@+id/tvAdminEnglish"</span>
+        <span class="var">android:textAlignment=</span><span class="str">"textStart"</span> <span class="kw">/&gt;</span>
+
+    <span class="cm">&lt;!-- עברית — תמיד בצד ימין --&gt;</span>
+    <span class="kw">&lt;TextView</span> <span class="var">android:id=</span><span class="str">"@+id/tvAdminHebrew"</span>
+        <span class="var">android:textAlignment=</span><span class="str">"textEnd"</span>
+        <span class="var">android:layout_gravity=</span><span class="str">"end"</span> <span class="kw">/&gt;</span>
+<span class="kw">&lt;/LinearLayout&gt;</span></pre>
+    </div>
+
+    <table>
+      <tr><th>מצב</th><th>הגדרה</th><th>תוצאה</th></tr>
+      <tr><td>כל האפליקציה</td><td><code>supportsRtl="true"</code></td><td>עברית מימין, ניווט מימין</td></tr>
+      <tr><td>כרטיס מנהל</td><td><code>layoutDirection="ltr"</code> על LinearLayout</td><td>אנגלית שמאל | עברית ימין בכרטיס אחד</td></tr>
+    </table>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     2. WORD CARD
+════════════════════════════════════════════════════ -->
+<section class="feature-section c2h" id="wordcard">
+  <div class="section-header">
+    <span class="section-num c2">2</span>
+    <div>
+      <h2>מלבן כרטיס מילה — WordListAdapter</h2>
+      <div class="subtitle">SpannableString לחלק הדיבר + כרטיס MaterialCardView</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>מה מוצג?</b><br>
+      כל מילה מוצגת בכרטיס <b>MaterialCardView</b> עם:
+      שם המילה + <span style="color:#888;font-size:.9em">[חלק הדיבר]</span> אפור קטן יותר,
+      תרגום, משפט דוגמה אנגלי, משפט דוגמה עברי, וכפתור 🔊.<br><br>
+      ה-<b>SpannableString</b> מאפשר להציג שני סגנונות שונים בטקסט אחד:
+      המילה בגודל רגיל + חלק הדיבר קטן ואפור, בלי שני TextView נפרדים.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>WordListAdapter.java</span>
+      <span class="file-tag"><span class="icon">📄</span>list_item_word.xml</span>
+      <span class="file-tag"><span class="icon">📁</span>ui/mywords/</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>WordListAdapter.java → bind() — שורה 142</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">public void</span> <span class="fn">bind</span>(<span class="kw">final</span> <span class="ty">Word</span> word, <span class="kw">final</span> <span class="ty">OnPronounceClickListener</span> listener) {
+
+    <span class="ty">String</span> eng = word.<span class="fn">getEnglishWord</span>();
+    <span class="cm">// חלק הדיבר — אם קיים מוסיפים ב"סוגריים", אחרת מחרוזת ריקה</span>
+    <span class="ty">String</span> pos = (word.<span class="fn">getPartOfSpeech</span>() != <span class="kw">null</span> &amp;&amp; !word.<span class="fn">getPartOfSpeech</span>().<span class="fn">isEmpty</span>())
+                 ? <span class="str">" ("</span> + word.<span class="fn">getPartOfSpeech</span>() + <span class="str">")"</span> : <span class="str">""</span>;
+
+    <span class="cm">// SpannableString = טקסט אחד עם שני סגנונות שונים</span>
+    <span class="ty">SpannableString</span> spannable = <span class="kw">new</span> <span class="ty">SpannableString</span>(eng + pos);
+
+    <span class="kw">if</span> (!pos.<span class="fn">isEmpty</span>()) {
+        <span class="kw">int</span> start = eng.<span class="fn">length</span>();
+        <span class="cm">// חלק הדיבר: גודל 70% מהגודל הרגיל</span>
+        spannable.<span class="fn">setSpan</span>(<span class="kw">new</span> <span class="ty">RelativeSizeSpan</span>(<span class="num">0.7f</span>), start, spannable.<span class="fn">length</span>(), <span class="num">0</span>);
+        <span class="cm">// חלק הדיבר: צבע אפור</span>
+        spannable.<span class="fn">setSpan</span>(<span class="kw">new</span> <span class="ty">ForegroundColorSpan</span>(<span class="ty">Color</span>.GRAY), start, spannable.<span class="fn">length</span>(), <span class="num">0</span>);
+    }
+
+    tvEnglish.<span class="fn">setText</span>(spannable);
+    tvHebrew.<span class="fn">setText</span>(word.<span class="fn">getHebrewTranslation</span>());
+    tvExEng.<span class="fn">setText</span>(word.<span class="fn">getExampleSentence</span>());
+    tvExHeb.<span class="fn">setText</span>(word.<span class="fn">getHebrewExample</span>());
+
+    <span class="cm">// כפתור הרמקול — שולח אירוע ל-Fragment ל-TTS</span>
+    btnSpeak.<span class="fn">setOnClickListener</span>(v -&gt; {
+        <span class="kw">if</span> (listener != <span class="kw">null</span> &amp;&amp; word.<span class="fn">getEnglishWord</span>() != <span class="kw">null</span>)
+            listener.<span class="fn">onPronounceClick</span>(word.<span class="fn">getEnglishWord</span>());
+    });
+}</pre>
+    </div>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     3. ADD WORD
+════════════════════════════════════════════════════ -->
+<section class="feature-section c3h" id="addword">
+  <div class="section-header">
+    <span class="section-num c3">3</span>
+    <div>
+      <h2>הוספת מילים אישיות למאגר</h2>
+      <div class="subtitle">FAB → דיאלוג → Room עם isFavorite=true, isVerified=false</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>כיצד מובדלות מילים אישיות ממילים גלובליות?</b><br>
+      כל מילה ב-Room מסומנת עם שני דגלים:
+      <b>isVerified</b> = מילה גלובלית מהמנהל,
+      <b>isFavorite</b> = מילה אישית של המשתמש.
+      מילה שהמשתמש הוסיף: <code>isFavorite=true</code> + <code>isVerified=false</code>.
+      כך הן אף פעם לא ייחשבו כ"מאגר הגלובלי" ולא יימחקו בסנכרון.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>MyWordsFragment.java</span>
+      <span class="file-tag"><span class="icon">📄</span>dialog_add_word.xml</span>
+      <span class="file-tag"><span class="icon">☕</span>Word.java</span>
+      <span class="file-tag"><span class="icon">📁</span>ui/mywords/ + data/</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>MyWordsFragment.java — שורה 167 — שמירת מילה אישית</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">// יצירת אובייקט Word חדש מהנתונים שהמשתמש הזין בדיאלוג</span>
+<span class="ty">Word</span> newWord = <span class="kw">new</span> <span class="ty">Word</span>(eng, heb, posCode, <span class="str">""</span>, <span class="str">""</span>, <span class="num">1</span>, <span class="ty">System</span>.<span class="fn">currentTimeMillis</span>());
+newWord.<span class="fn">setTags</span>(tag);
+newWord.<span class="fn">setFavorite</span>(<span class="kw">true</span>);    <span class="cm">// ✓ מילה אישית</span>
+newWord.<span class="fn">setVerified</span>(<span class="kw">false</span>);   <span class="cm">// ✗ לא גלובלית — לא תיפגע בסנכרון</span>
+viewModel.<span class="fn">insert</span>(newWord);     <span class="cm">// שמירה ל-Room (מקומי בלבד)</span></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>MyWordsFragment.java — שורה 106 — סינון מילים אישיות</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">// בעת הצגת "המילים שלי" — מסננים רק מילים אישיות (לא גלובליות)</span>
+<span class="kw">for</span> (<span class="ty">Word</span> w : masterList) {
+    <span class="kw">if</span> (!w.<span class="fn">isVerified</span>() &amp;&amp; w.<span class="fn">isFavorite</span>()) {
+        source.<span class="fn">add</span>(w); <span class="cm">// רק מילה שהמשתמש הוסיף בעצמו</span>
+    }
+}</pre>
+    </div>
+
+    <table>
+      <tr><th>סוג מילה</th><th>isFavorite</th><th>isVerified</th><th>נשמרת ב</th></tr>
+      <tr><td>מילה אישית שהמשתמש הוסיף</td><td>✅ true</td><td>❌ false</td><td>Room בלבד</td></tr>
+      <tr><td>מילה גלובלית מהמנהל</td><td>❌ false</td><td>✅ true</td><td>Room + Firestore</td></tr>
+      <tr><td>מילה מסריקה (OCR)</td><td>✅ true</td><td>❌ false</td><td>Room בלבד</td></tr>
+    </table>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     4. WIN/LOSE
+════════════════════════════════════════════════════ -->
+<section class="feature-section c4h" id="winlose">
+  <div class="section-header">
+    <span class="section-num c4">4</span>
+    <div>
+      <h2>הודעת ניצחון / הפסד בסיום תרגול</h2>
+      <div class="subtitle">showResultDialog() עם אנימציית OvershootInterpolator — בכל שלושת מצבי התרגול</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>היכן קיים?</b><br>
+      ב-<b>QuizFragment</b>, <b>SpellingFragment</b> ו-<b>FlashcardsFragment</b> — כל אחד קורא לגרסה שלו.
+      הדיאלוג מציג: emoji גדול, כותרת ("כל הכבוד!" / "אל תוותר!"), ציון, הסבר, וכפתורי "נסה שוב" / "סיום".
+      הסף לניצחון: <b>≥60% נכון</b>. רקע: ירוק לניצחון, אדום לאי-ניצחון.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>QuizFragment.java — שורה 436</span>
+      <span class="file-tag"><span class="icon">☕</span>SpellingFragment.java — שורה 316</span>
+      <span class="file-tag"><span class="icon">☕</span>FlashcardsFragment.java — שורה 431</span>
+      <span class="file-tag"><span class="icon">📄</span>dialog_result.xml</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>QuizFragment.java → showResultDialog() — שורה 436</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private void</span> <span class="fn">showResultDialog</span>(<span class="kw">int</span> finalScore, <span class="kw">int</span> total) {
+    <span class="kw">if</span> (!<span class="fn">isAdded</span>()) <span class="kw">return</span>;
+    <span class="kw">int</span> pct = total > <span class="num">0</span> ? finalScore * <span class="num">100</span> / total : <span class="num">0</span>;
+    <span class="kw">boolean</span> win = pct &gt;= <span class="num">60</span>; <span class="cm">// סף ניצחון: 60%</span>
+
+    <span class="ty">View</span> v = <span class="fn">getLayoutInflater</span>().<span class="fn">inflate</span>(<span class="ty">R</span>.layout.dialog_result, <span class="kw">null</span>);
+    <span class="ty">MaterialCardView</span> card = v.<span class="fn">findViewById</span>(<span class="ty">R</span>.id.resultCard);
+    <span class="ty">TextView</span> tvEmoji = v.<span class="fn">findViewById</span>(<span class="ty">R</span>.id.tvResultEmoji);
+    <span class="ty">TextView</span> tvTitle = v.<span class="fn">findViewById</span>(<span class="ty">R</span>.id.tvResultTitle);
+
+    <span class="cm">// ירוק = ניצחון | אדום = הפסד</span>
+    card.<span class="fn">setCardBackgroundColor</span>(win ? <span class="num">0xFF2E7D32</span> : <span class="num">0xFFBF360C</span>);
+    tvEmoji.<span class="fn">setText</span>(win ? <span class="str">"🏆"</span> : <span class="str">"💪"</span>);
+    tvTitle.<span class="fn">setText</span>(win ? <span class="str">"כל הכבוד!"</span> : <span class="str">"אל תוותר!"</span>);
+
+    <span class="ty">AlertDialog</span> dialog = <span class="kw">new</span> <span class="ty">AlertDialog</span>.<span class="ty">Builder</span>(<span class="fn">requireContext</span>())
+            .<span class="fn">setView</span>(v).<span class="fn">setCancelable</span>(<span class="kw">false</span>).<span class="fn">create</span>();
+
+    dialog.<span class="fn">show</span>();
+
+    <span class="cm">// אנימציית כניסה: מוקטן ושקוף → מלא עם OvershootInterpolator (קפיצה)</span>
+    v.<span class="fn">setScaleX</span>(<span class="num">0.75f</span>); v.<span class="fn">setScaleY</span>(<span class="num">0.75f</span>); v.<span class="fn">setAlpha</span>(<span class="num">0f</span>);
+    v.<span class="fn">animate</span>().<span class="fn">scaleX</span>(<span class="num">1f</span>).<span class="fn">scaleY</span>(<span class="num">1f</span>).<span class="fn">alpha</span>(<span class="num">1f</span>).<span class="fn">setDuration</span>(<span class="num">350</span>)
+            .<span class="fn">setInterpolator</span>(<span class="kw">new</span> <span class="ty">OvershootInterpolator</span>()).<span class="fn">start</span>();
+
+    <span class="cm">// ה-emoji "קופץ" עם השהיה קצרה ו-overshoot חזק יותר</span>
+    tvEmoji.<span class="fn">setScaleX</span>(<span class="num">0f</span>); tvEmoji.<span class="fn">setScaleY</span>(<span class="num">0f</span>);
+    tvEmoji.<span class="fn">animate</span>().<span class="fn">scaleX</span>(<span class="num">1f</span>).<span class="fn">scaleY</span>(<span class="num">1f</span>).<span class="fn">setDuration</span>(<span class="num">450</span>).<span class="fn">setStartDelay</span>(<span class="num">200</span>)
+            .<span class="fn">setInterpolator</span>(<span class="kw">new</span> <span class="ty">OvershootInterpolator</span>(<span class="num">3f</span>)).<span class="fn">start</span>();
+}</pre>
+    </div>
+
+    <table>
+      <tr><th>מודול</th><th>שם הפונקציה</th><th>סף ניצחון</th></tr>
+      <tr><td>שאלון (Quiz)</td><td>showResultDialog(score, total)</td><td>60% נכון</td></tr>
+      <tr><td>כרטיסיות (Flashcards)</td><td>showFlashResult()</td><td>60% נכון</td></tr>
+      <tr><td>אלוף האיות (Spelling)</td><td>finish() → dialog</td><td>60% נכון</td></tr>
+    </table>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     5. FLASHCARD CENTER
+════════════════════════════════════════════════════ -->
+<section class="feature-section c5h" id="flashcenter">
+  <div class="section-header">
+    <span class="section-num c5">5</span>
+    <div>
+      <h2>פלאשקארדס ממורכזים — cardRestingX</h2>
+      <div class="subtitle">שמירת מיקום טבעי של הכרטיס ב-runtime + חזרה למרכז אחרי גרירה</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>מה הבעיה?</b><br>
+      כשהמשתמש מחליק כרטיסייה ימינה/שמאלה — היא עוזבת את המסך.
+      הכרטיסייה הבאה צריכה להופיע <b>בדיוק במרכז</b>, לא ב-X=0.
+      הבעיה: הפריסה (Layout) ב-XML מוציאה את הכרטיסייה ממוקם על-ידי ConstraintLayout —
+      קואורדינטת X האמיתית נקבעת רק אחרי הצגת המסך (post layout).
+      הפתרון: <b>שמירת cardRestingX</b> פעם אחת אחרי ה-layout הראשון.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>FlashcardsFragment.java — שורות 93, 145, 377</span>
+      <span class="file-tag"><span class="icon">📁</span>ui/practice/</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>FlashcardsFragment.java — שמירת מיקום ראשוני — שורה 145</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">// שדה לשמירת המיקום "הטבעי" של הכרטיסייה (נקבע רק אחרי הצגת ה-layout)</span>
+<span class="kw">private float</span> cardRestingX = <span class="num">-1f</span>; <span class="cm">// -1 = עדיין לא אותחל</span>
+
+<span class="cm">// flashCard.post() = קוד שרץ אחרי שה-layout מסיים לחשב את המיקומים</span>
+<span class="cm">// בלי post(): X יחזיר 0 כי ה-layout עוד לא רץ</span>
+flashCard.<span class="fn">post</span>(() -&gt; {
+    <span class="kw">if</span> (cardRestingX &lt; <span class="num">0</span>) <span class="cm">// שמירה פעם אחת בלבד</span>
+        cardRestingX = flashCard.<span class="fn">getX</span>();
+});</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>FlashcardsFragment.java → resetCard() — שורה 365</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">/**
+ * resetCard — מאפס את הכרטיסייה למצב ברירת מחדל.
+ * סדר פעולות קריטי: מסתירים את הצד האחורי קודם,
+ * אחר כך מחזירים את הכרטיסייה למיקום — מונע "בזק" של תוכן הפוך.
+ */</span>
+<span class="kw">private void</span> <span class="fn">resetCard</span>() {
+    flashCard.<span class="fn">animate</span>().<span class="fn">cancel</span>(); <span class="cm">// עצירת כל אנימציה פעילה</span>
+
+    <span class="cm">// 1. מסתירים את הצד האחורי קודם — מונע flash</span>
+    layoutBack.<span class="fn">setRotationY</span>(<span class="num">0</span>);
+    layoutBack.<span class="fn">setVisibility</span>(<span class="ty">View</span>.INVISIBLE);
+    layoutFront.<span class="fn">setRotationY</span>(<span class="num">0</span>);
+    layoutFront.<span class="fn">setVisibility</span>(<span class="ty">View</span>.VISIBLE);
+
+    <span class="cm">// 2. רק עכשיו מחזירים למרכז בטוחה</span>
+    flashCard.<span class="fn">setX</span>(cardRestingX &gt;= <span class="num">0</span> ? cardRestingX : <span class="num">0</span>); <span class="cm">// חזרה למרכז</span>
+    flashCard.<span class="fn">setRotation</span>(<span class="num">0</span>);  <span class="cm">// ישר — ללא הטיה</span>
+    flashCard.<span class="fn">setAlpha</span>(<span class="num">1</span>);     <span class="cm">// גלוי לגמרי</span>
+    flashCard.<span class="fn">setRotationY</span>(<span class="num">0</span>); <span class="cm">// לא מסובב על ציר Y</span>
+    isShowingFront = <span class="kw">true</span>;
+}</pre>
+    </div>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     6. TTS
+════════════════════════════════════════════════════ -->
+<section class="feature-section c6h" id="tts">
+  <div class="section-header">
+    <span class="section-num c6">6</span>
+    <div>
+      <h2>שמיעת המילה (TTS) — בכל מצבי התרגול</h2>
+      <div class="subtitle">TextToSpeech API — הקראה מבוקרת ע"פ הגדרת TTS ב-Settings</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>TTS = Text-To-Speech</b> — מנוע הקראה מובנה באנדרואיד.
+      כל מצב תרגול יוצר אובייקט <b>TextToSpeech</b> משלו ומאתחל אנגלית אמריקאית.
+      ה-TTS מופעל רק אם המשתמש <b>לא כיבה אותו בהגדרות</b>
+      (<code>KEY_TTS_ENABLED</code> ב-SharedPreferences).
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>QuizFragment.java — שורה 482</span>
+      <span class="file-tag"><span class="icon">☕</span>FlashcardsFragment.java — שורה 420</span>
+      <span class="file-tag"><span class="icon">☕</span>SpellingFragment.java — שורה 358</span>
+      <span class="file-tag"><span class="icon">☕</span>MyWordsFragment.java — שורה 354</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>QuizFragment.java → speakCurrentWord() — שורה 482</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="cm">/** speakCurrentWord — מקריא את המילה הנוכחית בקול. */</span>
+<span class="kw">private void</span> <span class="fn">speakCurrentWord</span>() {
+    <span class="cm">// בדיקה שה-TTS לא כובה בהגדרות</span>
+    <span class="ty">SharedPreferences</span> prefs = <span class="fn">requireContext</span>()
+            .<span class="fn">getSharedPreferences</span>(<span class="ty">SettingsFragment</span>.PREFS_SETTINGS, <span class="ty">Context</span>.MODE_PRIVATE);
+    <span class="kw">if</span> (!prefs.<span class="fn">getBoolean</span>(<span class="ty">SettingsFragment</span>.KEY_TTS_ENABLED, <span class="kw">true</span>)) <span class="kw">return</span>;
+
+    <span class="kw">if</span> (tts != <span class="kw">null</span> &amp;&amp; currentIndex &lt; quizWords.<span class="fn">size</span>()) {
+        <span class="cm">// QUEUE_FLUSH: מבטל הקראה קודמת מיד ומתחיל חדשה</span>
+        tts.<span class="fn">speak</span>(quizWords.<span class="fn">get</span>(currentIndex).<span class="fn">getEnglishWord</span>(),
+                 <span class="ty">TextToSpeech</span>.QUEUE_FLUSH, <span class="kw">null</span>, <span class="kw">null</span>);
+    }
+}</pre>
+    </div>
+
+    <table>
+      <tr><th>מודול</th><th>שם הפונקציה</th><th>מופעל מתי</th></tr>
+      <tr><td>שאלון (Quiz)</td><td>speakCurrentWord()</td><td>כפתור 🔊 + אוטומטי בהצגת שאלה</td></tr>
+      <tr><td>כרטיסיות (Flashcards)</td><td>speakCurrentWord()</td><td>כפתור 🔊</td></tr>
+      <tr><td>אלוף האיות (Spelling)</td><td>speak()</td><td>כפתור 🔊 + אוטומטי בפתיחת מילה</td></tr>
+      <tr><td>המילים שלי (MyWords)</td><td>tts.speak(text, QUEUE_FLUSH, null, null)</td><td>לחיצה על כפתור הרמקול בכרטיס</td></tr>
+    </table>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     7. SPELLING ERROR
+════════════════════════════════════════════════════ -->
+<section class="feature-section c7h" id="spellingerror">
+  <div class="section-header">
+    <span class="section-num c7">7</span>
+    <div>
+      <h2>תשובה גדולה במקרה של טעות — אלוף האיות</h2>
+      <div class="subtitle">tvSpellingError — TextView נסתר שמתגלה עם התשובה הנכונה ב-22sp</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>מה הלוגיקה?</b><br>
+      כשהמשתמש מקליד תשובה שגויה — מופיע TextView גדול <code>tvSpellingError</code>
+      עם סימן ✗ ושם המילה הנכונה. ה-TextView מוסתר (<code>GONE</code>) כל הזמן,
+      ונפתח רק בעת שגיאה. בנוסף, שדה הקלט מסומן אדום ע"י <code>inputLayout.setError("")</code>.<br><br>
+      <b>currentAttempted</b> — דגל שמונע ספירת שגיאות כפולה: אם המשתמש ניסה שוב ושוב
+      על אותה מילה — נספור שגיאה אחת בלבד.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>SpellingFragment.java — שורה 296</span>
+      <span class="file-tag"><span class="icon">📄</span>fragment_spelling.xml — שורה 103</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>SpellingFragment.java → check() — שורה 287</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">else</span> {
+    <span class="cm">// ── תשובה שגויה — ספירה רק בניסיון הראשון ──────────</span>
+    <span class="kw">if</span> (!currentAttempted) {
+        word.<span class="fn">setErrorInSpelling</span>(<span class="kw">true</span>);
+        word.<span class="fn">setTotalAttempts</span>(word.<span class="fn">getTotalAttempts</span>() + <span class="num">1</span>); <span class="cm">// מוריד mastery</span>
+        viewModel.<span class="fn">update</span>(word);
+        currentAttempted = <span class="kw">true</span>; <span class="cm">// לא נספור שגיאות נוספות על אותה מילה</span>
+    }
+
+    <span class="cm">// הודעת שגיאה גדולה: ✗ + שם המילה הנכונה</span>
+    tvError.<span class="fn">setText</span>(<span class="str">"✗  "</span> + word.<span class="fn">getEnglishWord</span>());
+    tvError.<span class="fn">setVisibility</span>(<span class="ty">View</span>.VISIBLE); <span class="cm">// מגלה את ה-TextView הגדול</span>
+    inputLayout.<span class="fn">setError</span>(<span class="str">""</span>); <span class="cm">// מסמן את שדה הקלט כשגוי (אדום)</span>
+}</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>fragment_spelling.xml — הגדרת tvSpellingError — שורה 103</span>
+        <span class="lang-badge">XML</span>
+      </div>
+      <pre><span class="cm">&lt;!-- TextView מוסתר — מתגלה רק בעת שגיאה --&gt;</span>
+<span class="kw">&lt;TextView</span>
+    <span class="var">android:id=</span><span class="str">"@+id/tvSpellingError"</span>
+    <span class="var">android:visibility=</span><span class="str">"gone"</span>          <span class="cm">&lt;!-- מוסתר כברירת מחדל --&gt;</span>
+    <span class="var">android:textSize=</span><span class="str">"22sp"</span>            <span class="cm">&lt;!-- גדול יותר מהרגיל (18sp) --&gt;</span>
+    <span class="var">android:textColor=</span><span class="str">"@color/error_red"</span>
+    <span class="var">android:textStyle=</span><span class="str">"bold"</span>
+    <span class="var">android:gravity=</span><span class="str">"center"</span>           <span class="cm">&lt;!-- ממורכז --&gt;</span>
+    <span class="var">android:layout_width=</span><span class="str">"match_parent"</span>
+    <span class="var">android:layout_height=</span><span class="str">"wrap_content"</span> <span class="kw">/&gt;</span></pre>
+    </div>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     8. RANK
+════════════════════════════════════════════════════ -->
+<section class="feature-section c8h" id="rank">
+  <div class="section-header">
+    <span class="section-num c8">8</span>
+    <div>
+      <h2>דירוג ביחס לקירבה ליעד — updateRank()</h2>
+      <div class="subtitle">7 רמות דרגה לפי אחוז שליטה (mastery) + מעקב יעד יומי</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="explain">
+      <b>שני מנגנוני "קירבה ליעד":</b><br>
+      1. <b>מסך סטטיסטיקות</b> — חישוב אחוז "מילים שנכבשו" (correctAttempts ≥ 3)
+      ומתן דרגה מ-7 רמות (מתחיל ← אגדה).<br>
+      2. <b>מסך הבית ותרגול</b> — יעד יומי (ניתן לשינוי בהגדרות) עם פס התקדמות
+      <code>dailyCorrect / dailyGoal</code>.
+    </div>
+
+    <div class="file-tags">
+      <span class="file-tag"><span class="icon">☕</span>StatisticsFragment.java — שורה 140</span>
+      <span class="file-tag"><span class="icon">☕</span>StatisticsFragment.java — שורה 183</span>
+      <span class="file-tag"><span class="icon">☕</span>DashboardFragment.java — שורה 127</span>
+      <span class="file-tag"><span class="icon">☕</span>PracticeFragment.java — שורה 149</span>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>StatisticsFragment.java → calculateMastery() — שורה 140</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private void</span> <span class="fn">calculateMastery</span>(<span class="ty">List</span>&lt;<span class="ty">Word</span>&gt; words) {
+    <span class="kw">int</span> total    = words.<span class="fn">size</span>();
+    <span class="kw">int</span> mastered = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">Word</span> w : words) {
+        <span class="cm">// "נכבשה" = לפחות 3 תשובות נכונות</span>
+        <span class="kw">if</span> (w.<span class="fn">getCorrectAttempts</span>() &gt;= <span class="num">3</span>) mastered++;
+    }
+
+    <span class="cm">// אחוז שליטה — float לדיוק עשרוני</span>
+    <span class="kw">float</span> masteryPct = total &gt; <span class="num">0</span> ? (mastered * <span class="num">100.0f</span>) / total : <span class="num">0f</span>;
+
+    binding.tvMasteryScore.<span class="fn">setText</span>(<span class="ty">String</span>.<span class="fn">format</span>(<span class="str">"%.1f%%"</span>, masteryPct));
+    binding.tvTotalWordsCount.<span class="fn">setText</span>(mastered + <span class="str">" מתוך "</span> + total + <span class="str">" מילים נכבשו"</span>);
+
+    <span class="cm">// עדכון כרטיס הדירוג לפי האחוז</span>
+    <span class="fn">updateRank</span>(masteryPct, mastered);
+}</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">
+        <span>StatisticsFragment.java → updateRank() — שורה 183</span>
+        <span class="lang-badge">Java</span>
+      </div>
+      <pre><span class="kw">private void</span> <span class="fn">updateRank</span>(<span class="kw">float</span> pct, <span class="kw">int</span> mastered) {
+    <span class="ty">String</span> emoji, title, desc;
+
+    <span class="kw">if</span>      (pct &lt;  <span class="num">5</span>)  { emoji = <span class="str">"🌱"</span>; title = <span class="str">"מתחיל"</span>;  desc = <span class="str">"המסע זה עתה החל!"</span>; }
+    <span class="kw">else if</span> (pct &lt; <span class="num">20</span>)  { emoji = <span class="str">"📖"</span>; title = <span class="str">"תלמיד"</span>;  desc = <span class="str">"אתה לומד, המשך כך!"</span>; }
+    <span class="kw">else if</span> (pct &lt; <span class="num">40</span>)  { emoji = <span class="str">"⭐"</span>; title = <span class="str">"מתקדם"</span>;  desc = <span class="str">"ביצועים מרשימים! "</span> + mastered + <span class="str">" מילים נכבשו."</span>; }
+    <span class="kw">else if</span> (pct &lt; <span class="num">60</span>)  { emoji = <span class="str">"🎖"</span>; title = <span class="str">"אלוף"</span>;   desc = <span class="str">"הכרת מילים רבות! כמעט נסיך!"</span>; }
+    <span class="kw">else if</span> (pct &lt; <span class="num">80</span>)  { emoji = <span class="str">"👑"</span>; title = <span class="str">"נסיך"</span>;   desc = <span class="str">"בקיאות מרשימה! דרך לכתר!"</span>; }
+    <span class="kw">else if</span> (pct &lt; <span class="num">95</span>)  { emoji = <span class="str">"🏆"</span>; title = <span class="str">"מלך"</span>;    desc = <span class="str">"שליטה מעולה! כמעט שלמות!"</span>; }
+    <span class="kw">else</span>                { emoji = <span class="str">"💎"</span>; title = <span class="str">"אגדה"</span>;   desc = <span class="str">"שלמות מוחלטת! אין לך מתחרים!"</span>; }
+
+    binding.tvRankEmoji.<span class="fn">setText</span>(emoji);
+    binding.tvRankTitle.<span class="fn">setText</span>(title);
+    binding.tvRankDesc.<span class="fn">setText</span>(desc);
+}</pre>
+    </div>
+
+    <table>
+      <tr><th>אחוז שליטה</th><th>Emoji</th><th>דרגה</th><th>הסבר</th></tr>
+      <tr><td>&lt; 5%</td><td>🌱</td><td>מתחיל</td><td>המסע זה עתה החל!</td></tr>
+      <tr><td>5–19%</td><td>📖</td><td>תלמיד</td><td>אתה לומד, המשך כך!</td></tr>
+      <tr><td>20–39%</td><td>⭐</td><td>מתקדם</td><td>ביצועים מרשימים!</td></tr>
+      <tr><td>40–59%</td><td>🎖</td><td>אלוף</td><td>הכרת מילים רבות!</td></tr>
+      <tr><td>60–79%</td><td>👑</td><td>נסיך</td><td>בקיאות מרשימה!</td></tr>
+      <tr><td>80–94%</td><td>🏆</td><td>מלך</td><td>שליטה מעולה!</td></tr>
+      <tr><td>95–100%</td><td>💎</td><td>אגדה</td><td>שלמות מוחלטת!</td></tr>
+    </table>
+
+  </div>
+  <a class="back-top" href="#top">↑ חזרה לתוכן עניינים</a>
+</section>
+
+</main>
+
+<footer style="text-align:center;padding:24px;color:#888;font-size:.85rem;border-top:1px solid #ddd;">
+  EasyLex — Android App · Java · MVVM · Room · Firebase &nbsp;|&nbsp; תשפ"ה 2026
+</footer>
+
+</body>
+</html>

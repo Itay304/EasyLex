@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- ==================== CAPTURE MODE ==================== -->
+
+    <!-- Camera preview — fills area above the button bar -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/viewFinder"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Title: overlaid on camera in capture mode, hidden in review mode -->
+    <TextView
+        android:id="@+id/textTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="44dp"
+        android:paddingBottom="12dp"
+        android:text="סריקת מילים חדשות"
+        android:textAppearance="?attr/textAppearanceHeadline5"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:shadowColor="#000"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:shadowRadius="4"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ==================== REVIEW MODE ==================== -->
+
+    <!-- Cropped page image + word overlay — initially GONE -->
+    <FrameLayout
+        android:id="@+id/imageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- fitXY: no letterboxing → overlay coords align pixel-perfectly -->
+        <ImageView
+            android:id="@+id/imageResult"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY" />
+
+        <!-- Word highlight overlay (same size as ImageView) -->
+        <com.example.easylex.ui.scan.GraphicOverlay
+            android:id="@+id/graphicOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <!-- ==================== SHARED BOTTOM BAR ==================== -->
+
+    <!-- Always-visible bottom bar; switches inner content per mode -->
+    <LinearLayout
+        android:id="@+id/buttonBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorSurface"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="28dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- SCAN MODE TOGGLE: Book Scan / Free Text -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleScanMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBookScan"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="סריקת ספר" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFreeText"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="טקסט חופשי" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="14dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <!-- CAPTURE MODE: צלם + גלריה -->
+        <LinearLayout
+            android:id="@+id/captureButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_camera"
+                style="@style/Widget.Material3.Button.ElevatedButton.Icon"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="צלם עכשיו"
+                android:padding="12dp"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                app:icon="@drawable/ic_scan"
+                app:iconGravity="textStart"
+                app:iconPadding="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_gallery"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="בחר מהגלריה"
+                android:padding="12dp"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                app:icon="@drawable/ic_gallery"
+                app:iconGravity="textStart"
+                app:iconPadding="16dp" />
+
+        </LinearLayout>
+
+        <!-- REVIEW MODE: הוראה + צלם מחדש — initially GONE -->
+        <LinearLayout
+            android:id="@+id/reviewButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="10dp"
+                android:text="הקש על מילה כדי להוסיף אותה"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:gravity="center" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_retake"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="צלם מחדש"
+                android:padding="12dp"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                app:icon="@drawable/ic_scan"
+                app:iconGravity="textStart"
+                app:iconPadding="16dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,127 @@
+@startuml 02_Auth_Navigation
+title אימות וניווט — Auth & Navigation
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+  HeaderBackgroundColor #C62828
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #C62828
+
+
+class SplashActivity <<LAUNCHER>> {
+  - authReady : boolean
+  - animDone : boolean
+  - goToMain : boolean
+  ==
+  # onCreate(Bundle)
+  - startSplashAnimation()
+  - checkAppVersion()
+  - resolveAuth()
+  - tryProceed()
+  - showForceUpdateDialog(String url)
+}
+note right of SplashActivity
+  tryProceed: ניווט רק אם
+  animDone=true AND authReady=true
+end note
+
+class LoginActivity {
+  - etEmail : EditText
+  - etPassword : EditText
+  - mAuth : FirebaseAuth
+  ==
+  # onCreate(Bundle)
+  - loginUser()
+}
+
+class RegisterActivity {
+  - etEmail : EditText
+  - etPassword : EditText
+  - mAuth : FirebaseAuth
+  ==
+  # onCreate(Bundle)
+  - registerUser()
+}
+note right of RegisterActivity
+  finishAffinity() — מנקה back stack
+end note
+
+class MainActivity {
+  - binding : ActivityMainBinding
+  ==
+  # onCreate(Bundle)
+  + onSupportNavigateUp() : boolean
+}
+note right of MainActivity
+  NavHostFragment
+  BottomNavigationView (5 tabs)
+  NavigationUI.setupWithNavController()
+end note
+
+class DashboardFragment {
+  - binding : FragmentDashboardBinding
+  - gamification : GamificationEngine
+  - masterWords : List<Word>
+  - {static} QUOTES : String[]
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onResume()
+  + onDestroyView()
+  - onWordsLoaded(List<Word>)
+  - setupWordOfDay(List<Word>)
+  - setupDailyChallenges(List<Word>)
+  - setupWeeklyActivity()
+  - buildDayLabels() : String[]
+  - setupMistakesRow(List<Word>)
+  - navigateToQuiz(String type)
+  - setupGreeting()
+  - refreshStats()
+  - getDailyQuote() : String
+  - dpToPx(int) : int
+}
+note right of DashboardFragment
+  מילה יומית: DAY_OF_YEAR % size
+  גרף שבועי: בנוי בקוד (ללא ספרייה)
+  אתגר יומי: dailyCorrect / dailyGoal
+end note
+
+package "Bottom Nav Fragments" #F3E5F5 {
+  class MyWordsFragment
+  class PracticeFragment
+  class ScanFragment
+  class StatisticsFragment
+}
+note bottom of MyWordsFragment
+  פירוט מלא: 03_mywords_viewmodel
+end note
+note bottom of PracticeFragment
+  פירוט מלא: 04_practice_modules
+end note
+note bottom of ScanFragment
+  פירוט מלא: 05_scan_gamification
+end note
+note bottom of StatisticsFragment
+  פירוט מלא: 06_admin_stats_settings
+end note
+
+SplashActivity --> LoginActivity  : לא מחובר
+SplashActivity --> MainActivity   : מחובר
+LoginActivity  --> MainActivity   : success
+RegisterActivity --> MainActivity : success + finishAffinity()
+
+MainActivity --> DashboardFragment
+MainActivity --> MyWordsFragment
+MainActivity --> PracticeFragment
+MainActivity --> ScanFragment
+MainActivity --> StatisticsFragment
+
+@enduml

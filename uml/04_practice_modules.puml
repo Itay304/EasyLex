@@ -1,0 +1,204 @@
+@startuml 04_Practice_Modules
+title מודולי תרגול — Practice
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #E0F2F1
+  BorderColor #00695C
+  HeaderBackgroundColor #00695C
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #00695C
+
+
+class PracticeFragment {
+  - binding : FragmentPracticeBinding
+  - viewModel : MyWordsViewModel
+  - masterWords : List<Word>
+  - adapter : PracticeAdapter
+  - tvPracticeLevel : TextView
+  - tvStreakBadge : TextView
+  - progressXp : LinearProgressIndicator
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onResume()
+  - updateXpHeader(GamificationEngine)
+  - updateMenu()
+  - getDailyProgress(int goal) : String
+  - getMistakeCount() : String
+  - getSpellingCount() : String
+  - getPersonalCount() : String
+  - getFlashCount() : String
+  - handleNav(View, PracticeOption)
+  - showCategorySelection(View)
+}
+note right of PracticeFragment
+  6 כרטיסים:
+  Quiz / Spelling / Flashcards
+  Daily / Mistakes / Personal
+  Inner class: PracticeAdapter
+end note
+
+class QuizFragment {
+  - binding : FragmentQuizBinding
+  - viewModel : MyWordsViewModel
+  - quizWords : List<Word>
+  - allMasterWords : List<Word>
+  - currentIndex : int
+  - score : int
+  - quizType : String
+  - tvQuestion : TextView
+  - tvCount : TextView
+  - tvXpGain : TextView
+  - tts : TextToSpeech
+  - progressBar : LinearProgressIndicator
+  - optButtons : MaterialButton[]
+  - handler : Handler
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onDestroyView()
+  - prepareQuiz(String type, String category)
+  - {static} addUpTo(List<Word> dest, List<Word> src, int max)
+  - showNextQuestion()
+  - checkAnswer(MaterialButton, Word)
+  - showXpAnimation(String text)
+  - finishQuiz()
+  - showResultDialog(int score, int total)
+  - speakCurrentWord()
+}
+note right of QuizFragment
+  60% hard (Mastery 0-2)
+  20% new (0 attempts)
+  20% solid (Mastery 3-5)
+  SESSION = 20 מילים
+  Daily Seed: currentTimeMillis/86400000
+  Handler.postDelayed(1000ms)
+  OvershootInterpolator result dialog
+end note
+
+class SpellingFragment {
+  - {static} SESSION_SIZE : int
+  - binding : FragmentSpellingBinding
+  - viewModel : MyWordsViewModel
+  - words : List<Word>
+  - currentIndex : int
+  - score : int
+  - currentAttempted : boolean
+  - tts : TextToSpeech
+  - handler : Handler
+  - tvHebrew : TextView
+  - tvCount : TextView
+  - tvError : TextView
+  - etInput : TextInputEditText
+  - inputLayout : TextInputLayout
+  - progressBar : LinearProgressIndicator
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onDestroyView()
+  - selectAdaptiveWords(List<Word> pool, int total) : List<Word>
+  - {static} addUpTo(List<Word> dest, List<Word> src, int max)
+  - showWord()
+  - check()
+  - finish()
+  - speak()
+}
+note right of SpellingFragment
+  SESSION = 15
+  currentAttempted: מונע
+  ספירה כפולה של שגיאות
+  tvError: מציג המילה הנכונה בגדול
+end note
+
+class FlashcardsFragment {
+  - binding : FragmentFlashcardsBinding
+  - viewModel : MyWordsViewModel
+  - words : List<Word>
+  - currentIndex : int
+  - score : int
+  - isShowingFront : boolean
+  - flashCard : MaterialCardView
+  - tts : TextToSpeech
+  - cardRestingX : float
+  - layoutFront : View
+  - layoutBack : View
+  - tvFront : TextView
+  - tvBack : TextView
+  - tvEx : TextView
+  - tvCount : TextView
+  - dX : float
+  - startRawX : float
+  - startRawY : float
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onDestroyView()
+  - orderByPriority(List<Word> pool) : List<Word>
+  - showWord()
+  - advanceCard()
+  - handleSwipe(boolean known)
+  - resetCard()
+  - flipCard()
+  - speakCurrentWord()
+  - showFlashResult()
+}
+note right of FlashcardsFragment
+  Swipe RIGHT = נכון (+XP)
+  Swipe LEFT = טעות
+  flipCard: rotationY 0→180°
+  layoutBack counter-rotate 180°
+  touch: setOnTouchListener
+  cardRestingX: נשמר אחרי layout
+end note
+
+class GamificationEngine <<Singleton>> {
+  - {static} instance : volatile GamificationEngine
+  - prefs : SharedPreferences
+  - db : FirebaseFirestore
+  - {static} XP_CORRECT_ANSWER : int
+  - {static} XP_MODULE_COMPLETE : int
+  - {static} XP_WORD_MASTERED : int
+  ==
+  - GamificationEngine(Context)
+  + {static} getInstance(Context) : GamificationEngine
+  + onCorrectAnswer(Word before, Word after)
+  + onModuleComplete()
+  + getTotalXp() : int
+  + getCurrentLevel() : int
+  + getStreak() : int
+  + getDailyCorrectCount() : int
+  + getWeeklyActivity() : int[]
+  + getXpForLevelStart(int level) : int
+  + getXpForNextLevel() : int
+  + getXpWithinLevel() : int
+  + getXpRangeOfLevel() : int
+  + syncFromFirestore(Runnable)
+  - addXp(int)
+  - {static} computeLevel(int xp) : int
+  - checkStreak()
+  - persistToFirestore(int xp, int level)
+  - recordDailyActivity()
+  - {static} todayString() : String
+}
+note bottom of GamificationEngine
+  +10 XP נכון
+  +100 XP mastery <5 → 5
+  +50 XP סוף מודול
+  Level = floor(sqrt(XP/100)) + 1
+  SharedPrefs + Firestore dual-write
+end note
+
+PracticeFragment ..> QuizFragment      : navigate
+PracticeFragment ..> SpellingFragment  : navigate
+PracticeFragment ..> FlashcardsFragment : navigate
+
+QuizFragment      --> GamificationEngine : onCorrectAnswer
+SpellingFragment  --> GamificationEngine : onCorrectAnswer
+FlashcardsFragment --> GamificationEngine : onCorrectAnswer
+PracticeFragment  --> GamificationEngine : onModuleComplete
+
+@enduml

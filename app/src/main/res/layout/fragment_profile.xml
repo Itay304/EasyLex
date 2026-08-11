@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="32dp"
+    android:background="#FAFAFA">
+
+    <!-- תמונת פרופיל -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/profileImage"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="40dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_profile_placeholder"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        app:strokeColor="@color/turquoise_accent"
+        app:strokeWidth="2dp" />
+
+    <!-- שם משתמש -->
+    <TextView
+        android:id="@+id/tvUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="טוען שם..."
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black" />
+
+    <!-- אימייל -->
+    <TextView
+        android:id="@+id/tvUserEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="email@example.com"
+        android:textSize="16sp"
+        android:textColor="#666666" />
+
+    <!-- תלמיד (עצמאי + מוסדי) — streak/רמה/XP/תג הישג. שלב 2, חלק 4:
+         ProfileFragment.applyRoleUi() קובע visibility לפי role. -->
+    <LinearLayout
+        android:id="@+id/llStudentStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/tvStreakLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/holo_orange_dark"
+            tools:text="🔥 7 ימים ברצף" />
+
+        <TextView
+            android:id="@+id/tvBadgeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_dark"
+            tools:text="⭐ מתקדם" />
+
+        <TextView
+            android:id="@+id/tvLevelXp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="רמה 4 · 350 XP" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressLevelProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:trackThickness="8dp"
+            app:trackCornerRadius="4dp"
+            app:indicatorColor="@color/turquoise_accent"
+            app:trackColor="#EEEEEE" />
+    </LinearLayout>
+
+    <!-- תלמיד מוסדי בלבד — כיתה/דירוג/משימות שהושלמו. -->
+    <LinearLayout
+        android:id="@+id/llInstitutionalStudentExtra"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvClassName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="הכיתה שלי: ד'1" />
+
+        <TextView
+            android:id="@+id/tvLeaderboardRank"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="מקום #3 בטבלת המובילים" />
+
+        <TextView
+            android:id="@+id/tvAssignmentsCompleted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="הושלמו 2 משימות" />
+    </LinearLayout>
+
+    <!-- מורה/מנהל בלבד — מוסד/כיתות/תלמידים/משימות. אין XP/רמה/streak. -->
+    <LinearLayout
+        android:id="@+id/llTeacherStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvInstitutionName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_dark"
+            tools:text="בית ספר יסודי אלון" />
+
+        <!-- מנהל מוסד בלבד (role=="principal") — מספר מורים במוסד. -->
+        <TextView
+            android:id="@+id/tvTeacherCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:visibility="gone"
+            tools:text="4 מורים"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvClassCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="3 כיתות" />
+
+        <TextView
+            android:id="@+id/tvActiveStudentCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="62 תלמידים פעילים" />
+
+        <TextView
+            android:id="@+id/tvActiveAssignmentCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            tools:text="5 משימות פעילות" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="32dp"
+        android:background="#EEEEEE" />
+
+    <!-- כפתור הגדרות -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSettings"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="הגדרות"
+        android:textColor="@color/green_dark"
+        app:icon="@drawable/ic_filter"
+        android:layout_marginBottom="12dp" />
+
+    <!-- כפתור ניהול (יוצג רק למנהלים) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAdminPanel"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ממשק מנהל: עריכת מילים"
+        android:textColor="@color/green_dark"
+        app:icon="@drawable/ic_scan"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp" />
+
+    <!-- כפתור התנתקות -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogout"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="התנתק מהחשבון"
+        android:textColor="@android:color/holo_red_dark" />
+
+</LinearLayout>

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "464855561341",
+    "project_id": "my-book-club-site",
+    "storage_bucket": "my-book-club-site.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:464855561341:android:f9c351eac28698306aad14",
+        "android_client_info": {
+          "package_name": "com.example.easylex"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "464855561341-geak6m5pslg20b65vphqls28kvknscpg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.easylex",
+            "certificate_hash": "fcbc2078dfb3304109a42a1b101ac779b46f937d"
+          }
+        },
+        {
+          "client_id": "464855561341-s538dsqitse65pt1724ou0e9vgdmu7g8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAre4xQ6LwTymM7jsBdWl9AI65dED3yqdk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "464855561341-s538dsqitse65pt1724ou0e9vgdmu7g8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

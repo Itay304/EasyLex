@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- English word (required) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminEng"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="מילה באנגלית *"
+            android:layout_marginBottom="10dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminEng"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords|textNoSuggestions"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/green_dark" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Hebrew translation (required) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminHeb"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="תרגום לעברית *"
+            android:layout_marginBottom="10dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminHeb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textDirection="rtl" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Part of speech -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminPOS"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="חלק דיבר (n, v, adj, adv…)"
+            android:layout_marginBottom="10dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminPOS"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- English example sentence -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminExEng"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="משפט דוגמה (אנגלית)"
+            android:layout_marginBottom="10dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminExEng"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:lines="2"
+                android:gravity="top|start" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Hebrew example sentence -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminExHeb"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="משפט דוגמה (עברית)"
+            android:layout_marginBottom="10dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminExHeb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:lines="2"
+                android:gravity="top|end"
+                android:textDirection="rtl" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Tags (optional) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAdminTags"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="תגיות (מופרדות בפסיק)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAdminTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+</ScrollView>

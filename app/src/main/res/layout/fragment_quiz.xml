@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FDFDFD">
+
+    <!-- Back navigation toolbar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="מבחן"
+        app:titleCentered="false" />
+
+    <!-- Quiz content (same as before, padding moved here) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- פס התקדמות מעוצב -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/quizProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:trackThickness="10dp"
+            app:trackCornerRadius="5dp"
+            app:indicatorColor="@color/turquoise_accent"
+            app:trackColor="#EEEEEE" />
+
+        <TextView
+            android:id="@+id/tvQuestionCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="שאלה 1 מתוך 20"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:textColor="#999999"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+
+        <!-- כרטיסיית המילה באנגלית -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_marginTop="24dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#EEEEEE"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvTargetWord"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:maxLines="3"
+                    android:text="Apple"
+                    android:textSize="42sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/green_dark"
+                    android:textAlignment="center"
+                    android:layoutDirection="ltr"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="16sp"
+                    app:autoSizeMaxTextSize="42sp"
+                    app:autoSizeStepGranularity="2sp" />
+
+                <ImageButton
+                    android:id="@+id/btnQuizSpeak"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_lock_silent_mode_off"
+                    app:tint="@color/turquoise_accent"
+                    android:contentDescription="השמע מילה" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="בחר את התרגום הנכון:"
+            android:layout_gravity="center"
+            android:layout_marginTop="32dp"
+            android:textColor="#555555"
+            android:textSize="16sp" />
+
+        <!-- כפתורי התשובות -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpt1"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:layout_marginBottom="12dp"
+                android:text="אופציה 1"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:textAlignment="textStart"
+                app:strokeColor="#DDDDDD"
+                app:cornerRadius="16dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpt2"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:layout_marginBottom="12dp"
+                android:text="אופציה 2"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:textAlignment="textStart"
+                app:strokeColor="#DDDDDD"
+                app:cornerRadius="16dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpt3"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:layout_marginBottom="12dp"
+                android:text="אופציה 3"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:textAlignment="textStart"
+                app:strokeColor="#DDDDDD"
+                app:cornerRadius="16dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpt4"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:text="אופציה 4"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:textAlignment="textStart"
+                app:strokeColor="#DDDDDD"
+                app:cornerRadius="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Floating "+10 XP" animation label — shown briefly on correct answer -->
+        <TextView
+            android:id="@+id/tvXpGain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="+10 XP"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_primary"
+            android:visibility="invisible" />
+
+    </LinearLayout>
+
+</LinearLayout>

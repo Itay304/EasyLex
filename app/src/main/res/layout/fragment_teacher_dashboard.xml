@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F2F5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Header: institution name. -->
+        <!-- TODO (0.9): כאן יתווסף בעתיד כפתור לפתיחת דשבורד ווב מלא
+             (מפת חום, גרפים, הקצאות) — הדשבורד באפליקציה נשאר מכוון-כיתה,
+             מהיר, לפעולות יומיומיות בלבד. ר' הערה מלאה ב-TeacherDashboardFragment.java. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header_rounded_bottom"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:id="@+id/tvInstitutionName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                tools:text="בית ספר בדיקה" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="הכיתות שלי"
+                android:textSize="13sp"
+                android:textColor="#CCFFFFFF"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/teacherDashboardProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:indicatorColor="@color/turquoise_accent"
+            app:trackColor="#EEEEEE"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewClasses"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="96dp"
+            android:visibility="gone" />
+
+        <!-- מצב ריק: "צור את הכיתה הראשונה שלך". -->
+        <LinearLayout
+            android:id="@+id/layoutEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏫"
+                android:textSize="48sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="צור את הכיתה הראשונה שלך"
+                android:textSize="16sp"
+                android:textColor="#777777"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabCreateClass"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        android:text="צור כיתה חדשה"
+        app:icon="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/green_dark"
+        app:iconTint="@android:color/white"
+        android:textColor="@android:color/white" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

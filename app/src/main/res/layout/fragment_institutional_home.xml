@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F4F0"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
+
+        <!-- ── Header ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header_rounded_bottom"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="הבית שלי"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="הכיתה שלך במבט אחד"
+                android:textSize="13sp"
+                android:textColor="#CCFFFFFF"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- ── א. הודעה מהמורה — gone כברירת מחדל, מוצג רק אם יש הודעה שלא נקראה ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginTop="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="#FFF3E0"
+            app:strokeWidth="0dp"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📢"
+                    android:textSize="22sp"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAnnouncementMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="#E65100"
+                        tools:text="שלום לכולם! מבחן בשבוע הבא על יחידה 3." />
+
+                    <TextView
+                        android:id="@+id/tvAnnouncementMeta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="11sp"
+                        android:textColor="#BF7A3D"
+                        tools:text="מורה בדיקה · 3.8" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── ב. טבלת מובילים ── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="טבלת מובילים 🏆"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewLeaderboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_leaderboard_row" />
+
+                <TextView
+                    android:id="@+id/tvLeaderboardEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="עדיין אין נתונים בטבלת המובילים"
+                    android:textSize="13sp"
+                    android:textColor="#999999"
+                    android:gravity="center"
+                    android:padding="20dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── ג. משימות פעילות (עד 3) ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="18dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="משימות פעילות 📋"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/green_dark" />
+
+            <TextView
+                android:id="@+id/tvSeeAllAssignments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ראה הכל"
+                android:textSize="13sp"
+                android:textColor="@color/turquoise_accent"
+                android:padding="4dp" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewAssignmentsPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:itemCount="1"
+            tools:listitem="@layout/item_student_assignment" />
+
+        <TextView
+            android:id="@+id/tvAssignmentsPreviewEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="אין משימות פעילות כרגע"
+            android:textSize="13sp"
+            android:textColor="#999999"
+            android:gravity="center"
+            android:padding="16dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

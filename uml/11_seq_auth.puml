@@ -1,0 +1,55 @@
+@startuml 11_Seq_Auth
+title זרימת אימות — Splash → Login → MainActivity
+
+skinparam defaultFontSize 13
+skinparam sequence {
+  ArrowColor #E65100
+  ParticipantBackgroundColor #FBE9E7
+  ParticipantBorderColor #BF360C
+  NoteBackgroundColor #FFFDE7
+  NoteBorderColor #F9A825
+}
+
+actor "משתמש" as User
+participant "SplashActivity" as SA
+participant "Firebase Auth" as FA
+participant "LoginActivity" as LA
+participant "RegisterActivity" as RA
+participant "MainActivity" as MA
+
+User -> SA : פותח אפליקציה
+SA -> SA : startSplashAnimation()\nanimDone=false
+
+par
+  SA -> SA : animation ends\nanimDone=true\ntryProceed()
+  SA -> FA : getCurrentUser()
+  FA --> SA : user / null\nauthReady=true\ntryProceed()
+end
+
+note over SA : tryProceed: ניווט רק אם\nשני הדגלים true
+
+alt מחובר
+  SA -> MA : startActivity + finish()
+else לא מחובר
+  SA -> LA : startActivity + finish()
+
+  User -> LA : email + password
+  LA -> FA : signInWithEmailAndPassword()
+
+  alt הצלחה
+    LA -> MA : startActivity + finish()
+  else כישלון
+    LA --> User : Toast שגיאה
+    User -> LA : "הירשם"
+    LA -> RA : startActivity
+    User -> RA : email + password
+    RA -> FA : createUserWithEmailAndPassword()
+    RA -> MA : startActivity
+    RA -> RA : finishAffinity()
+    note right : מנקה back stack מלא\n(Splash+Login+Register)
+  end
+end
+
+MA --> User : DashboardFragment
+
+@enduml

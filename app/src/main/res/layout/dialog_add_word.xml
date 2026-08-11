@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- English word (editable — pre-filled by OCR, empty for manual entry) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilEnglish"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="מילה באנגלית"
+        android:layout_marginBottom="12dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEnglish"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapWords|textNoSuggestions"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_dark" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Hebrew translation -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilHebrew"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="תרגום לעברית"
+        android:layout_marginBottom="12dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etHebrew"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:textDirection="rtl"
+            android:gravity="end" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Tag / list selector -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTag"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="רשימה / תגית"
+        android:layout_marginBottom="12dp">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvTag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:completionThreshold="0"
+            android:inputType="textAutoComplete" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Part of speech selector -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPos"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="חלק דיבר">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvPos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:completionThreshold="0"
+            android:focusable="false"
+            android:inputType="none" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

@@ -1,0 +1,20 @@
+2026-07-20 23:35:35.261 14286-14286 AndroidRuntime          com.example.easylex                  E  FATAL EXCEPTION: main
+                                                                                                    Process: com.example.easylex, PID: 14286
+                                                                                                    java.lang.IllegalArgumentException: Invalid document reference. Document references must have an even number of segments, but users/BNFm5Jq54EOxXaltG2Gag0ecdGY2/progress/This is a/an … has 5
+                                                                                                    	at com.google.firebase.firestore.DocumentReference.forPath(DocumentReference.java:81)
+                                                                                                    	at com.google.firebase.firestore.CollectionReference.document(CollectionReference.java:104)
+                                                                                                    	at com.example.easylex.data.ProgressSyncManager.syncSession(ProgressSyncManager.java:85)
+                                                                                                    	at com.example.easylex.ui.practice.QuizFragment.finishQuiz(QuizFragment.java:428)
+                                                                                                    	at com.example.easylex.ui.practice.QuizFragment.showNextQuestion(QuizFragment.java:301)
+                                                                                                    	at com.example.easylex.ui.practice.QuizFragment.$r8$lambda$1JTjzBzqDCSUpL5DE-ov9bvrT-k(QuizFragment.java:0)
+                                                                                                    	at com.example.easylex.ui.practice.QuizFragment$$ExternalSyntheticLambda8.run(D8$$SyntheticClass:0)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:938)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:226)
+                                                                                                    	at android.os.Looper.loop(Looper.java:313)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:8663)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:571)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1135)
+2026-07-20 23:35:35.323 14286-14286 Process                 com.example.easylex                  I  Sending signal. PID: 14286 SIG: 9
+---------------------------- PROCESS ENDED (14286) for package com.example.easylex ----------------------------

@@ -1,0 +1,30 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- העיצוב הבסיסי של האפליקציה למצב יום (Light Mode) -->
+    <style name="Base.Theme.EasyLex" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- הגדרת צבעים ראשיים -->
+        <!-- צבע ראשי, ישפיע על רקע של רכיבים כמו ה-Toolbar. -->
+        <item name="colorPrimary">@color/green_primary</item>
+        <!-- צבע משני, ישפיע על רכיבים כמו Checkbox או Progress Bar. -->
+        <item name="colorSecondary">@color/turquoise_accent</item>
+
+        <!-- צבע רקע כללי של האפליקציה. -->
+        <item name="android:windowBackground">@color/grey_light</item>
+        <!-- צבע שורת הסטטוס (השורה העליונה עם השעה והסוללה). -->
+        <item name="android:statusBarColor">@color/green_dark</item>
+
+        <!-- הגדרת צבעי טקסט -->
+        <!-- צבע טקסט ראשי. -->
+        <item name="android:textColorPrimary">@color/black_soft</item>
+        <!-- צבע טקסט משני. -->
+        <item name="android:textColorSecondary">@color/grey_text</item>
+
+    </style>
+
+    <!-- שיוך העיצוב הבסיסי לשם העיצוב הראשי של האפליקציה. -->
+    <style name="Theme.EasyLex" parent="Base.Theme.EasyLex" />
+    <!-- הוסף את ה-style הזה בתוך תגית ה-resources -->
+    <style name="ModernAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/turquoise_accent</item>
+        <item name="android:windowBackground">@drawable/dialog_background</item>
+    </style>
+</resources>

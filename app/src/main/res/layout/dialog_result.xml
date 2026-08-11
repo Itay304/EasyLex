@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/resultCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <!-- Emoji -->
+        <TextView
+            android:id="@+id/tvResultEmoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🏆"
+            android:textSize="64sp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvResultTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="כל הכבוד!"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Score circle -->
+        <FrameLayout
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@drawable/bg_score_circle"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:id="@+id/tvResultScore"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"/>
+        </FrameLayout>
+
+        <!-- Message -->
+        <TextView
+            android:id="@+id/tvResultMsg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="המשך כך!"
+            android:textSize="15sp"
+            android:textColor="#E0FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="28dp"/>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResultRetry"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="נסה שוב"
+                android:textColor="@android:color/white"
+                app:strokeColor="@android:color/white"
+                app:cornerRadius="12dp"
+                android:layout_marginEnd="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResultDone"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="סיום"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#55FFFFFF"
+                app:cornerRadius="12dp"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

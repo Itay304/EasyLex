@@ -1,0 +1,61 @@
+@startuml 10_Seq_OCR
+title זרימת סריקה — OCR + תרגום + שמירה
+
+skinparam defaultFontSize 13
+skinparam sequence {
+  ArrowColor #4A148C
+  ParticipantBackgroundColor #F3E5F5
+  ParticipantBorderColor #6A1B9A
+  NoteBackgroundColor #FFFDE7
+  NoteBorderColor #F9A825
+}
+
+actor "משתמש" as User
+participant "ScanFragment" as SF
+participant "CameraX" as CX
+participant "ExifInterface" as EI
+participant "ML Kit OCR" as OCR
+participant "ML Kit Translate" as TR
+participant "MyWordsViewModel" as VM
+participant "Room DB" as DB
+
+SF -> CX : bindToLifecycle(Preview + ImageCapture)
+CX --> User : תצוגת מצלמה חיה
+
+User -> SF : לוחץ "סרוק"
+SF -> CX : takePicture()
+CX --> SF : savedUri
+
+SF -> EI : readOrientation(uri)
+EI --> SF : EXIF tag
+SF -> SF : loadRotatedBitmap()\nMatrix.postRotate()
+
+SF -> OCR : process(InputImage)
+OCR --> SF : TextRecognitionResult
+
+alt מצב ספר
+  SF -> SF : extractWordBoxes()\nרמת Element → מילה בודדת
+else מצב טקסט חופשי
+  SF -> SF : extractFreeTextBoxes()\nרמת Line → שורה שלמה
+end
+
+SF --> User : מעבר למצב REVIEW
+
+SF -> TR : downloadModelIfNeeded()
+note right : הורדה חד-פעמית ~30MB\nאחר כך — offline לחלוטין
+
+loop לכל מילה
+  SF -> TR : translate(english)
+  TR --> SF : hebrew
+end
+
+SF --> User : רשימת (EN | HE)
+
+User -> SF : "שמור הכל"
+loop לכל תוצאה
+  SF -> VM : insert(Word)\nisVerified=false\nisFavorite=true
+  VM -> DB : INSERT
+end
+SF --> User : "נשמרו X מילים"
+
+@enduml

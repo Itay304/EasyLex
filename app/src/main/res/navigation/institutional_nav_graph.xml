@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- גרף ניווט ייעודי לתלמיד מוסדי (institutionId != null) — שינוי ארכיטקטוני
+     "4 עולמות לפי role". 4 טאבים: בית מוסדי / משימות / סטטיסטיקות (placeholder)
+     / פרופיל. MainActivity מחליף אליו את הגרף הפעיל (switchToInstitutionalNavigation)
+     אחרי שה-role מזוהה כ-student עם institutionId — ר' MainActivity.java.
+
+     חשוב: actions מוגדרים per-destination (לא גלובליים) ב-Navigation Component —
+     StudentAssignmentsFragment.startPractice() קורא ל-action_navigation_assignments_to_navigation_quiz,
+     אז הפעולה הזו *חייבת* להיות מוגדרת כאן, בדיוק כמו בגרף התלמיד הרגיל
+     (nav_graph.xml), אחרת תיפול קריסה כשמנווטים ל-Quiz מתוך הגרף הזה. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/institutional_nav_graph"
+    app:startDestination="@id/navigation_institutional_home">
+
+    <!-- בית מוסדי — הודעה מהמורה + טבלת מובילים + משימות פעילות (עד 3). -->
+    <fragment
+        android:id="@+id/navigation_institutional_home"
+        android:name="com.example.easylex.ui.institutional.InstitutionalHomeFragment"
+        android:label="בית"
+        tools:layout="@layout/fragment_institutional_home">
+        <action
+            android:id="@+id/action_navigation_institutional_home_to_navigation_assignments"
+            app:destination="@id/navigation_assignments" />
+        <action
+            android:id="@+id/action_navigation_institutional_home_to_navigation_quiz"
+            app:destination="@id/navigation_quiz" />
+        <action
+            android:id="@+id/action_navigation_institutional_home_to_navigation_flashcards"
+            app:destination="@id/navigation_flashcards" />
+        <action
+            android:id="@+id/action_navigation_institutional_home_to_navigation_spelling"
+            app:destination="@id/navigation_spelling" />
+    </fragment>
+
+    <!-- משימות — StudentAssignmentsFragment הקיים (משימה 0.15), ללא שינוי. -->
+    <fragment
+        android:id="@+id/navigation_assignments"
+        android:name="com.example.easylex.ui.assignments.StudentAssignmentsFragment"
+        android:label="משימות"
+        tools:layout="@layout/fragment_student_assignments">
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_quiz"
+            app:destination="@id/navigation_quiz" />
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_flashcards"
+            app:destination="@id/navigation_flashcards" />
+        <action
+            android:id="@+id/action_navigation_assignments_to_navigation_spelling"
+            app:destination="@id/navigation_spelling" />
+    </fragment>
+
+    <!-- סטטיסטיקות — InstitutionalStatsFragment (שלב 2, חלק 3): 4 תרשימים
+         (מסע/משימות/פעילות שבועית/חוזקות-חולשות), מחליף את ComingSoonFragment. -->
+    <fragment
+        android:id="@+id/navigation_institutional_stats"
+        android:name="com.example.easylex.ui.institutional.InstitutionalStatsFragment"
+        android:label="סטטיסטיקות"
+        tools:layout="@layout/fragment_institutional_stats" />
+
+    <!-- פרופיל — ProfileFragment הקיים, אותו id בדיוק כמו בגרפים האחרים. -->
+    <fragment android:id="@+id/navigation_profile"
+        android:name="com.example.easylex.ui.profile.ProfileFragment"
+        android:label="פרופיל">
+        <action
+            android:id="@+id/action_navigation_profile_to_navigation_settings"
+            app:destination="@id/navigation_settings" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.easylex.ui.settings.SettingsFragment"
+        android:label="הגדרות"
+        tools:layout="@layout/fragment_settings" />
+
+    <!-- Quiz/Flashcards/Spelling — נדרשים לכפתור "התחל תרגול" (PracticeTypeBottomSheet,
+         גם מהמסך המלא וגם מהתצוגה המקדימה בבית). -->
+    <fragment
+        android:id="@+id/navigation_quiz"
+        android:name="com.example.easylex.ui.practice.QuizFragment"
+        android:label="מבחן" />
+
+    <fragment
+        android:id="@+id/navigation_flashcards"
+        android:name="com.example.easylex.ui.practice.FlashcardsFragment"
+        android:label="כרטיסיות" />
+
+    <fragment
+        android:id="@+id/navigation_spelling"
+        android:name="com.example.easylex.ui.practice.SpellingFragment"
+        android:label="אלוף האיות" />
+
+</navigation>

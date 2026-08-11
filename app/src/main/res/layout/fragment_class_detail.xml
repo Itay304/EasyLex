@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F0F2F5">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/green_dark"
+        app:titleTextColor="@android:color/white"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIconTint="@android:color/white"
+        tools:title="כיתה ז'1" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayoutClassDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabTextColor="#888888"
+        app:tabSelectedTextColor="@color/green_dark"
+        app:tabIndicatorColor="@color/green_dark">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="תלמידים" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="משימות" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- לשונית "תלמידים" — מעקב התקדמות (Cloud Function getClassProgress). -->
+        <LinearLayout
+            android:id="@+id/layoutStudentsTab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- tvStudentCountBig נשאר קיים אך מוסתר — היה placeholder, לא הוסר כדי
+                 לא לשבור קוד קיים שמזין אותו (ClassDetailFragment.onCreateView). -->
+            <TextView
+                android:id="@+id/tvStudentCountBig"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <!-- כרטיס סיכום -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:id="@+id/tvSummaryActiveThisWeek"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="@color/black"
+                        tools:text="18 מתוך 24 תלמידים פעילים השבוע" />
+
+                    <TextView
+                        android:id="@+id/tvSummaryAvgMastered"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="14sp"
+                        android:textColor="@color/black"
+                        tools:text="ממוצע 12.3 מילים נכבשות בכיתה" />
+
+                    <TextView
+                        android:id="@+id/tvSummaryInactive"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:text="6 תלמידים לא תרגלו 3+ ימים"
+                        tools:textColor="@android:color/holo_red_dark" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- כפתור "שלח הודעה" בלשונית התלמידים (בנוסף לאייקון בToolbar,
+                 שניהם קוראים ל-showSendAnnouncementDialog הזהה). -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSendAnnouncementTab"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="שלח הודעה לכיתה"
+                app:icon="@drawable/ic_announcement"
+                app:iconTint="@color/green_dark" />
+
+            <!-- מיון + סינון -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:paddingBottom="4dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupSort"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSortXp"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="מיון: XP" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSortMastered"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="מיון: מילים" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSortActivity"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="מיון: פעילות" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- כפתור סינון עצמאי — ChipGroup נפרד (לא singleSelection) כדי שלא
+                 יתחרה עם בחירת המיון למעלה על אותה קבוצת "בחירה יחידה". -->
+            <com.google.android.material.chip.ChipGroup
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:paddingBottom="4dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFilterInactive"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="לא פעילים 3+ ימים" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/studentsProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:indicatorColor="@color/turquoise_accent"
+                app:trackColor="#EEEEEE"
+                android:visibility="gone" />
+
+            <!-- כותרות עמודות -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#EEEEEE"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:text="שם"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="נכבשו"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="XP"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="השבוע"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.5"
+                    android:gravity="center"
+                    android:text="פעילות אחרונה"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666" />
+            </LinearLayout>
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipeRefreshStudents"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerViewStudents"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:paddingBottom="24dp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutStudentsEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🧑‍🎓"
+                            android:textSize="48sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="אין תלמידים בכיתה עדיין"
+                            android:textSize="16sp"
+                            android:textColor="#777777"
+                            android:layout_marginTop="12dp" />
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        </LinearLayout>
+
+        <!-- לשונית "משימות". -->
+        <FrameLayout
+            android:id="@+id/layoutAssignmentsTab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/classDetailProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:indicatorColor="@color/turquoise_accent"
+                    app:trackColor="#EEEEEE"
+                    android:visibility="gone" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewAssignments"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="96dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/layoutAssignmentsEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📋"
+                        android:textSize="48sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="אין עדיין משימות בכיתה זו"
+                        android:textSize="16sp"
+                        android:textColor="#777777"
+                        android:layout_marginTop="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/fabCreateAssignment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="20dp"
+                android:text="משימה חדשה"
+                app:icon="@android:drawable/ic_input_add"
+                app:backgroundTint="@color/green_dark"
+                app:iconTint="@android:color/white"
+                android:textColor="@android:color/white" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

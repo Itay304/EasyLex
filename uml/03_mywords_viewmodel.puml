@@ -1,0 +1,106 @@
+@startuml 03_MyWords_ViewModel
+title מילון — MyWords (MVVM)
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  HeaderBackgroundColor #2E7D32
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 11
+}
+skinparam ArrowColor #2E7D32
+
+
+class MyWordsFragment {
+  - binding : FragmentMyWordsBinding
+  - viewModel : MyWordsViewModel
+  - adapter : WordListAdapter
+  - recyclerView : RecyclerView
+  - tts : TextToSpeech
+  - sideIndex : LinearLayout
+  - spinnerPOS : AutoCompleteTextView
+  - spinnerTags : AutoCompleteTextView
+  - bubblePopup : PopupWindow
+  - bubbleTextView : TextView
+  - lastSelectedLetter : TextView
+  - masterList : List<Word>
+  - selectedPOS : String
+  - selectedTag : String
+  - showPersonalOnly : boolean
+  ==
+  + onCreateView(LayoutInflater, ViewGroup, Bundle) : View
+  + onDestroyView()
+  + onPronounceClick(String text)
+  - setupFilterChips(View)
+  - applyPersonalFilter()
+  - setupFab(View)
+  - showAddWordDialog()
+  - setupViewModel()
+  - setupDropdowns()
+  - setupSideIndex()
+  - highlightLetter(String)
+  - scrollToLetter(String)
+  - showBubble(String letter, float y, View anchor)
+  - createBubblePopup()
+  - setupRecyclerView(View)
+  - setupSearch(View)
+  - initializeTts()
+}
+note right of MyWordsFragment
+  Side Index: A-Z → scroll
+  Bubble popup על האצבע
+  SpannableString לסימון חיפוש
+  TTS: Text-To-Speech לכל מילה
+end note
+
+class MyWordsViewModel <<AndroidViewModel>> {
+  - mRepository : WordRepository
+  - mAllWords : LiveData<List<Word>>
+  ==
+  + MyWordsViewModel(Application)
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + insert(Word)
+  + update(Word)
+  + deletePersonalWords()
+  + syncFromCloud()
+  # onCleared()
+}
+note left of MyWordsViewModel
+  Constructor:
+  1. Migration חד-פעמי
+  2. startGlobalDeleteListener()
+  3. Throttle sync (24h)
+
+  onCleared():
+  stopGlobalDeleteListener()
+  → מונע Memory Leak
+end note
+
+class WordRepository {
+  ==
+  + getAllWords() : LiveData<List<Word>>
+  + getPersonalWords() : LiveData<List<Word>>
+  + insert(Word)
+  + update(Word)
+  + delete(Word)
+  + syncGlobalWordsFromFirestore(Runnable)
+  + startGlobalDeleteListener()
+  + stopGlobalDeleteListener()
+}
+
+class "Room DB" as DB <<SQLite>>
+class "Firestore" as FS <<Cloud>>
+
+MyWordsFragment --> MyWordsViewModel : observe LiveData
+MyWordsViewModel --> WordRepository : delegates
+WordRepository --> DB : Room queries
+WordRepository --> FS : sync + listener
+
+@enduml

@@ -1,0 +1,241 @@
+rules_version = '2';
+
+// =====================================================================
+// EasyLex — Firestore Security Rules v2 (משימה 0.6, שלב 0א)
+// =====================================================================
+//
+// גרסה 0.4 קראה role/institutionId ע"י get() על users/{request.auth.uid}
+// בכל rule. מאז 0.5, syncUserClaims (functions/index.js) מסנכרן role
+// ו-institutionId ל-Custom Claims בכל כתיבה למסמך users/{uid}. גרסה זו
+// (0.6) מחליפה את שני אלה לקריאה ישירה מ-request.auth.token — בלי get()
+// נוסף בכלל, זול יותר. הלוגיקה של כל rule נשארה זהה; רק מקור הנתונים
+// השתנה. לוגיקת הכללים עצמם (מי-רשאי-מה) לא השתנתה בגרסה הזו.
+//
+// חריג מכוון: myClassIds() *נשאר* מבוסס get() על המסמך. syncUserClaims
+// לא מסנכרן classIds ל-claims בכוונה — מערך באורך משתנה (תלמיד יכול
+// להיות בכמה כיתות) לא מתאים למגבלת הגודל של Custom Claims (1000 בייט
+// לכלל ה-claims של משתמש), ובניגוד ל-role/institutionId זה לא ערך יחיד
+// קבוע. הכלל היחיד שתלוי ב-myClassIds() (5 — assignments, בדיקת תלמיד)
+// ממשיך לכן לעלות עלות get() אחת, כמו לפני 0.6.
+//
+// הערה תפעולית: Custom Claims לא נכנסים לתוקף מיידית — יש חלון זמן בין
+// כתיבת role חדש למסמך users/{uid} לבין שה-ID token של המשתמש (בצד
+// לקוח) מתעדכן בפועל (דורש getIdToken(true) מפורש). בזמן החלון הזה,
+// request.auth.token.role עדיין ישקף את הערך הישן. ר' פירוט נוסף
+// ב-functions/index.js.
+//
+// נפרס ל-production (משימה 0.6). עדיין נבדק גם מול Firebase Emulator
+// דרך rules-tests/ (ראו שם + README) — הבדיקות מדמות טוקן עם claims,
+// לא עוד מסמכי users/{uid} מדומים לצורך role/institutionId.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── פונקציות עזר ─────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // role/institutionId — מ-Custom Claims (syncUserClaims, functions/index.js,
+    // משימה 0.5), לא מ-get() על המסמך. isSignedIn() קודם, בקצר-מעגל, מגן
+    // מפני דה-רפרנס של request.auth.token כשאין משתמש מחובר.
+    function myRole() {
+      return isSignedIn() ? request.auth.token.role : null;
+    }
+
+    function isSuperAdmin() {
+      return myRole() == 'superadmin';
+    }
+
+    function isTeacher() {
+      return myRole() == 'teacher';
+    }
+
+    function myInstitutionId() {
+      return isSignedIn() ? request.auth.token.institutionId : null;
+    }
+
+    function belongsToInstitution(instId) {
+      return myInstitutionId() == instId;
+    }
+
+    // classIds — *נשאר* מבוסס get() על המסמך (לא עבר ל-Custom Claims,
+    // ר' הסבר בראש הקובץ). מגן מפני דה-רפרנס של request.auth.uid כשאין
+    // משתמש מחובר, ע"י isSignedIn() קודם בקצר-מעגל.
+    function myUserExists() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function myUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function myClassIds() {
+      return myUserExists() && ('classIds' in myUserData())
+        ? myUserData().classIds
+        : [];
+    }
+
+    // ── 1. users/{uid} ───────────────────────────────────────────────────
+    // קריאה: הבעלים, superadmin, או עמית באותו מוסד (טבלת מובילים — שינוי
+    // ארכיטקטוני "4 עולמות לפי role", מסך הבית המוסדי). כתיבה: הבעלים בלבד,
+    // ללא שינוי.
+    //
+    // הרחבה מכוונת: לפני זה, users/{uid} היה קריא רק לבעליו/superadmin.
+    // טבלת מובילים מוסדית דורשת שתלמידים באותו מוסד יוכלו לקרוא זה את
+    // מסמכי זה (query על institutionId, ממוין לפי totalXp) — אין דרך
+    // לבנות "מי הכי הרבה XP במוסד שלי" בלי לחשוף לפחות displayName+totalXp
+    // לעמיתים. אין email/סיסמה על המסמך (ר' שדות בפועל) — הרחבה חד-פעמית
+    // זו חושפת גם classJoinAttempts/lastActiveDate לעמיתי מוסד, לא רק
+    // displayName/totalXp; לא נחשב רגיש אך מתועד כאן במפורש לשקיפות.
+    // 'institutionId' in resource.data — בדיוק כמו myClassIds() למעלה,
+    // מגן מפני שגיאת evaluation על מסמך בלי השדה (למשל תלמיד עצמאי).
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isSuperAdmin() ||
+        ('institutionId' in resource.data && belongsToInstitution(resource.data.institutionId));
+      allow write: if isOwner(uid);
+
+      // ── 7. users/{uid}/progress/{wordKey} ────────────────────────────
+      // הבעלים בלבד, גם לקריאה וגם לכתיבה. מורה לא מקבל גישה ישירה
+      // ל-progress גולמי — רק לסיכומי אגרגציה (מחוץ לתחום v1 של הכללים).
+      match /progress/{wordKey} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+
+      // ── 8. users/{uid}/badges/{badgeId} — מערכת תגים (אפליקציית תלמיד) ──
+      // הבעלים בלבד, אותו דפוס בדיוק כמו progress/{wordKey} למעלה. הלקוח
+      // (checkAndAwardBadges, src/lib/badges.js) בודק קריטריונים ומעניק
+      // תגים לעצמו בלבד — אין כאן צד-שרת שמאמת את הקריטריונים בפועל,
+      // בדיוק כמו totalXp/streak שכבר נכתבים ע"י הלקוח באותה רמת אמון.
+      match /badges/{badgeId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+
+      // ── 9. users/{uid}/dailyChallenge/{dateKey} — אתגר יומי (אפליקציית
+      // תלמיד, src/lib/dailyChallenge.js). הבעלים בלבד, אותו דפוס בדיוק
+      // כמו progress/badges למעלה — אותה רמת אמון בלקוח.
+      match /dailyChallenge/{dateKey} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+
+      // ── 10. users/{uid}/tokens/{tokenId} — FCM push tokens (מולטי-מכשיר) ──
+      // הבעלים בלבד, אותו דפוס בדיוק כמו progress/badges/dailyChallenge
+      // למעלה. הלקוח (src/lib/push.js, the-easy-way-app-student) כותב
+      // מסמך per-device תחת doc ID = הטוקן עצמו; הצד-שרת (functions/index.js)
+      // קורא את כל התתי-אוסף הזה per uid כדי לשלוח לכל המכשירים של משתמש.
+      match /tokens/{tokenId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ── config/{document} — הגדרות גלובליות (למשל app_settings: min_version) ──
+    // קריאה: לכל אחד, כולל לא-מחובר. SplashActivity.checkAppVersion() בודק
+    // גרסת חובה *לפני* שה-Auth נפתר בכלל — isSignedIn() כאן היה חוסם את
+    // הבדיקה למשתמש שעדיין לא התחבר (למשל התקנה טרייה), בדיוק המצב שבו
+    // בדיקת "עדכון חובה" הכי חשובה. כתיבה: superadmin בלבד.
+    match /config/{document} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // ── 2. word_lists/{listId}(/words/{wordId}) — הבאנדים הציבוריים ─────
+    // קריאה: כל משתמש מחובר. כתיבה: superadmin בלבד (ללא שינוי מהיום —
+    // admin-tool פועל עם serviceAccountKey.json, שעוקף Rules לגמרי, כך
+    // שהכלל הזה מגן בפועל על גישה ישירה מה-SDK של האפליקציה/צד לקוח).
+    match /word_lists/{listId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+
+      match /words/{wordId} {
+        allow read: if isSignedIn();
+        allow write: if isSuperAdmin();
+      }
+    }
+
+    // ── 3-6. institutions/{instId}/... ───────────────────────────────────
+    match /institutions/{instId} {
+      // 3. institutions/{instId} — קריאה: משתמשים ששייכים למוסד (או superadmin).
+      // כתיבה: superadmin בלבד (יצירת/עריכת מוסד היא פעולת סופר-אדמין).
+      allow read: if belongsToInstitution(instId) || isSuperAdmin();
+      allow write: if isSuperAdmin();
+
+      // 4. institutions/{instId}/classes/{classId}
+      // קריאה: מורה, מנהל מוסד, או תלמיד ששייכים למוסד (או superadmin).
+      // תוקן (שלב 2, דשבורד מנהל): principal נוסף במפורש — לפני כן הכלל
+      // חסם מנהל לגמרי (isTeacher() בודק role=='teacher' בלבד), מה שהיה
+      // שובר גם את TeacherDashboardFragment הקיים כשמנהל נכנס אליו,
+      // ובוודאי את PrincipalDashboardFragment החדש (רשימת כל כיתות המוסד).
+      // כתיבה: מורה ששייך למוסד — נשאר ללא שינוי (מנהל לא יוצר כיתות דרך
+      // המסך הזה, מחוץ לתחום המשימה הנוכחית).
+      match /classes/{classId} {
+        allow read: if isSuperAdmin() ||
+          (belongsToInstitution(instId) && (isTeacher() || myRole() == 'principal' || myRole() == 'student'));
+        allow write: if isTeacher() && belongsToInstitution(instId);
+
+        // institutions/{instId}/classes/{classId}/announcements/{announcementId}
+        // (שינוי ארכיטקטוני — מסך הבית המוסדי, "הודעה מהמורה"; כתיבה בפועל
+        // דרך sendAnnouncement, Cloud Function — שלב 2, "הודעות מורה לכיתה").
+        // קריאה: תלמיד שהכיתה הזו ב-classIds שלו, מורה/מנהל/superadmin של המוסד.
+        // תוקן (סבב ניקוי): principal נוסף גם לקריאה — אותו דפוס בדיוק כמו
+        // classes/{classId} ו-assignments/{assignmentId} למעלה (write כבר
+        // כלל principal; read לא, אי-עקביות שנמצאה בסבב ביקורת firestore.rules
+        // ותוקנה כאן לפני שנתקלים בה בפועל, כמו שקרה עם assignments).
+        // כתיבה: מורה או מנהל ששייך למוסד (בעלות ברמת-כיתה נאכפת ב-
+        // sendAnnouncement עצמה — classDoc.teacherId — לא כאן, אותו דפוס
+        // בדיוק כמו assignments/{assignmentId} למעלה).
+        match /announcements/{announcementId} {
+          allow read: if isSuperAdmin() ||
+            ((isTeacher() || myRole() == 'principal') && belongsToInstitution(instId)) ||
+            (belongsToInstitution(instId) && myRole() == 'student' && classId in myClassIds());
+          allow write: if (isTeacher() || myRole() == 'principal') && belongsToInstitution(instId);
+        }
+      }
+
+      // 5. institutions/{instId}/assignments/{assignmentId}
+      // קריאה: כל משתמש שה-classId של המשימה נמצא ב-classIds שלו (או superadmin/מורה/מנהל במוסד).
+      // תוקן (שלב 2, דשבורד מנהל): principal נוסף — אותה בעיה בדיוק שתוקנה
+      // ב-classes/{classId} למעלה. עד עכשיו מנהל מעולם לא הגיע בפועל ל-
+      // ClassDetailFragment (TeacherDashboardFragment הראה לו 0 כיתות, מסונן
+      // לפי teacherId) — PrincipalDashboardFragment החדש כן פותח לו נתיב
+      // אמיתי לשם (לחיצה על כיתה ברשימת "כל הכיתות במוסד"), וזה חשף את
+      // הפער: לשונית "משימות" נכשלה עם PERMISSION_DENIED עבור מנהל.
+      // כתיבה: מורה ששייך למוסד — ללא שינוי (מנהל לא יוצר משימות כאן).
+      //
+      // הערה: שדה classId נוסף למסמך ה-assignment (ר' seed-structure.js) כדי
+      // שהכלל הזה יהיה בר-מימוש בפועל — לא היה ברשימת השדות המקורית.
+      match /assignments/{assignmentId} {
+        allow read: if isSuperAdmin() ||
+          ((isTeacher() || myRole() == 'principal') && belongsToInstitution(instId)) ||
+          (resource != null && resource.data.classId in myClassIds());
+        allow write: if isTeacher() && belongsToInstitution(instId);
+      }
+
+      // 6. institutions/{instId}/customLists/{listId}(/words/{wordId})
+      // קריאה: כל משתמש במוסד (או superadmin). כתיבה: מורה ששייך למוסד.
+      match /customLists/{listId} {
+        allow read: if belongsToInstitution(instId) || isSuperAdmin();
+        allow write: if isTeacher() && belongsToInstitution(instId);
+
+        match /words/{wordId} {
+          allow read: if belongsToInstitution(instId) || isSuperAdmin();
+          allow write: if isTeacher() && belongsToInstitution(instId);
+        }
+      }
+    }
+
+    // כל דבר אחר שלא הוגדר במפורש — חסום כברירת מחדל (Firestore Rules
+    // חוסמות כברירת מחדל כל path שאין לו match מתאים, אין צורך ב-catch-all
+    // מפורש, אבל רושמים זאת כאן לתיעוד הכוונה).
+  }
+}

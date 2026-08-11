@@ -1,0 +1,14 @@
+{
+  "name": "easylex-admin-tool",
+  "version": "1.0.0",
+  "description": "Local admin tool for uploading EasyLex word lists to Firestore",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.1"
+  }
+}

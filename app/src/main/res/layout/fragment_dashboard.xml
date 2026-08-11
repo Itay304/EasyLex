@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F4F0"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
+
+        <!-- ── Hero Header ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header_rounded_bottom"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingTop="36dp"
+            android:paddingBottom="36dp">
+
+            <TextView
+                android:id="@+id/tvGreeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Good morning, Student!"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/tvQuote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&quot;A different language is a different vision of life.&quot;"
+                android:textSize="13sp"
+                android:textStyle="italic"
+                android:textColor="#CCFFFFFF"
+                android:lineSpacingMultiplier="1.4" />
+
+        </LinearLayout>
+
+        <!-- ── Gamification Stats Card ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:weightSum="3">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="⭐" android:textSize="26sp" />
+                    <TextView android:id="@+id/tvDashLevel"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="1" android:textSize="30sp" android:textStyle="bold"
+                        android:textColor="@color/green_dark" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="רמה" android:textSize="11sp" android:textColor="#999999" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="60dp"
+                    android:layout_gravity="center_vertical" android:background="#E0E0E0" />
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="⚡" android:textSize="26sp" />
+                    <TextView android:id="@+id/tvDashXp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textSize="30sp" android:textStyle="bold"
+                        android:textColor="@color/green_dark" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="XP" android:textSize="11sp" android:textColor="#999999" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="60dp"
+                    android:layout_gravity="center_vertical" android:background="#E0E0E0" />
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="🔥" android:textSize="26sp" />
+                    <TextView android:id="@+id/tvDashStreak"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textSize="30sp" android:textStyle="bold"
+                        android:textColor="@color/green_dark" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="ימים" android:textSize="11sp" android:textColor="#999999" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── Word of the Day ── -->
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="מילת היום 📖"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp" android:layout_marginTop="20dp"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardWordOfDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp">
+
+                <TextView android:id="@+id/tvWodPos"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="noun" android:textSize="11sp"
+                    android:textColor="@color/turquoise_accent" android:textStyle="italic"
+                    android:layoutDirection="ltr"
+                    android:layout_gravity="left"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView android:id="@+id/tvWodEnglish"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Resilience" android:textSize="32sp" android:textStyle="bold"
+                    android:textColor="@color/green_dark"
+                    android:layoutDirection="ltr"
+                    android:layout_gravity="left" />
+
+                <TextView android:id="@+id/tvWodHebrew"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="חוסן" android:textSize="18sp" android:textColor="#555555"
+                    android:layout_marginTop="4dp" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#F0F0F0"
+                    android:layout_marginTop="14dp" android:layout_marginBottom="12dp" />
+
+                <TextView android:id="@+id/tvWodExample"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Her resilience in difficult times was truly inspiring."
+                    android:textSize="13sp" android:textColor="#888888" android:textStyle="italic"
+                    android:lineSpacingMultiplier="1.4" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── Quick Start Hub ── -->
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="התחל עכשיו ⚡"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp" android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            android:weightSum="2">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardQuickQuiz"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="6dp"
+                android:clickable="true" android:focusable="true"
+                app:cardCornerRadius="18dp" app:cardElevation="3dp"
+                app:cardBackgroundColor="#E8F4FD" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="16dp">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp"
+                        android:src="@drawable/ic_quiz" app:tint="#1565C0" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="מבחן יומי" android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="#1565C0" android:layout_marginTop="8dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="20 מילים" android:textSize="11sp"
+                        android:textColor="#5C9BD6" android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardQuickMistakes"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="6dp"
+                android:clickable="true" android:focusable="true"
+                app:cardCornerRadius="18dp" app:cardElevation="3dp"
+                app:cardBackgroundColor="#FFF3E0" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="16dp">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp"
+                        android:src="@drawable/ic_mistakes" app:tint="#E65100" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="תיקון שגיאות" android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="#E65100" android:layout_marginTop="8dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="שגיאות אחרונות" android:textSize="11sp"
+                        android:textColor="#FF8A50" android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            android:layout_marginTop="10dp"
+            android:weightSum="2">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardQuickFlashcards"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="6dp"
+                android:clickable="true" android:focusable="true"
+                app:cardCornerRadius="18dp" app:cardElevation="3dp"
+                app:cardBackgroundColor="#F3E5F5" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="16dp">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp"
+                        android:src="@drawable/ic_flashcards" app:tint="#6A1B9A" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="כרטיסיות" android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="#6A1B9A" android:layout_marginTop="8dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="גלול ולמד" android:textSize="11sp"
+                        android:textColor="#AB47BC" android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardQuickSpelling"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="6dp"
+                android:clickable="true" android:focusable="true"
+                app:cardCornerRadius="18dp" app:cardElevation="3dp"
+                app:cardBackgroundColor="#E8F5E9" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="16dp">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp"
+                        android:src="@drawable/ic_spelling" app:tint="#2E7D32" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="איות" android:textSize="14sp" android:textStyle="bold"
+                        android:textColor="#2E7D32" android:layout_marginTop="8dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="כתוב נכון" android:textSize="11sp"
+                        android:textColor="#66BB6A" android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+        <!-- ── Daily Challenges ── -->
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="משימות היום ✅"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp" android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            app:cardCornerRadius="20dp" app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF" app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp" android:paddingEnd="20dp"
+                android:paddingTop="18dp" android:paddingBottom="18dp">
+
+                <!-- Challenge 1 -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginBottom="6dp">
+                    <TextView android:id="@+id/tvChallenge1Label"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="תרגל 10 מילים היום 🎯"
+                        android:textSize="13sp" android:textColor="#444444" />
+                    <TextView android:id="@+id/tvChallenge1Progress"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0/10" android:textSize="12sp"
+                        android:textStyle="bold" android:textColor="@color/green_primary" />
+                </LinearLayout>
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progressChallenge1"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:trackThickness="8dp" app:trackCornerRadius="4dp"
+                    app:indicatorColor="@color/green_primary" app:trackColor="#EEEEEE" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#F5F5F5"
+                    android:layout_marginTop="14dp" android:layout_marginBottom="14dp" />
+
+                <!-- Challenge 2 -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginBottom="6dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="מילים שנלמדו 📚"
+                        android:textSize="13sp" android:textColor="#444444" />
+                    <TextView android:id="@+id/tvChallenge2Progress"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0/0" android:textSize="12sp"
+                        android:textStyle="bold" android:textColor="@color/turquoise_accent" />
+                </LinearLayout>
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progressChallenge2"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:trackThickness="8dp" app:trackCornerRadius="4dp"
+                    app:indicatorColor="@color/turquoise_accent" app:trackColor="#EEEEEE" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── My Dictionary Card ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardDictionary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginTop="22dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp"
+            app:rippleColor="@color/turquoise_accent">
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:paddingStart="20dp" android:paddingEnd="16dp"
+                android:paddingTop="20dp" android:paddingBottom="20dp">
+
+                <FrameLayout
+                    android:layout_width="52dp" android:layout_height="52dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:layout_marginEnd="16dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_search" app:tint="@color/green_primary" />
+                </FrameLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="My Dictionary" android:textSize="17sp"
+                        android:textStyle="bold" android:textColor="@color/green_dark" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="עיין ברשימת המילים המלאה" android:textSize="12sp"
+                        android:textColor="#999999" android:layout_marginTop="3dp" />
+                </LinearLayout>
+
+                <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_back" android:rotation="180"
+                    app:tint="@color/turquoise_accent" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── Word Lists Card ── -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardWordLists"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="0dp"
+            app:rippleColor="@color/turquoise_accent">
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:paddingStart="20dp" android:paddingEnd="16dp"
+                android:paddingTop="20dp" android:paddingBottom="20dp">
+
+                <FrameLayout
+                    android:layout_width="52dp" android:layout_height="52dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:layout_marginEnd="16dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_download" app:tint="@color/green_primary" />
+                </FrameLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="רשימות מילים" android:textSize="17sp"
+                        android:textStyle="bold" android:textColor="@color/green_dark" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="גלה ותוריד רשימות נוספות" android:textSize="12sp"
+                        android:textColor="#999999" android:layout_marginTop="3dp" />
+                </LinearLayout>
+
+                <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_back" android:rotation="180"
+                    app:tint="@color/turquoise_accent" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ── Recent Mistakes ── -->
+        <TextView
+            android:id="@+id/tvMistakesHeader"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="מילים לחזרה 🔁"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp" android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMistakes"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingStart="14dp" android:paddingEnd="14dp"
+            android:clipToPadding="false"
+            android:requiresFadingEdge="horizontal"
+            android:fadingEdgeLength="40dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvNoMistakes"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="אין שגיאות — כל הכבוד! ✅"
+            android:textSize="14sp" android:textColor="#999999"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:visibility="gone" />
+
+        <!-- ── Weekly Activity ── -->
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="פעילות שבועית 📊"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="@color/green_dark"
+            android:layout_marginStart="18dp" android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            app:cardCornerRadius="20dp" app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF" app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:id="@+id/llWeeklyBars"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="16dp" android:paddingEnd="16dp"
+                android:paddingTop="16dp" android:paddingBottom="16dp" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
