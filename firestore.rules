@@ -100,13 +100,18 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isOwner(uid) || isSuperAdmin() ||
         ('institutionId' in resource.data && belongsToInstitution(resource.data.institutionId));
-      allow write: if isOwner(uid);
+      // isSuperAdmin() נוסף (לוח בקרה — the-easy-way-app-admin): שינוי role/
+      // institutionId של משתמש כלשהו ("הגדר מנהל") ומחיקת מסמך משתמש דורשים
+      // כתיבה על users/{uid} שאינו ה-uid של הכותב עצמו — owner-בלבד לא מספיק.
+      allow write: if isOwner(uid) || isSuperAdmin();
 
       // ── 7. users/{uid}/progress/{wordKey} ────────────────────────────
-      // הבעלים בלבד, גם לקריאה וגם לכתיבה. מורה לא מקבל גישה ישירה
-      // ל-progress גולמי — רק לסיכומי אגרגציה (מחוץ לתחום v1 של הכללים).
+      // הבעלים בלבד לקריאה וכתיבה רגילה. isSuperAdmin() נוסף לקריאה (לוח
+      // בקרה — סטטיסטיקות פלטפורמה: מילים שנשלטו/מילים קשות, דורש
+      // collectionGroup('progress') על כל המשתמשים). מורה עדיין לא מקבל
+      // גישה ישירה ל-progress גולמי — רק לסיכומי אגרגציה, ללא שינוי.
       match /progress/{wordKey} {
-        allow read: if isOwner(uid);
+        allow read: if isOwner(uid) || isSuperAdmin();
         allow write: if isOwner(uid);
       }
 
@@ -232,6 +237,17 @@ service cloud.firestore {
           allow write: if isTeacher() && belongsToInstitution(instId);
         }
       }
+    }
+
+    // ── 11. collectionGroup('progress') — לוח בקרה (the-easy-way-app-admin) ──
+    // התאמה מקוננת (match /users/{uid} { match /progress/{wordKey} } }, סעיף
+    // 7 למעלה) מספיקה לשאילתה ישירה users/{uid}/progress, אבל Firestore
+    // *לא* מרחיב אותה אוטומטית לשאילתת collectionGroup — זו דורשת match
+    // ברמה עליונה עם wildcard רקורסיבי {path=**}, בנפרד מהכלל המקונן.
+    // שני הכללים חיים זה לצד זה (OR) בלי סתירה: זה כאן רק ל-superadmin,
+    // הכלל המקונן ממשיך לשרת owner-בלבד לשאילתות רגילות.
+    match /{path=**}/progress/{wordKey} {
+      allow read: if isSuperAdmin();
     }
 
     // כל דבר אחר שלא הוגדר במפורש — חסום כברירת מחדל (Firestore Rules
