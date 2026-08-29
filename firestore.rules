@@ -142,6 +142,16 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow write: if isOwner(uid);
       }
+
+      // ── 12. users/{uid}/moduleSessions/{sessionId} — יומן שימוש לפי מודול
+      // תרגול (the-easy-way-app-student, src/lib/progressSync.js) — לכל מילה
+      // שנענתה בפועל בסשן: { module, timestamp, correct }. הבעלים כותב;
+      // isSuperAdmin() נוסף לקריאה בדיוק כמו progress/{wordKey} למעלה —
+      // סטטיסטיקות "שימוש במודולים" בלוח הבקרה.
+      match /moduleSessions/{sessionId} {
+        allow read: if isOwner(uid) || isSuperAdmin();
+        allow write: if isOwner(uid);
+      }
     }
 
     // ── config/{document} — הגדרות גלובליות (למשל app_settings: min_version) ──
@@ -247,6 +257,13 @@ service cloud.firestore {
     // שני הכללים חיים זה לצד זה (OR) בלי סתירה: זה כאן רק ל-superadmin,
     // הכלל המקונן ממשיך לשרת owner-בלבד לשאילתות רגילות.
     match /{path=**}/progress/{wordKey} {
+      allow read: if isSuperAdmin();
+    }
+
+    // אותו הסבר בדיוק כמו collectionGroup('progress') למעלה — נדרש גם כאן
+    // כדי שסטטיסטיקות "שימוש במודולים" בלוח הבקרה יוכלו לקרוא collectionGroup
+    // בפועל, לא רק שאילתה ישירה על users/{uid}/moduleSessions.
+    match /{path=**}/moduleSessions/{sessionId} {
       allow read: if isSuperAdmin();
     }
 
