@@ -238,6 +238,54 @@ exports.joinAsTeacher = onCall(
 
 /**
  * =====================================================================
+ * joinInstitutionAsTeacher — הרשמת מורה עם קישור מוסד ישיר
+ * =====================================================================
+ * שונה מ-joinAsTeacher למעלה: שם ה-"קוד" הוא teacherJoinCode, שדה נפרד
+ * על מסמך המוסד שמחפשים לפיו (query). כאן ה-"קוד" הוא ה-institutionId
+ * עצמו — הקישור שנוצר בלוח הבקרה (the-easy-way-app-admin,
+ * Institutions.jsx) הוא teacher.theeasywayapp.co.il?institutionCode=
+ * <institutionId>, נלכד ב-main.jsx של אפליקציית המורה ונשמר ל-
+ * localStorage עד ההרשמה. הבדיקה שהמוסד קיים לא יכולה להתבצע ישירות
+ * מהלקוח: firestore.rules על institutions/{instId} דורשות
+ * belongsToInstitution(instId) לקריאה, ומשתמש חדש/לא-משויך עדיין לא
+ * שייך לאף מוסד — בדיוק כמו joinClass, הבדיקה חייבת לקרות בצד שרת עם
+ * הרשאות Admin SDK. ללא הגבלת קצב כמו joinClass/joinAsTeacher: הקוד כאן
+ * הוא מזהה מסמך Firestore אקראי וארוך, לא קוד קצר שניתן לנחש בברוטפורס.
+ */
+exports.joinInstitutionAsTeacher = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר לפני הצטרפות למוסד.");
+    }
+    const uid = request.auth.uid;
+
+    const institutionId = String((request.data && request.data.institutionId) || "").trim();
+    if (!institutionId) {
+      throw new HttpsError("invalid-argument", "חסר קוד מוסד.");
+    }
+
+    const instSnap = await admin.firestore().collection("institutions").doc(institutionId).get();
+    if (!instSnap.exists) {
+      throw new HttpsError("not-found", "קוד המוסד אינו תקין. בקש קישור חדש מהמנהל.");
+    }
+
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .set({ role: "teacher", institutionId }, { merge: true });
+
+    logger.info(`joinInstitutionAsTeacher: ${uid} הצטרף כמורה למוסד ${institutionId}`);
+
+    return { institutionId, institutionName: instSnap.data().name || "" };
+  }
+);
+
+/**
+ * =====================================================================
  * createClass — משימה 0.9 (שלב 0ב, איפיון הפלטפורמה)
  * =====================================================================
  *
