@@ -832,6 +832,76 @@ exports.getClassProgress = onCall(
 
 /**
  * =====================================================================
+ * getClassStudentCounts — ספירה חיה של תלמידים לכל כיתות המורה (audit fix)
+ * =====================================================================
+ *
+ * מה זה עושה?
+ * ------------
+ * מחליף את השדה המאוחסן classes/{id}.studentCount, שיכול לצאת לא מסונכרן
+ * (ר' audit/REPORT.md — אין קוד שמקטין אותו, אז מחיקת/הסרת תלמיד משאירה
+ * אותו תפוח לצמיתות). מחזירה { counts: { [classId]: number } } — ספירה
+ * חיה בפועל בזמן הקריאה, באמצעות count() aggregation (זול, לא קורא
+ * את כל מסמכי המשתמשים בפועל) על users where classIds array-contains
+ * classId, לכל כיתה בנפרד.
+ *
+ * מורה: רק הכיתות שהוא הבעלים שלהן (teacherId==uid). מנהל: כל הכיתות
+ * הפעילות במוסד — אותה הבחנה בדיוק כמו getClassProgress.
+ */
+exports.getClassStudentCounts = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+
+    const role = request.auth.token.role;
+    if (role !== "teacher" && role !== "principal") {
+      throw new HttpsError("permission-denied", "רק מורה או מנהל יכולים לצפות במספרי תלמידים.");
+    }
+
+    const institutionId = (request.data || {}).institutionId;
+    if (!institutionId) {
+      throw new HttpsError("invalid-argument", "חסר institutionId.");
+    }
+    if (institutionId !== request.auth.token.institutionId) {
+      throw new HttpsError("permission-denied", "אין לך הרשאה למוסד זה.");
+    }
+
+    let classesQuery = admin
+      .firestore()
+      .collection("institutions").doc(institutionId)
+      .collection("classes")
+      .where("archived", "==", false);
+    if (role === "teacher") {
+      classesQuery = classesQuery.where("teacherId", "==", request.auth.uid);
+    }
+    const classesSnap = await classesQuery.get();
+
+    const counts = {};
+    await Promise.all(
+      classesSnap.docs.map(async (classDoc) => {
+        const countSnap = await admin
+          .firestore()
+          .collection("users")
+          .where("classIds", "array-contains", classDoc.id)
+          .count()
+          .get();
+        counts[classDoc.id] = countSnap.data().count;
+      })
+    );
+
+    logger.info(
+      `getClassStudentCounts: ${request.auth.uid} ספר תלמידים ל-${classesSnap.size} כיתות במוסד ${institutionId}`
+    );
+
+    return { counts };
+  }
+);
+
+/**
+ * =====================================================================
  * getClassHardWords — מפת חום: כל המילים הקשות בכיתה (דשבורד מורה, אתר ווב)
  * =====================================================================
  *
