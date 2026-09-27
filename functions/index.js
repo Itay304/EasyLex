@@ -518,6 +518,68 @@ exports.joinClass = onCall(
 
 /**
  * =====================================================================
+ * removeStudentFromClass — הסרת תלמיד מכיתה ע"י המורה (audit fix)
+ * =====================================================================
+ *
+ * מה זה עושה?
+ * ------------
+ * מורה הכיתה בלבד (לא מנהל — בכוונה, בדיוק כמו שהוגדר) יכול להסיר תלמיד
+ * מהכיתה שלו: arrayRemove של classId מ-classIds[] של מסמך התלמיד. לא
+ * נוגע ב-studentCount (השדה בוטל — ר' getClassStudentCounts למעלה),
+ * ולא מוחק שום מידע אחר של התלמיד (progress/moduleSessions וכו' נשארים,
+ * זו רק הסרת שיוך לכיתה הזו, לא מחיקת חשבון).
+ */
+exports.removeStudentFromClass = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+    if (request.auth.token.role !== "teacher") {
+      throw new HttpsError("permission-denied", "רק מורה הכיתה יכול להסיר תלמיד ממנה.");
+    }
+
+    const data = request.data || {};
+    const { studentUid, classId, institutionId } = data;
+    if (!studentUid || !classId || !institutionId) {
+      throw new HttpsError("invalid-argument", "חסרים שדות חובה: studentUid, classId, institutionId.");
+    }
+    if (institutionId !== request.auth.token.institutionId) {
+      throw new HttpsError("permission-denied", "אין לך הרשאה למוסד זה.");
+    }
+
+    const classRef = admin
+      .firestore()
+      .collection("institutions").doc(institutionId)
+      .collection("classes").doc(classId);
+    const classDoc = await classRef.get();
+    if (!classDoc.exists) {
+      throw new HttpsError("not-found", "הכיתה לא נמצאה.");
+    }
+    if (classDoc.data().teacherId !== request.auth.uid) {
+      throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
+    }
+
+    const studentRef = admin.firestore().collection("users").doc(studentUid);
+    const studentDoc = await studentRef.get();
+    if (!studentDoc.exists) {
+      throw new HttpsError("not-found", "התלמיד לא נמצא.");
+    }
+
+    await studentRef.update({
+      classIds: admin.firestore.FieldValue.arrayRemove(classId),
+    });
+
+    logger.info(`removeStudentFromClass: ${request.auth.uid} הסיר את ${studentUid} מכיתה ${classId}`);
+
+    return { success: true };
+  }
+);
+
+/**
+ * =====================================================================
  * createAssignment — משימה 0.14 (שלב 2, מערכת משימות)
  * =====================================================================
  *
