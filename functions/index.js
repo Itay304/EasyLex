@@ -418,7 +418,6 @@ exports.createClass = onCall(
       name: className,
       grade,
       teacherId: request.auth.uid,
-      studentCount: 0,
       archived: false,
       joinCode,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -455,12 +454,9 @@ exports.createClass = onCall(
  * מחפש בכל תת-אוספי "classes" תחת כל מוסד בבת אחת. דורש אינדקס ייעודי
  * (firestore.indexes.json, נפרס בנפרד מ-Rules/Functions).
  *
- * הגנה מפני ניפוח studentCount:
- * -------------------------------
- * אם התלמיד כבר חבר בכיתה הזו (למשל לחיצה כפולה על הכפתור, או הזנת
- * אותו קוד פעמיים בטעות) — לא מגדילים את studentCount שוב. arrayUnion
- * עצמו כבר לא-יוצר-כפילות ל-classIds, אבל studentCount הוא contler
- * נפרד שדורש בדיקה מפורשת לפני ההגדלה.
+ * classIds נכתב תמיד עם arrayUnion (לא יוצר כפילות בהצטרפות כפולה),
+ * ומספר התלמידים בכיתה נספר חי בזמן קריאה (ר' getClassStudentCounts) —
+ * לא מתוחזק כמונה מאוחסן, ר' audit/REPORT.md.
  * =====================================================================
  */
 
@@ -525,9 +521,6 @@ exports.joinClass = onCall(
     // institutions/{instId}/classes/{classId} — ה-ref.parent.parent הוא מסמך המוסד.
     const institutionId = classDoc.ref.parent.parent.id;
 
-    const existingClassIds = userData.classIds || [];
-    const alreadyMember = existingClassIds.includes(classId);
-
     const userUpdate = {
       classJoinAttempts: recentAttempts,
       classIds: admin.firestore.FieldValue.arrayUnion(classId),
@@ -545,12 +538,6 @@ exports.joinClass = onCall(
     }
 
     await userRef.set(userUpdate, { merge: true });
-
-    if (!alreadyMember) {
-      await classDoc.ref.update({
-        studentCount: admin.firestore.FieldValue.increment(1),
-      });
-    }
 
     logger.info(`joinClass: ${uid} הצטרף לכיתה ${classId} (מוסד ${institutionId})`);
 
