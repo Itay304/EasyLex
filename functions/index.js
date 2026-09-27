@@ -39,6 +39,7 @@
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const functionsV1 = require("firebase-functions/v1");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -141,6 +142,47 @@ exports.syncUserClaims = onDocumentWritten(
     }
   }
 );
+
+/**
+ * =====================================================================
+ * cleanupUserOnAuthDelete — ניקוי users/{uid} כשחשבון Auth נמחק (audit fix)
+ * =====================================================================
+ *
+ * מה זה עושה?
+ * ------------
+ * מחיקת חשבון Firebase Auth (מהקונסולה, admin.auth().deleteUser, או
+ * שהמשתמש עצמו מוחק את החשבון) לא מוחקת אוטומטית את מסמך users/{uid}
+ * המתאים ולא נוגעת ב-subcollections שלו (progress, moduleSessions,
+ * dailyChallenge וכו') — הם היו נשארים יתומים לצמיתות. זהו טריגר v1
+ * (functions/v2 identity תומך רק ב-blocking functions על create/sign-in,
+ * לא ב-onDelete אמיתי) שמוחק את המסמך + כל תת-האוספים שלו ברגע שחשבון
+ * ה-Auth נעלם, בצ'אנקים של עד 400 מחיקות ל-batch (מתחת למגבלת ה-500).
+ */
+exports.cleanupUserOnAuthDelete = functionsV1
+  .region("europe-west1")
+  .auth.user()
+  .onDelete(async (userRecord) => {
+    const uid = userRecord.uid;
+    const userRef = admin.firestore().collection("users").doc(uid);
+
+    const subcollections = await userRef.listCollections();
+    const allDocRefs = [userRef];
+    for (const col of subcollections) {
+      const snap = await col.get();
+      snap.forEach((d) => allDocRefs.push(d.ref));
+    }
+
+    const CHUNK_SIZE = 400;
+    for (let i = 0; i < allDocRefs.length; i += CHUNK_SIZE) {
+      const batch = admin.firestore().batch();
+      allDocRefs.slice(i, i + CHUNK_SIZE).forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
+
+    logger.info(
+      `cleanupUserOnAuthDelete: נמחקו users/${uid} ו-${allDocRefs.length - 1} מסמכי subcollections (${subcollections.length} אוספים)`
+    );
+  });
 
 /**
  * =====================================================================
