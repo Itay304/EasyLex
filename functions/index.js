@@ -808,7 +808,10 @@ exports.getClassProgress = onCall(
 
           return {
             uid: userDoc.id,
-            displayName: u.displayName || "",
+            // fullName הוא השדה שהרשמת תלמיד כותבת בפועל (the-easy-way-app-student
+            // src/pages/Login.jsx) — displayName נשאר fallback ראשון להיסטוריה/
+            // עקביות עם משתמשים אחרים. ר' audit/REPORT.md #1.
+            displayName: u.displayName || u.fullName || "",
             totalXp: typeof u.totalXp === "number" ? u.totalXp : 0,
             lastActiveDate,
             masteredWords,
