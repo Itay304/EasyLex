@@ -144,6 +144,65 @@ exports.syncUserClaims = onDocumentWritten(
 
 /**
  * =====================================================================
+ * deleteUserAccount — מחיקת חשבון עצמית, או ע"י superadmin (audit fix)
+ * =====================================================================
+ *
+ * מה זה עושה?
+ * ------------
+ * מחליף את cleanupUserOnAuthDelete (טריגר v1 שלא הצליח לעלות — Gen1 לא
+ * תומך ב-Node 24 שהקודבייס נעול עליו). כאן המחיקה יזומה במפורש דרך
+ * onCall (Gen2, Node 24 תקין): משתמש יכול למחוק רק את עצמו; superadmin
+ * יכול למחוק כל משתמש.
+ *
+ * סדר המחיקה — Firestore לפני Auth, בכוונה:
+ * ------------------------------------------
+ * אם המחיקה הייתה מתחילה מ-Auth וקרסה באמצע (לפני שה-Firestore doc נמחק),
+ * הייתה נשארת "רוח רפאים": מסמך users/{uid} עם classIds פעיל, שעדיין
+ * נספר בספירת התלמידים של כיתה (getClassStudentCounts) למרות שהחשבון כבר
+ * לא קיים ב-Auth ולא ניתן להתחבר אליו — בדיוק סוג האי-סנכרון שהביקורת
+ * המקורית (audit/REPORT.md) עסקה בו. מוחקים את Firestore קודם (כולל כל
+ * תת-האוספים, recursiveDelete) ורק אז את Auth: אם השלב השני נכשל, נשאר
+ * לכל היותר חשבון Auth יתום בלי מסמך — לא נספר בשום מקום, לא משפיע על
+ * ספירות/כיתות, וניתן לנקות בנפרד.
+ */
+exports.deleteUserAccount = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+
+    const callerUid = request.auth.uid;
+    const targetUid = (request.data || {}).uid || callerUid;
+    const isSelf = targetUid === callerUid;
+    const isSuperadmin = request.auth.token.role === "superadmin";
+
+    if (!isSelf && !isSuperadmin) {
+      throw new HttpsError("permission-denied", "אפשר למחוק רק את החשבון שלך.");
+    }
+
+    const userRef = admin.firestore().collection("users").doc(targetUid);
+    await admin.firestore().recursiveDelete(userRef);
+
+    try {
+      await admin.auth().deleteUser(targetUid);
+    } catch (err) {
+      // מסמך ה-Firestore כבר נמחק בשלב הקודם — לא נשאר "רוח רפאים" שנספרת
+      // בכיתות, גם אם השלב הזה נכשל (למשל חשבון כבר נמחק קודם ב-Auth).
+      logger.error(`deleteUserAccount: users/${targetUid} נמחק אך מחיקת ה-Auth נכשלה`, err);
+      throw new HttpsError("internal", "מסמך המשתמש נמחק אך מחיקת חשבון ה-Auth נכשלה.");
+    }
+
+    logger.info(`deleteUserAccount: ${callerUid} מחק את החשבון ${targetUid}${isSelf ? " (עצמי)" : " (superadmin)"}`);
+
+    return { success: true };
+  }
+);
+
+/**
+ * =====================================================================
  * joinAsTeacher — משימה 0.8 (שלב 0ב, איפיון הפלטפורמה)
  * =====================================================================
  *
