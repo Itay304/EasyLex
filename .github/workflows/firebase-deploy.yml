@@ -27,4 +27,4 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes --project my-book-club-site --non-interactive
+        run: npx firebase-tools@15.24.0 deploy --only functions,firestore:rules,firestore:indexes --project my-book-club-site --non-interactive
