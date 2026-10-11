@@ -916,9 +916,9 @@ exports.getClassProgress = onCall(
 
           return {
             uid: userDoc.id,
-            // fullName הוא השדה שהרשמת תלמיד כותבת בפועל (the-easy-way-app-student
-            // src/pages/Login.jsx) — displayName נשאר fallback ראשון להיסטוריה/
-            // עקביות עם משתמשים אחרים. ר' audit/REPORT.md #1.
+            // הרשמת תלמיד (the-easy-way-app-student src/pages/Login.jsx) כותבת
+            // גם fullName וגם displayName (אותו ערך) מאז התיקון באודיט — ה-fallback
+            // ל-fullName נשאר רק עבור חשבונות ישנים שנוצרו לפני התיקון.
             displayName: u.displayName || u.fullName || "",
             totalXp: typeof u.totalXp === "number" ? u.totalXp : 0,
             lastActiveDate,
