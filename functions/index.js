@@ -1030,7 +1030,19 @@ exports.getClassStudentCounts = onCall(
  * getClassProgress: correctAttempts>=3 && total>0 && correct/total>=0.7).
  * כל תלמיד תורם לכל היותר progress doc אחד למילה נתונה (doc ID = המילה),
  * כך שאין צורך ב-Set לדה-דופ — ספירה ישירה מספיקה.
+ *
+ * MIN_STUDENTS_FOR_HARD_WORD / MIN_ATTEMPTS_FOR_HARD_WORD — מילה עם ניסיון
+ * בודד (תלמיד אחד, כמה ניסיונות) שיצא לו שגוי מקבלת errorRate=100% ומציפה
+ * את מילים שבאמת קשות לכל הכיתה (audit fix). מילה נכנסת לדירוג רק אם
+ * ניסו אותה לפחות 2 תלמידים שונים *וגם* יש עליה לפחות 3 ניסיונות בסך
+ * הכל — סף כפול כי תלמיד אחד יכול לתרום הרבה ניסיונות למילה בודדת (לא
+ * רק studentsAttempted נמוך), וגם שני תלמידים עם ניסיון אחד כל אחד לא
+ * מספיקים סטטיסטית. אם אף מילה לא עוברת את הסף (כיתה קטנה/חדשה) —
+ * מוחזר מערך ריק, וה-UI (HardWordsHeatmap.jsx) כבר מציג מצב ריק קיים.
  */
+const MIN_STUDENTS_FOR_HARD_WORD = 2;
+const MIN_ATTEMPTS_FOR_HARD_WORD = 3;
+
 exports.getClassHardWords = onCall(
   {
     region: "europe-west1",
@@ -1107,6 +1119,11 @@ exports.getClassHardWords = onCall(
     );
 
     const words = Array.from(wordStats.entries())
+      .filter(
+        ([, stats]) =>
+          stats.studentsAttempted >= MIN_STUDENTS_FOR_HARD_WORD &&
+          stats.attempts >= MIN_ATTEMPTS_FOR_HARD_WORD
+      )
       .map(([englishWord, stats]) => ({
         englishWord,
         totalAttempts: stats.attempts,
