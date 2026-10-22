@@ -41,6 +41,9 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+// FieldValue מה-API המודולרי: admin.firestore.FieldValue לא קיים בתוך אמולטור ה-Functions (שעוטף את
+// admin.firestore), והייבוא הישיר עובד זהה גם בפרודקשן.
+const { FieldValue } = require("firebase-admin/firestore");
 const stages = require("./stages");
 
 admin.initializeApp();
@@ -460,7 +463,7 @@ exports.createClass = onCall(
       teacherId: request.auth.uid,
       archived: false,
       joinCode,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     logger.info(`createClass: ${request.auth.uid} יצר כיתה ${classRef.id} במוסד ${institutionId}`);
@@ -563,7 +566,7 @@ exports.joinClass = onCall(
 
     const userUpdate = {
       classJoinAttempts: recentAttempts,
-      classIds: admin.firestore.FieldValue.arrayUnion(classId),
+      classIds: FieldValue.arrayUnion(classId),
     };
     if (!userData.institutionId) {
       userUpdate.institutionId = institutionId;
@@ -638,7 +641,7 @@ exports.removeStudentFromClass = onCall(
     }
 
     await studentRef.update({
-      classIds: admin.firestore.FieldValue.arrayRemove(classId),
+      classIds: FieldValue.arrayRemove(classId),
     });
 
     logger.info(`removeStudentFromClass: ${request.auth.uid} הסיר את ${studentUid} מכיתה ${classId}`);
@@ -737,7 +740,7 @@ exports.createAssignment = onCall(
       listId,
       wordIds,
       createdBy: request.auth.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       status: "active",
       listSource,
       // חלוקה לשלבים של 10–15 מילים לפי סדר wordIds (stages.buildStageSizes)
@@ -1494,7 +1497,7 @@ exports.sendAnnouncement = onCall(
 
     const announcementRef = await classRef.collection("announcements").add({
       message,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       createdBy: request.auth.uid,
       createdByName,
       isRead: false,
