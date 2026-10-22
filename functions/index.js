@@ -97,6 +97,28 @@ async function getTokensForUids(uids) {
   return tokensPerUser.flat();
 }
 
+/**
+ * מילות משימה: [{ id, englishWord }]. רשימה גלובלית (word_lists — רשימות ה-Band) או מוסדית
+ * (institutions/{inst}/customLists), לפי assignment.listSource; במשימות ישנות בלי השדה — לפי קיום
+ * הרשימה ב-word_lists. עם wordIds: getAll של המסמכים האלה בלבד (לא כל הרשימה).
+ */
+async function loadAssignmentWords(institutionId, assignment) {
+  const db = admin.firestore();
+  const listId = assignment.listId;
+  let source = assignment.listSource;
+  if (source !== "custom" && source !== "global") {
+    source = (await db.collection("word_lists").doc(listId).get()).exists ? "global" : "custom";
+  }
+  const wordsCol = source === "custom"
+    ? db.collection("institutions").doc(institutionId).collection("customLists").doc(listId).collection("words")
+    : db.collection("word_lists").doc(listId).collection("words");
+  const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
+  const docs = wordIds.length > 0
+    ? await db.getAll(...wordIds.map((id) => wordsCol.doc(id)))
+    : (await wordsCol.get()).docs;
+  return docs.filter((d) => d.exists).map((d) => ({ id: d.id, englishWord: d.data().englishWord }));
+}
+
 function todayKeyIsrael() {
   // en-CA מפרמט כ-YYYY-MM-DD — אותו מבנה בדיוק כמו toDateKey() בצד לקוח
   // (src/lib/dateUtils.js), רק עם timeZone מפורש כדי שה"יום" יחושב לפי
@@ -675,6 +697,8 @@ exports.createAssignment = onCall(
     // (StepFinalize.jsx). לא אוכף חלוקה בפועל בין מודולים — רק דגל
     // תצוגה, ר' getMyAssignments/PracticePicker.
     const practiceMode = data.practiceMode === "varied" ? "varied" : null;
+    // מאיפה המילים: "global" = word_lists (רשימות ה-Band), "custom" = institutions/{inst}/customLists
+    const listSource = data.listSource === "custom" ? "custom" : "global";
 
     if (!classId || !listId || !title) {
       throw new HttpsError(
@@ -705,6 +729,7 @@ exports.createAssignment = onCall(
       createdBy: request.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       status: "active",
+      listSource,
     };
     if (dueDateMs !== null) {
       assignmentData.dueDateMs = dueDateMs;
@@ -796,6 +821,7 @@ exports.getMyAssignments = onCall(
         dueDateMs: typeof data.dueDateMs === "number" ? data.dueDateMs : null,
         status: data.status || "active",
         practiceMode: data.practiceMode === "varied" ? "varied" : null,
+        listSource: data.listSource || null,
       };
     });
 
@@ -1209,28 +1235,10 @@ exports.getAssignmentProgress = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
-    // קביעת קבוצת המילים של המשימה (englishWord strings).
-    let targetWords;
-    if (wordIds.length > 0) {
-      const wordDocs = await Promise.all(
-        wordIds.map((wordId) =>
-          admin.firestore().collection("word_lists").doc(listId)
-            .collection("words").doc(wordId).get()
-        )
-      );
-      targetWords = new Set(
-        wordDocs.filter((d) => d.exists).map((d) => d.data().englishWord).filter(Boolean)
-      );
-    } else {
-      const listWordsSnap = await admin
-        .firestore()
-        .collection("word_lists").doc(listId)
-        .collection("words")
-        .get();
-      targetWords = new Set(
-        listWordsSnap.docs.map((d) => d.data().englishWord).filter(Boolean)
-      );
-    }
+    // קביעת קבוצת המילים של המשימה (englishWord strings) — מרשימה גלובלית או מוסדית
+    const targetWords = new Set(
+      (await loadAssignmentWords(institutionId, assignment)).map((w) => w.englishWord).filter(Boolean)
+    );
 
     if (targetWords.size === 0) {
       return { completionPct: 0, studentCount: 0 };
