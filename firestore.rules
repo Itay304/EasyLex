@@ -234,6 +234,29 @@ service cloud.firestore {
           ((isTeacher() || myRole() == 'principal') && belongsToInstitution(instId)) ||
           (resource != null && resource.data.classId in myClassIds());
         allow write: if isTeacher() && belongsToInstitution(instId);
+
+        // 5א. institutions/{instId}/assignments/{assignmentId}/students/{studentId}
+        // התקדמות של תלמיד אחד במשימה אחת (שלבים, מילים "ידועות" — the-easy-way-app-student,
+        // src/lib/assignmentProgress.js). מסמך נפרד מ-users/{uid}/progress, כך שאפליקציית
+        // האנדרואיד (שכותבת רק ל-progress) לא דורסת אותו.
+        // כתיבה: התלמיד עצמו בלבד, רק למשימה של כיתה שהוא בה, ורק עם uid שלו במסמך. אין מחיקה.
+        // קריאה: התלמיד עצמו; המורה של הכיתה (teacherId של הכיתה של המשימה); מנהל המוסד; superadmin.
+        match /students/{studentId} {
+          function assignmentDoc() {
+            return get(/databases/$(database)/documents/institutions/$(instId)/assignments/$(assignmentId)).data;
+          }
+          function iTeachThisClass() {
+            return get(/databases/$(database)/documents/institutions/$(instId)/classes/$(assignmentDoc().classId)).data.teacherId == request.auth.uid;
+          }
+          allow read: if isSuperAdmin() ||
+            (isOwner(studentId) && belongsToInstitution(instId)) ||
+            (myRole() == 'principal' && belongsToInstitution(instId)) ||
+            (isTeacher() && belongsToInstitution(instId) && iTeachThisClass());
+          allow create, update: if isOwner(studentId) && belongsToInstitution(instId) &&
+            assignmentDoc().classId in myClassIds() &&
+            request.resource.data.uid == studentId;
+          allow delete: if false;
+        }
       }
 
       // 6. institutions/{instId}/customLists/{listId}(/words/{wordId})
