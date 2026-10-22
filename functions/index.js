@@ -711,7 +711,11 @@ exports.createAssignment = onCall(
     }
     // משימה = רשימת מילים מפורשת, 1–300. "כל הרשימה" (wordIds ריק = עד 1,902 מילים ב-Band 2) כבר לא אפשרי.
     if (wordIds.length === 0) {
-      throw new HttpsError("invalid-argument", "יש לבחור מילים למשימה (לפחות מילה אחת).");
+      // רשימה ריקה = "כל הרשימה" — מה שאפליקציית האנדרואיד שולחת. מפנים את המורה לאפליקציה בדפדפן.
+      throw new HttpsError(
+        "invalid-argument",
+        "יצירת משימות עברה לאפליקציית המורה בדפדפן: https://teacher.theeasywayapp.co.il. שם אפשר לבחור מילים ולחלק לשלבים."
+      );
     }
     if (wordIds.length > stages.MAX_ASSIGNMENT_WORDS) {
       throw new HttpsError(
