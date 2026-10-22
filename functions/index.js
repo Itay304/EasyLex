@@ -1308,6 +1308,129 @@ exports.getAssignmentProgress = onCall(
 
 /**
  * =====================================================================
+ * getAssignmentSummary — סיכום משימה למורה (שלבים): מי בקצב, מי מאחור, מי לא התחיל,
+ * ו-10 המילים הקשות של המשימה. מחליף את getAssignmentProgress בדשבורד.
+ * =====================================================================
+ *
+ * קורא מסמך אחד לכל תלמיד במשימה (institutions/{inst}/assignments/{aid}/students/{uid}, נכתב
+ * ע"י אפליקציית התלמיד — src/lib/assignmentProgress.js), ולא את כל ה-progress הגלובלי של כל תלמיד.
+ * קריאות: משימה (1) + כיתה (1) + תלמידי הכיתה (N) + מסמכי ההתקדמות במשימה (≤N). בלי מסמכי מילים —
+ * המילה באנגלית (en) שמורה במסמך ההתקדמות.
+ *
+ * קצב (stages.paceStatus): כמה מילים התלמיד היה אמור לראות עד היום — לפי תאריך היעד, ובלעדיו סבב ביום.
+ * מילים קשות: אותם ספים כמו getClassHardWords (לפחות 2 תלמידים ו-3 ניסיונות), ממוינות לפי אחוז טעויות.
+ */
+exports.getAssignmentSummary = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+    const role = request.auth.token.role;
+    if (role !== "teacher" && role !== "principal") {
+      throw new HttpsError("permission-denied", "רק מורה או מנהל יכולים לצפות בהתקדמות תלמידים.");
+    }
+    const data = request.data || {};
+    const assignmentId = data.assignmentId;
+    const institutionId = data.institutionId;
+    if (!assignmentId || !institutionId) {
+      throw new HttpsError("invalid-argument", "חסרים שדות חובה: assignmentId, institutionId.");
+    }
+    if (institutionId !== request.auth.token.institutionId) {
+      throw new HttpsError("permission-denied", "אין לך הרשאה למוסד זה.");
+    }
+
+    const db = admin.firestore();
+    const assignmentRef = db.collection("institutions").doc(institutionId).collection("assignments").doc(assignmentId);
+    const assignmentDoc = await assignmentRef.get();
+    if (!assignmentDoc.exists) {
+      throw new HttpsError("not-found", "המשימה לא נמצאה.");
+    }
+    const assignment = assignmentDoc.data();
+    const classDoc = await db.collection("institutions").doc(institutionId).collection("classes").doc(assignment.classId).get();
+    if (!classDoc.exists) {
+      throw new HttpsError("not-found", "הכיתה לא נמצאה.");
+    }
+    if (role === "teacher" && classDoc.data().teacherId !== request.auth.uid) {
+      throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
+    }
+
+    const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
+    const totalWords = wordIds.length;
+    const wordSet = new Set(wordIds);
+    const createdAtMs = assignment.createdAt && typeof assignment.createdAt.toMillis === "function"
+      ? assignment.createdAt.toMillis() : null;
+    const dueDateMs = typeof assignment.dueDateMs === "number" ? assignment.dueDateMs : null;
+
+    const [usersSnap, progressSnap] = await Promise.all([
+      db.collection("users").where("classIds", "array-contains", assignment.classId).get(),
+      assignmentRef.collection("students").get(),
+    ]);
+    const progressByUid = new Map(progressSnap.docs.map((d) => [d.id, d.data()]));
+
+    const counts = { onPace: 0, behind: 0, notStarted: 0 };
+    const wordStats = new Map(); // wordId -> { en, attempts, wrong, students, notKnown }
+    const students = usersSnap.docs
+      .filter((u) => u.data().institutionId === institutionId)
+      .map((u) => {
+        const p = progressByUid.get(u.id) || {};
+        const words = p.words || {};
+        let seen = 0;
+        let known = 0;
+        for (const [wordId, w] of Object.entries(words)) {
+          if (!wordSet.has(wordId) || !w.seen) continue;
+          seen++;
+          const isKnown = stages.isKnown(w);
+          if (isKnown) known++;
+          const e = wordStats.get(wordId) || { en: w.en || wordId, attempts: 0, wrong: 0, students: 0, notKnown: 0 };
+          e.attempts += w.n || 0;
+          e.wrong += w.wrong || 0;
+          e.students += 1;
+          if (!isKnown) e.notKnown += 1;
+          wordStats.set(wordId, e);
+        }
+        const pace = stages.paceStatus({ totalWords, seenWords: seen, createdAtMs, dueDateMs });
+        const status = known === totalWords && totalWords > 0 ? "on-pace" : pace.status;
+        counts[status === "on-pace" ? "onPace" : status === "behind" ? "behind" : "notStarted"]++;
+        const sessionDays = Object.keys(p.sessions || {}).sort();
+        return {
+          uid: u.id,
+          displayName: u.data().displayName || u.data().fullName || "",
+          status,
+          seen,
+          known,
+          expectedSeen: pace.expectedSeen,
+          lastDay: p.lastDay || sessionDays[sessionDays.length - 1] || null,
+        };
+      });
+
+    const order = { "behind": 0, "not-started": 1, "on-pace": 2 };
+    students.sort((a, b) => order[a.status] - order[b.status] || a.known - b.known);
+
+    const hardWords = [...wordStats.values()]
+      .filter((w) => w.students >= MIN_STUDENTS_FOR_HARD_WORD && w.attempts >= MIN_ATTEMPTS_FOR_HARD_WORD)
+      .map((w) => ({ englishWord: w.en, errorRate: w.wrong / w.attempts, studentsAttempted: w.students, studentsNotKnown: w.notKnown }))
+      .sort((a, b) => b.errorRate - a.errorRate)
+      .slice(0, 10);
+
+    logger.info(
+      `getAssignmentSummary: ${request.auth.uid} — משימה ${assignmentId}: ${students.length} תלמידים, ${progressSnap.size} מסמכי התקדמות`
+    );
+    return {
+      totalWords,
+      stageCount: stages.buildStageSizes(totalWords).length,
+      dueDateMs,
+      counts,
+      students,
+      hardWords,
+    };
+  }
+);
+
+/**
+ * =====================================================================
  * sendAnnouncement — הודעת מורה לכיתה, חד-כיוונית (שלב 2)
  * =====================================================================
  *
