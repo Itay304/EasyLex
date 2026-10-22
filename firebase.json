@@ -11,7 +11,13 @@
       "enabled": true,
       "port": 4001
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    }
   },
   "functions": [
     {
@@ -23,7 +29,8 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "*.test.js"
       ]
     }
   ]

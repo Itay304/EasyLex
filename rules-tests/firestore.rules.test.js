@@ -216,3 +216,84 @@ describe('משתמש לא מחובר', () => {
     await assertFails(anon.doc('institutions/inst_a').get());
   });
 });
+
+// ── 5א. assignments/{aid}/students/{uid} — התקדמות תלמיד במשימה (שלבים) ─────────────
+
+describe('institutions/{inst}/assignments/{aid}/students/{uid}', () => {
+  const INST = 'inst_a';
+  const AID = 'assign_1';
+  const DOC = (uid) => `institutions/${INST}/assignments/${AID}/students/${uid}`;
+
+  async function seedClassAndAssignment() {
+    await seed(async (db) => {
+      await db.doc(`institutions/${INST}/classes/class_1`).set({ name: 'ז1', teacherId: 'teacher_a' });
+      await db.doc(`institutions/${INST}/classes/class_2`).set({ name: 'ז2', teacherId: 'teacher_b' });
+      await db.doc(`institutions/${INST}/assignments/${AID}`).set({ classId: 'class_1', title: 'חזרה', wordIds: ['w1'] });
+      await db.doc('users/student_a').set({ classIds: ['class_1'] });
+      await db.doc('users/student_out').set({ classIds: ['class_2'] });
+    });
+  }
+
+  const student = (uid) => authedContext(uid, { role: 'student', institutionId: INST });
+  const progressDoc = (uid) => ({ uid, classId: 'class_1', words: { w1: { seen: true, n: 1, wrong: 0, correctDays: ['2026-10-22'] } } });
+
+  test('תלמיד בכיתה כותב וקורא את המסמך שלו', async () => {
+    await seedClassAndAssignment();
+    const s = student('student_a');
+    await assertSucceeds(s.doc(DOC('student_a')).set(progressDoc('student_a'), { merge: true }));
+    await assertSucceeds(s.doc(DOC('student_a')).get());
+  });
+
+  test('תלמיד לא כותב למסמך של תלמיד אחר', async () => {
+    await seedClassAndAssignment();
+    await assertFails(student('student_a').doc(DOC('student_b')).set(progressDoc('student_b')));
+  });
+
+  test('תלמיד לא כותב עם uid של מישהו אחר בתוך המסמך', async () => {
+    await seedClassAndAssignment();
+    await assertFails(student('student_a').doc(DOC('student_a')).set(progressDoc('student_b')));
+  });
+
+  test('תלמיד שלא בכיתה של המשימה לא כותב', async () => {
+    await seedClassAndAssignment();
+    await assertFails(student('student_out').doc(DOC('student_out')).set(progressDoc('student_out')));
+  });
+
+  test('תלמיד ממוסד אחר לא כותב ולא קורא', async () => {
+    await seedClassAndAssignment();
+    await seed(async (db) => db.doc(DOC('student_a')).set(progressDoc('student_a')));
+    const other = authedContext('student_a', { role: 'student', institutionId: 'inst_b' });
+    await assertFails(other.doc(DOC('student_a')).get());
+    await assertFails(other.doc(DOC('student_a')).set(progressDoc('student_a')));
+  });
+
+  test('תלמיד לא קורא את המסמך של תלמיד אחר', async () => {
+    await seedClassAndAssignment();
+    await seed(async (db) => db.doc(DOC('student_b')).set(progressDoc('student_b')));
+    await assertFails(student('student_a').doc(DOC('student_b')).get());
+  });
+
+  test('המורה של הכיתה קורא; מורה של כיתה אחרת לא', async () => {
+    await seedClassAndAssignment();
+    await seed(async (db) => db.doc(DOC('student_a')).set(progressDoc('student_a')));
+    await assertSucceeds(authedContext('teacher_a', { role: 'teacher', institutionId: INST }).doc(DOC('student_a')).get());
+    await assertFails(authedContext('teacher_b', { role: 'teacher', institutionId: INST }).doc(DOC('student_a')).get());
+  });
+
+  test('מורה לא כותב למסמך של תלמיד', async () => {
+    await seedClassAndAssignment();
+    await assertFails(authedContext('teacher_a', { role: 'teacher', institutionId: INST }).doc(DOC('student_a')).set(progressDoc('student_a')));
+  });
+
+  test('מנהל המוסד קורא', async () => {
+    await seedClassAndAssignment();
+    await seed(async (db) => db.doc(DOC('student_a')).set(progressDoc('student_a')));
+    await assertSucceeds(authedContext('principal_a', { role: 'principal', institutionId: INST }).doc(DOC('student_a')).get());
+  });
+
+  test('אין מחיקה — גם לא לתלמיד עצמו', async () => {
+    await seedClassAndAssignment();
+    await seed(async (db) => db.doc(DOC('student_a')).set(progressDoc('student_a')));
+    await assertFails(student('student_a').doc(DOC('student_a')).delete());
+  });
+});

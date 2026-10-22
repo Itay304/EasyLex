@@ -41,6 +41,10 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+// FieldValue מה-API המודולרי: admin.firestore.FieldValue לא קיים בתוך אמולטור ה-Functions (שעוטף את
+// admin.firestore), והייבוא הישיר עובד זהה גם בפרודקשן.
+const { FieldValue } = require("firebase-admin/firestore");
+const stages = require("./stages");
 
 admin.initializeApp();
 
@@ -95,6 +99,28 @@ async function getTokensForUids(uids) {
     })
   );
   return tokensPerUser.flat();
+}
+
+/**
+ * מילות משימה: [{ id, englishWord }]. רשימה גלובלית (word_lists — רשימות ה-Band) או מוסדית
+ * (institutions/{inst}/customLists), לפי assignment.listSource; במשימות ישנות בלי השדה — לפי קיום
+ * הרשימה ב-word_lists. עם wordIds: getAll של המסמכים האלה בלבד (לא כל הרשימה).
+ */
+async function loadAssignmentWords(institutionId, assignment) {
+  const db = admin.firestore();
+  const listId = assignment.listId;
+  let source = assignment.listSource;
+  if (source !== "custom" && source !== "global") {
+    source = (await db.collection("word_lists").doc(listId).get()).exists ? "global" : "custom";
+  }
+  const wordsCol = source === "custom"
+    ? db.collection("institutions").doc(institutionId).collection("customLists").doc(listId).collection("words")
+    : db.collection("word_lists").doc(listId).collection("words");
+  const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
+  const docs = wordIds.length > 0
+    ? await db.getAll(...wordIds.map((id) => wordsCol.doc(id)))
+    : (await wordsCol.get()).docs;
+  return docs.filter((d) => d.exists).map((d) => ({ id: d.id, englishWord: d.data().englishWord }));
 }
 
 function todayKeyIsrael() {
@@ -437,7 +463,7 @@ exports.createClass = onCall(
       teacherId: request.auth.uid,
       archived: false,
       joinCode,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     logger.info(`createClass: ${request.auth.uid} יצר כיתה ${classRef.id} במוסד ${institutionId}`);
@@ -540,7 +566,7 @@ exports.joinClass = onCall(
 
     const userUpdate = {
       classJoinAttempts: recentAttempts,
-      classIds: admin.firestore.FieldValue.arrayUnion(classId),
+      classIds: FieldValue.arrayUnion(classId),
     };
     if (!userData.institutionId) {
       userUpdate.institutionId = institutionId;
@@ -615,7 +641,7 @@ exports.removeStudentFromClass = onCall(
     }
 
     await studentRef.update({
-      classIds: admin.firestore.FieldValue.arrayRemove(classId),
+      classIds: FieldValue.arrayRemove(classId),
     });
 
     logger.info(`removeStudentFromClass: ${request.auth.uid} הסיר את ${studentUid} מכיתה ${classId}`);
@@ -671,15 +697,30 @@ exports.createAssignment = onCall(
     const title = typeof data.title === "string" ? data.title.trim() : "";
     const wordIds = Array.isArray(data.wordIds) ? data.wordIds : [];
     const dueDateMs = typeof data.dueDateMs === "number" ? data.dueDateMs : null;
-    // practiceMode: "varied" — מורה בחר "מגוון אוטומטי" בשלב 3 של האשף
-    // (StepFinalize.jsx). לא אוכף חלוקה בפועל בין מודולים — רק דגל
-    // תצוגה, ר' getMyAssignments/PracticePicker.
-    const practiceMode = data.practiceMode === "varied" ? "varied" : null;
+    // תרגול משימה הוא תמיד מגוון (מסירים את הבחירה מהמורה) — practiceMode נשמר "varied" לכל משימה
+    // חדשה, לתאימות עם לקוחות שקוראים את השדה.
+    const practiceMode = "varied";
+    // מאיפה המילים: "global" = word_lists (רשימות ה-Band), "custom" = institutions/{inst}/customLists
+    const listSource = data.listSource === "custom" ? "custom" : "global";
 
     if (!classId || !listId || !title) {
       throw new HttpsError(
         "invalid-argument",
         "חסרים שדות חובה: כיתה, רשימת מילים ושם משימה."
+      );
+    }
+    // משימה = רשימת מילים מפורשת, 1–300. "כל הרשימה" (wordIds ריק = עד 1,902 מילים ב-Band 2) כבר לא אפשרי.
+    if (wordIds.length === 0) {
+      // רשימה ריקה = "כל הרשימה" — מה שאפליקציית האנדרואיד שולחת. מפנים את המורה לאפליקציה בדפדפן.
+      throw new HttpsError(
+        "invalid-argument",
+        "יצירת משימות עברה לאפליקציית המורה בדפדפן: https://teacher.theeasywayapp.co.il. שם אפשר לבחור מילים ולחלק לשלבים."
+      );
+    }
+    if (wordIds.length > stages.MAX_ASSIGNMENT_WORDS) {
+      throw new HttpsError(
+        "invalid-argument",
+        `משימה יכולה לכלול עד ${stages.MAX_ASSIGNMENT_WORDS} מילים (נבחרו ${wordIds.length}). צמצמו בסינון או חלקו לכמה משימות.`
       );
     }
 
@@ -703,8 +744,11 @@ exports.createAssignment = onCall(
       listId,
       wordIds,
       createdBy: request.auth.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       status: "active",
+      listSource,
+      // חלוקה לשלבים של 10–15 מילים לפי סדר wordIds (stages.buildStageSizes)
+      stagePlan: { sizes: stages.buildStageSizes(wordIds.length) },
     };
     if (dueDateMs !== null) {
       assignmentData.dueDateMs = dueDateMs;
@@ -796,6 +840,10 @@ exports.getMyAssignments = onCall(
         dueDateMs: typeof data.dueDateMs === "number" ? data.dueDateMs : null,
         status: data.status || "active",
         practiceMode: data.practiceMode === "varied" ? "varied" : null,
+        listSource: data.listSource || null,
+        // משימות ישנות בלי stagePlan — מחושב כאן בזמן הקריאה (אותה חלוקה בדיוק)
+        stagePlan: data.stagePlan || { sizes: stages.buildStageSizes(Array.isArray(data.wordIds) ? data.wordIds.length : 0) },
+        createdAtMs: data.createdAt && typeof data.createdAt.toMillis === "function" ? data.createdAt.toMillis() : null,
       };
     });
 
@@ -1209,28 +1257,10 @@ exports.getAssignmentProgress = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
-    // קביעת קבוצת המילים של המשימה (englishWord strings).
-    let targetWords;
-    if (wordIds.length > 0) {
-      const wordDocs = await Promise.all(
-        wordIds.map((wordId) =>
-          admin.firestore().collection("word_lists").doc(listId)
-            .collection("words").doc(wordId).get()
-        )
-      );
-      targetWords = new Set(
-        wordDocs.filter((d) => d.exists).map((d) => d.data().englishWord).filter(Boolean)
-      );
-    } else {
-      const listWordsSnap = await admin
-        .firestore()
-        .collection("word_lists").doc(listId)
-        .collection("words")
-        .get();
-      targetWords = new Set(
-        listWordsSnap.docs.map((d) => d.data().englishWord).filter(Boolean)
-      );
-    }
+    // קביעת קבוצת המילים של המשימה (englishWord strings) — מרשימה גלובלית או מוסדית
+    const targetWords = new Set(
+      (await loadAssignmentWords(institutionId, assignment)).map((w) => w.englishWord).filter(Boolean)
+    );
 
     if (targetWords.size === 0) {
       return { completionPct: 0, studentCount: 0 };
@@ -1280,6 +1310,129 @@ exports.getAssignmentProgress = onCall(
     );
 
     return { completionPct, studentCount: relevantStudents.length };
+  }
+);
+
+/**
+ * =====================================================================
+ * getAssignmentSummary — סיכום משימה למורה (שלבים): מי בקצב, מי מאחור, מי לא התחיל,
+ * ו-10 המילים הקשות של המשימה. מחליף את getAssignmentProgress בדשבורד.
+ * =====================================================================
+ *
+ * קורא מסמך אחד לכל תלמיד במשימה (institutions/{inst}/assignments/{aid}/students/{uid}, נכתב
+ * ע"י אפליקציית התלמיד — src/lib/assignmentProgress.js), ולא את כל ה-progress הגלובלי של כל תלמיד.
+ * קריאות: משימה (1) + כיתה (1) + תלמידי הכיתה (N) + מסמכי ההתקדמות במשימה (≤N). בלי מסמכי מילים —
+ * המילה באנגלית (en) שמורה במסמך ההתקדמות.
+ *
+ * קצב (stages.paceStatus): כמה מילים התלמיד היה אמור לראות עד היום — לפי תאריך היעד, ובלעדיו סבב ביום.
+ * מילים קשות: אותם ספים כמו getClassHardWords (לפחות 2 תלמידים ו-3 ניסיונות), ממוינות לפי אחוז טעויות.
+ */
+exports.getAssignmentSummary = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+    const role = request.auth.token.role;
+    if (role !== "teacher" && role !== "principal") {
+      throw new HttpsError("permission-denied", "רק מורה או מנהל יכולים לצפות בהתקדמות תלמידים.");
+    }
+    const data = request.data || {};
+    const assignmentId = data.assignmentId;
+    const institutionId = data.institutionId;
+    if (!assignmentId || !institutionId) {
+      throw new HttpsError("invalid-argument", "חסרים שדות חובה: assignmentId, institutionId.");
+    }
+    if (institutionId !== request.auth.token.institutionId) {
+      throw new HttpsError("permission-denied", "אין לך הרשאה למוסד זה.");
+    }
+
+    const db = admin.firestore();
+    const assignmentRef = db.collection("institutions").doc(institutionId).collection("assignments").doc(assignmentId);
+    const assignmentDoc = await assignmentRef.get();
+    if (!assignmentDoc.exists) {
+      throw new HttpsError("not-found", "המשימה לא נמצאה.");
+    }
+    const assignment = assignmentDoc.data();
+    const classDoc = await db.collection("institutions").doc(institutionId).collection("classes").doc(assignment.classId).get();
+    if (!classDoc.exists) {
+      throw new HttpsError("not-found", "הכיתה לא נמצאה.");
+    }
+    if (role === "teacher" && classDoc.data().teacherId !== request.auth.uid) {
+      throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
+    }
+
+    const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
+    const totalWords = wordIds.length;
+    const wordSet = new Set(wordIds);
+    const createdAtMs = assignment.createdAt && typeof assignment.createdAt.toMillis === "function"
+      ? assignment.createdAt.toMillis() : null;
+    const dueDateMs = typeof assignment.dueDateMs === "number" ? assignment.dueDateMs : null;
+
+    const [usersSnap, progressSnap] = await Promise.all([
+      db.collection("users").where("classIds", "array-contains", assignment.classId).get(),
+      assignmentRef.collection("students").get(),
+    ]);
+    const progressByUid = new Map(progressSnap.docs.map((d) => [d.id, d.data()]));
+
+    const counts = { onPace: 0, behind: 0, notStarted: 0 };
+    const wordStats = new Map(); // wordId -> { en, attempts, wrong, students, notKnown }
+    const students = usersSnap.docs
+      .filter((u) => u.data().institutionId === institutionId)
+      .map((u) => {
+        const p = progressByUid.get(u.id) || {};
+        const words = p.words || {};
+        let seen = 0;
+        let known = 0;
+        for (const [wordId, w] of Object.entries(words)) {
+          if (!wordSet.has(wordId) || !w.seen) continue;
+          seen++;
+          const isKnown = stages.isKnown(w);
+          if (isKnown) known++;
+          const e = wordStats.get(wordId) || { en: w.en || wordId, attempts: 0, wrong: 0, students: 0, notKnown: 0 };
+          e.attempts += w.n || 0;
+          e.wrong += w.wrong || 0;
+          e.students += 1;
+          if (!isKnown) e.notKnown += 1;
+          wordStats.set(wordId, e);
+        }
+        const pace = stages.paceStatus({ totalWords, seenWords: seen, createdAtMs, dueDateMs });
+        const status = known === totalWords && totalWords > 0 ? "on-pace" : pace.status;
+        counts[status === "on-pace" ? "onPace" : status === "behind" ? "behind" : "notStarted"]++;
+        const sessionDays = Object.keys(p.sessions || {}).sort();
+        return {
+          uid: u.id,
+          displayName: u.data().displayName || u.data().fullName || "",
+          status,
+          seen,
+          known,
+          expectedSeen: pace.expectedSeen,
+          lastDay: p.lastDay || sessionDays[sessionDays.length - 1] || null,
+        };
+      });
+
+    const order = { "behind": 0, "not-started": 1, "on-pace": 2 };
+    students.sort((a, b) => order[a.status] - order[b.status] || a.known - b.known);
+
+    const hardWords = [...wordStats.values()]
+      .filter((w) => w.students >= MIN_STUDENTS_FOR_HARD_WORD && w.attempts >= MIN_ATTEMPTS_FOR_HARD_WORD)
+      .map((w) => ({ englishWord: w.en, errorRate: w.wrong / w.attempts, studentsAttempted: w.students, studentsNotKnown: w.notKnown }))
+      .sort((a, b) => b.errorRate - a.errorRate)
+      .slice(0, 10);
+
+    logger.info(
+      `getAssignmentSummary: ${request.auth.uid} — משימה ${assignmentId}: ${students.length} תלמידים, ${progressSnap.size} מסמכי התקדמות`
+    );
+    return {
+      totalWords,
+      stageCount: stages.buildStageSizes(totalWords).length,
+      dueDateMs,
+      counts,
+      students,
+      hardWords,
+    };
   }
 );
 
@@ -1348,7 +1501,7 @@ exports.sendAnnouncement = onCall(
 
     const announcementRef = await classRef.collection("announcements").add({
       message,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       createdBy: request.auth.uid,
       createdByName,
       isRead: false,
