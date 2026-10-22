@@ -41,6 +41,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const stages = require("./stages");
 
 admin.initializeApp();
 
@@ -693,10 +694,9 @@ exports.createAssignment = onCall(
     const title = typeof data.title === "string" ? data.title.trim() : "";
     const wordIds = Array.isArray(data.wordIds) ? data.wordIds : [];
     const dueDateMs = typeof data.dueDateMs === "number" ? data.dueDateMs : null;
-    // practiceMode: "varied" — מורה בחר "מגוון אוטומטי" בשלב 3 של האשף
-    // (StepFinalize.jsx). לא אוכף חלוקה בפועל בין מודולים — רק דגל
-    // תצוגה, ר' getMyAssignments/PracticePicker.
-    const practiceMode = data.practiceMode === "varied" ? "varied" : null;
+    // תרגול משימה הוא תמיד מגוון (מסירים את הבחירה מהמורה) — practiceMode נשמר "varied" לכל משימה
+    // חדשה, לתאימות עם לקוחות שקוראים את השדה.
+    const practiceMode = "varied";
     // מאיפה המילים: "global" = word_lists (רשימות ה-Band), "custom" = institutions/{inst}/customLists
     const listSource = data.listSource === "custom" ? "custom" : "global";
 
@@ -704,6 +704,16 @@ exports.createAssignment = onCall(
       throw new HttpsError(
         "invalid-argument",
         "חסרים שדות חובה: כיתה, רשימת מילים ושם משימה."
+      );
+    }
+    // משימה = רשימת מילים מפורשת, 1–300. "כל הרשימה" (wordIds ריק = עד 1,902 מילים ב-Band 2) כבר לא אפשרי.
+    if (wordIds.length === 0) {
+      throw new HttpsError("invalid-argument", "יש לבחור מילים למשימה (לפחות מילה אחת).");
+    }
+    if (wordIds.length > stages.MAX_ASSIGNMENT_WORDS) {
+      throw new HttpsError(
+        "invalid-argument",
+        `משימה יכולה לכלול עד ${stages.MAX_ASSIGNMENT_WORDS} מילים (נבחרו ${wordIds.length}). צמצמו בסינון או חלקו לכמה משימות.`
       );
     }
 
@@ -730,6 +740,8 @@ exports.createAssignment = onCall(
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       status: "active",
       listSource,
+      // חלוקה לשלבים של 10–15 מילים לפי סדר wordIds (stages.buildStageSizes)
+      stagePlan: { sizes: stages.buildStageSizes(wordIds.length) },
     };
     if (dueDateMs !== null) {
       assignmentData.dueDateMs = dueDateMs;
@@ -822,6 +834,9 @@ exports.getMyAssignments = onCall(
         status: data.status || "active",
         practiceMode: data.practiceMode === "varied" ? "varied" : null,
         listSource: data.listSource || null,
+        // משימות ישנות בלי stagePlan — מחושב כאן בזמן הקריאה (אותה חלוקה בדיוק)
+        stagePlan: data.stagePlan || { sizes: stages.buildStageSizes(Array.isArray(data.wordIds) ? data.wordIds.length : 0) },
+        createdAtMs: data.createdAt && typeof data.createdAt.toMillis === "function" ? data.createdAt.toMillis() : null,
       };
     });
 
