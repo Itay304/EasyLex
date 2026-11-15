@@ -30,7 +30,8 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local",
-        "*.test.js"
+        "*.test.js",
+        "*.emulator.js"
       ]
     }
   ]

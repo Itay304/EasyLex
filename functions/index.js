@@ -45,6 +45,8 @@ const admin = require("firebase-admin");
 // admin.firestore), והייבוא הישיר עובד זהה גם בפרודקשן.
 const { FieldValue } = require("firebase-admin/firestore");
 const stages = require("./stages");
+// "תוכן מותאם לבתי ספר דתיים" — סינון מילים מתויגות sensitive למוסד שהפעיל את ההגדרה (contentFilter.js)
+const contentFilter = require("./contentFilter");
 
 admin.initializeApp();
 
@@ -120,7 +122,11 @@ async function loadAssignmentWords(institutionId, assignment) {
   const docs = wordIds.length > 0
     ? await db.getAll(...wordIds.map((id) => wordsCol.doc(id)))
     : (await wordsCol.get()).docs;
-  return docs.filter((d) => d.exists).map((d) => ({ id: d.id, englishWord: d.data().englishWord }));
+  return docs.filter((d) => d.exists).map((d) => ({
+    id: d.id,
+    englishWord: d.data().englishWord,
+    sensitive: contentFilter.isSensitive(d.data()),
+  }));
 }
 
 function todayKeyIsrael() {
@@ -738,6 +744,18 @@ exports.createAssignment = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
+    // מוסד עם "תוכן מותאם לבתי ספר דתיים": אי אפשר להוסיף מילים רגישות גם אם הלקוח שלח אותן
+    const db = admin.firestore();
+    if (await contentFilter.institutionHidesSensitive(db, institutionId)) {
+      const hidden = await contentFilter.sensitiveIdsAmong(db, institutionId, listId, listSource, wordIds);
+      if (hidden.size > 0) {
+        throw new HttpsError(
+          "failed-precondition",
+          `המוסד שלך מוגדר ל"תוכן מותאם לבתי ספר דתיים" — ${hidden.size} מהמילים שנבחרו אינן זמינות. הסירו אותן ונסו שוב.`
+        );
+      }
+    }
+
     const assignmentData = {
       title,
       classId,
@@ -829,7 +847,7 @@ exports.getMyAssignments = onCall(
       .where("classId", "in", classIds.slice(0, 30))
       .get();
 
-    const assignments = snap.docs.map((doc) => {
+    const toClient = (doc) => {
       const data = doc.data();
       return {
         assignmentId: doc.id,
@@ -845,7 +863,18 @@ exports.getMyAssignments = onCall(
         stagePlan: data.stagePlan || { sizes: stages.buildStageSizes(Array.isArray(data.wordIds) ? data.wordIds.length : 0) },
         createdAtMs: data.createdAt && typeof data.createdAt.toMillis === "function" ? data.createdAt.toMillis() : null,
       };
-    });
+    };
+
+    // מוסד שמסנן: מילים רגישות יוצאות מ-wordIds ומכל שלב (stagePlan) — התלמיד לא רואה אותן, ושלב לא
+    // "נתקע" על מילה מוסתרת. משימה ישנה בלי wordIds (כל הרשימה) מסוננת בלקוח בטעינת המילים.
+    const db = admin.firestore();
+    const hides = await contentFilter.institutionHidesSensitive(db, institutionId);
+    const assignments = await Promise.all(snap.docs.map(async (doc) => {
+      const a = toClient(doc);
+      if (!hides) return a;
+      const hidden = await contentFilter.sensitiveIdsAmong(db, institutionId, a.listId, a.listSource, a.wordIds);
+      return contentFilter.applyToAssignment(a, hidden, true);
+    }));
 
     assignments.sort((a, b) => {
       const aActive = a.status === "active" ? 0 : 1;
@@ -1166,9 +1195,14 @@ exports.getClassHardWords = onCall(
         })
     );
 
+    // מוסד שמסנן: מילים רגישות לא מוצגות גם במפת המילים הקשות
+    const hiddenEnglish = (await contentFilter.institutionHidesSensitive(admin.firestore(), institutionId))
+      ? await contentFilter.sensitiveEnglishWords(admin.firestore())
+      : new Set();
     const words = Array.from(wordStats.entries())
       .filter(
-        ([, stats]) =>
+        ([englishWord, stats]) =>
+          !hiddenEnglish.has(String(englishWord).trim().toLowerCase()) &&
           stats.studentsAttempted >= MIN_STUDENTS_FOR_HARD_WORD &&
           stats.attempts >= MIN_ATTEMPTS_FOR_HARD_WORD
       )
@@ -1257,9 +1291,14 @@ exports.getAssignmentProgress = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
-    // קביעת קבוצת המילים של המשימה (englishWord strings) — מרשימה גלובלית או מוסדית
+    // קביעת קבוצת המילים של המשימה (englishWord strings) — מרשימה גלובלית או מוסדית.
+    // מוסד שמסנן: מילים רגישות לא נספרות (התלמידים לא רואים אותן).
+    const hides = await contentFilter.institutionHidesSensitive(admin.firestore(), institutionId);
     const targetWords = new Set(
-      (await loadAssignmentWords(institutionId, assignment)).map((w) => w.englishWord).filter(Boolean)
+      (await loadAssignmentWords(institutionId, assignment))
+        .filter((w) => !(hides && w.sensitive))
+        .map((w) => w.englishWord)
+        .filter(Boolean)
     );
 
     if (targetWords.size === 0) {
@@ -1364,7 +1403,12 @@ exports.getAssignmentSummary = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
-    const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
+    // מוסד שמסנן: מילים רגישות יוצאות מהמשימה ומהשלבים — בדיוק מה שהתלמידים רואים (getMyAssignments)
+    const hides = await contentFilter.institutionHidesSensitive(db, institutionId);
+    const hidden = hides
+      ? await contentFilter.sensitiveIdsAmong(db, institutionId, assignment.listId, assignment.listSource, assignment.wordIds)
+      : new Set();
+    const { wordIds, stagePlan } = contentFilter.filterStagePlan(assignment.wordIds, assignment.stagePlan, hidden);
     const totalWords = wordIds.length;
     const wordSet = new Set(wordIds);
     const createdAtMs = assignment.createdAt && typeof assignment.createdAt.toMillis === "function"
@@ -1427,7 +1471,7 @@ exports.getAssignmentSummary = onCall(
     );
     return {
       totalWords,
-      stageCount: stages.buildStageSizes(totalWords).length,
+      stageCount: stagePlan.sizes.length,
       dueDateMs,
       counts,
       students,
@@ -1722,5 +1766,50 @@ exports.transferClass = onCall(
     );
 
     return { success: true };
+  }
+);
+
+/**
+ * =====================================================================
+ * setInstitutionContentSettings — "תוכן מותאם לבתי ספר דתיים" (הגדרת מוסד)
+ * =====================================================================
+ * מנהל המוסד (principal) מפעיל/מכבה את ההגדרה למוסד שלו; superadmin — לכל מוסד (institutionId בבקשה).
+ * נשמר במסמך המוסד: hideSensitiveWords (boolean, ברירת מחדל כבוי). כתיבה למסמך המוסד חסומה בכללים
+ * לכל מי שאינו superadmin, ולכן דרך הפונקציה הזו בלבד. ההשפעה: contentFilter.js (ובלקוחות
+ * src/lib/contentFilter.js) — מילים מתויגות "sensitive" לא מוצגות לתלמידי המוסד ולא נבחרות למשימות.
+ */
+exports.setInstitutionContentSettings = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "יש להתחבר.");
+    }
+    const role = request.auth.token.role;
+    const data = request.data || {};
+    if (typeof data.hideSensitiveWords !== "boolean") {
+      throw new HttpsError("invalid-argument", "חסר שדה: hideSensitiveWords (true/false).");
+    }
+    let institutionId;
+    if (role === "principal") {
+      institutionId = request.auth.token.institutionId;
+    } else if (role === "superadmin") {
+      institutionId = data.institutionId;
+    } else {
+      throw new HttpsError("permission-denied", "רק מנהל המוסד יכול לשנות את ההגדרה.");
+    }
+    if (!institutionId) {
+      throw new HttpsError("failed-precondition", "לא נמצא מוסד.");
+    }
+    const ref = admin.firestore().collection("institutions").doc(institutionId);
+    if (!(await ref.get()).exists) {
+      throw new HttpsError("not-found", "המוסד לא נמצא.");
+    }
+    await ref.update({ [contentFilter.INSTITUTION_FIELD]: data.hideSensitiveWords });
+    logger.info(
+      `setInstitutionContentSettings: ${request.auth.uid} (${role}) — מוסד ${institutionId}: hideSensitiveWords=${data.hideSensitiveWords}`
+    );
+    return { hideSensitiveWords: data.hideSensitiveWords };
   }
 );
