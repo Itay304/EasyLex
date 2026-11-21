@@ -4,7 +4,10 @@
 
 const STAGE_MIN = 10;
 const STAGE_MAX = 15;
-const MAX_ASSIGNMENT_WORDS = 300;
+// משימה גדולה: מעל LARGE_ASSIGNMENT_WORDS מילים — רק עם אישור מפורש של המורה (acknowledgedLarge);
+// MAX_ASSIGNMENT_WORDS — תקרה קשיחה (assignments-v2; קודם 300 היה התקרה).
+const LARGE_ASSIGNMENT_WORDS = 300;
+const MAX_ASSIGNMENT_WORDS = 1000;
 const SESSION_BASE = 16;
 const NEW_PER_SESSION = Math.ceil(SESSION_BASE / 2); // קצב ברירת מחדל: סבב ביום ≈ 8 מילים חדשות
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -58,6 +61,7 @@ function paceStatus({ totalWords, seenWords, createdAtMs, dueDateMs, now = Date.
 module.exports = {
   STAGE_MIN,
   STAGE_MAX,
+  LARGE_ASSIGNMENT_WORDS,
   MAX_ASSIGNMENT_WORDS,
   NEW_PER_SESSION,
   dayKey,
