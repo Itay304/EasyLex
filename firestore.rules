@@ -42,6 +42,33 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // ── הסכמה לתקנון / למדיניות הפרטיות / לדיוור — על users/{uid} ──────────
+    function consentKeys() {
+      return ['termsAcceptedAt', 'termsVersion', 'marketingConsent', 'marketingConsentAt', 'marketingConsentVersion'];
+    }
+
+    // השדות ששונו בכתיבה הזו (ביצירה — כל השדות)
+    function changedKeys() {
+      return resource == null
+        ? request.resource.data.keys()
+        : request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function consentFieldsChanged() {
+      return changedKeys().hasAny(consentKeys());
+    }
+
+    function consentFieldsValid() {
+      let d = request.resource.data;
+      let ch = changedKeys();
+      return (!ch.hasAny(['termsAcceptedAt']) || d.termsAcceptedAt == request.time)
+        && (!ch.hasAny(['termsVersion']) || d.termsVersion is string)
+        && (!ch.hasAny(['marketingConsentAt']) || d.marketingConsentAt == request.time)
+        && (!ch.hasAny(['marketingConsentVersion']) || d.marketingConsentVersion is string)
+        && (!ch.hasAny(['marketingConsent']) || d.marketingConsent == false ||
+            (d.marketingConsent == true && d.get('role', '') in ['teacher', 'principal']));
+    }
+
     // role/institutionId — מ-Custom Claims (syncUserClaims, functions/index.js,
     // משימה 0.5), לא מ-get() על המסמך. isSignedIn() קודם, בקצר-מעגל, מגן
     // מפני דה-רפרנס של request.auth.token כשאין משתמש מחובר.
@@ -103,7 +130,13 @@ service cloud.firestore {
       // isSuperAdmin() נוסף (לוח בקרה — the-easy-way-app-admin): שינוי role/
       // institutionId של משתמש כלשהו ("הגדר מנהל") ומחיקת מסמך משתמש דורשים
       // כתיבה על users/{uid} שאינו ה-uid של הכותב עצמו — owner-בלבד לא מספיק.
-      allow write: if isOwner(uid) || isSuperAdmin();
+      //
+      // שדות הסכמה (תקנון/פרטיות/דיוור, branch consent): רק המשתמש עצמו קובע אותם —
+      // גם superadmin לא יכול לשנות אותם (שאר השדות — כמו קודם). כשנכתבים: זמנים = זמן השרת
+      // (serverTimestamp), גרסאות = מחרוזת, marketingConsent = boolean, ו-true רק למורה/מנהל.
+      allow create, update: if (isOwner(uid) && consentFieldsValid()) ||
+        (isSuperAdmin() && !consentFieldsChanged());
+      allow delete: if isOwner(uid) || isSuperAdmin();
 
       // ── 7. users/{uid}/progress/{wordKey} ────────────────────────────
       // הבעלים בלבד לקריאה וכתיבה רגילה. isSuperAdmin() נוסף לקריאה (לוח
