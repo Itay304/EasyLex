@@ -297,3 +297,87 @@ describe('institutions/{inst}/assignments/{aid}/students/{uid}', () => {
     await assertFails(student('student_a').doc(DOC('student_a')).delete());
   });
 });
+
+// ── users/{uid} — הסכמה לתקנון/פרטיות/דיוור (branch consent) ──────────────
+// רק המשתמש קובע את שדות ההסכמה; זמנים = זמן שרת; marketingConsent=true רק למורה/מנהל;
+// superadmin עדיין משנה שדות אחרים (למשל role) — אבל לא את שדות ההסכמה.
+
+describe('users/{uid} — שדות הסכמה', () => {
+  const { serverTimestamp, Timestamp } = require('firebase/firestore');
+
+  test('תלמיד בהרשמה: termsAcceptedAt בזמן שרת + marketingConsent=false — מצליח', async () => {
+    const s = authedContext('stu_new', {});
+    await assertSucceeds(
+      s.doc('users/stu_new').set({
+        role: 'student',
+        termsAcceptedAt: serverTimestamp(),
+        termsVersion: '2026-10-21',
+        marketingConsent: false,
+      }),
+    );
+  });
+
+  test('termsAcceptedAt עם זמן מהלקוח (לא זמן שרת) — נכשל', async () => {
+    const s = authedContext('stu_new', {});
+    await assertFails(
+      s.doc('users/stu_new').set({ role: 'student', termsAcceptedAt: Timestamp.fromMillis(0), termsVersion: '2026-10-21' }),
+    );
+  });
+
+  test('תלמיד לא יכול לסמן marketingConsent=true', async () => {
+    await seed(async (db) => db.doc('users/stu_a').set({ role: 'student' }));
+    const s = authedContext('stu_a', { role: 'student' });
+    await assertFails(
+      s.doc('users/stu_a').update({
+        marketingConsent: true,
+        marketingConsentAt: serverTimestamp(),
+        marketingConsentVersion: '2026-10-21',
+      }),
+    );
+  });
+
+  test('מורה בהרשמה עם הסכמה לדיוור — מצליח', async () => {
+    const t = authedContext('t_new', {});
+    await assertSucceeds(
+      t.doc('users/t_new').set({
+        role: 'teacher',
+        termsAcceptedAt: serverTimestamp(),
+        termsVersion: '2026-10-21',
+        marketingConsent: true,
+        marketingConsentAt: serverTimestamp(),
+        marketingConsentVersion: '2026-10-21',
+      }),
+    );
+  });
+
+  test('מורה מבטל דיוור מהפרופיל — מצליח', async () => {
+    await seed(async (db) => db.doc('users/t_a').set({ role: 'teacher', marketingConsent: true }));
+    const t = authedContext('t_a', { role: 'teacher' });
+    await assertSucceeds(
+      t.doc('users/t_a').update({
+        marketingConsent: false,
+        marketingConsentAt: serverTimestamp(),
+        marketingConsentVersion: '2026-10-21',
+      }),
+    );
+  });
+
+  test('משתמש אחר לא יכול לכתוב הסכמה בשם מישהו', async () => {
+    await seed(async (db) => db.doc('users/t_a').set({ role: 'teacher' }));
+    const other = authedContext('t_b', { role: 'teacher' });
+    await assertFails(other.doc('users/t_a').update({ termsAcceptedAt: serverTimestamp(), termsVersion: 'x' }));
+  });
+
+  test('superadmin לא יכול לשנות שדות הסכמה, אבל כן role', async () => {
+    await seed(async (db) => db.doc('users/t_a').set({ role: 'teacher', marketingConsent: false }));
+    const admin = authedContext('root', { role: 'superadmin' });
+    await assertFails(admin.doc('users/t_a').update({ marketingConsent: true }));
+    await assertSucceeds(admin.doc('users/t_a').update({ role: 'principal', institutionId: 'inst_1' }));
+  });
+
+  test('כתיבה רגילה בלי שדות הסכמה (למשל XP) — כמו קודם', async () => {
+    await seed(async (db) => db.doc('users/stu_a').set({ role: 'student', totalXp: 0 }));
+    const s = authedContext('stu_a', { role: 'student' });
+    await assertSucceeds(s.doc('users/stu_a').update({ totalXp: 10 }));
+  });
+});
