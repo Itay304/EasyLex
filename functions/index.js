@@ -1911,3 +1911,44 @@ exports.restoreAssignment = onCall({ region: "europe-west1" }, async (request) =
   logger.info(`restoreAssignment: ${request.auth.uid} שחזר את ${ref.id} (מוסד ${institutionId})`);
   return { status: "active" };
 });
+
+/**
+ * =====================================================================
+ * deleteAssignmentPermanently — "מחיקה לצמיתות" ממשימות בארכיון (assignments-v2)
+ * =====================================================================
+ * רק משימה שכבר בארכיון (status "archived"), ורק המורה שיצר אותה או מנהל המוסד.
+ * נמחקים: מסמך המשימה + institutions/{inst}/assignments/{id}/students/* (ההתקדמות של התלמידים במשימה).
+ * לא נוגעים ב-users/{uid}/progress (ההתקדמות הגלובלית של כל תלמיד במילים נשארת).
+ * לפני המחיקה נכתב רישום: institutions/{inst}/deletionLog/{auto} (מי, מתי, איזו משימה, שם, מספר מילים,
+ * מספר מסמכי התקדמות שנמחקו) + שורת לוג בשרת. אי אפשר לבטל.
+ */
+exports.deleteAssignmentPermanently = onCall({ region: "europe-west1" }, async (request) => {
+  const { ref, data, institutionId } = await loadAssignmentForManage(request);
+  if (data.status !== "archived") {
+    throw new HttpsError("failed-precondition", "אפשר למחוק לצמיתות רק משימה שנמצאת בארכיון.");
+  }
+  const db = admin.firestore();
+  const studentsSnap = await ref.collection("students").get();
+  const wordCount = Array.isArray(data.wordIds) ? data.wordIds.length : 0;
+  const entry = {
+    type: "assignment-permanently-deleted",
+    assignmentId: ref.id,
+    title: data.title || "",
+    wordCount,
+    classId: data.classId || null,
+    createdBy: data.createdBy || null,
+    archivedAt: data.archivedAt || null,
+    studentProgressDocs: studentsSnap.size,
+    deletedBy: request.auth.uid,
+    deletedByRole: request.auth.token.role,
+    deletedAt: FieldValue.serverTimestamp(),
+  };
+  // הרישום נכתב לפני המחיקה — אם הכתיבה נכשלת, לא מוחקים כלום
+  const logRef = await db.collection("institutions").doc(institutionId).collection("deletionLog").add(entry);
+  logger.info(
+    `deleteAssignmentPermanently: ${request.auth.uid} (${request.auth.token.role}) מוחק לצמיתות את ${ref.id} "${entry.title}" — ${wordCount} מילים, ${studentsSnap.size} מסמכי התקדמות (מוסד ${institutionId}, רישום ${logRef.id})`
+  );
+  // מסמך המשימה + תת-האוסף students (אין תתי-אוספים אחרים במשימה)
+  await db.recursiveDelete(ref);
+  return { deleted: true, studentProgressDocs: studentsSnap.size, logId: logRef.id };
+});

@@ -301,6 +301,13 @@ service cloud.firestore {
         }
       }
 
+      // 5ב. institutions/{instId}/deletionLog/{logId} — רישום מחיקות לצמיתות (deleteAssignmentPermanently).
+      // נכתב רק בשרת (Admin SDK); קריאה — מנהל המוסד ו-superadmin בלבד.
+      match /deletionLog/{logId} {
+        allow read: if isSuperAdmin() || (myRole() == 'principal' && belongsToInstitution(instId));
+        allow write: if false;
+      }
+
       // 6. institutions/{instId}/customLists/{listId}(/words/{wordId})
       // קריאה: כל משתמש במוסד (או superadmin). כתיבה: מורה ששייך למוסד.
       match /customLists/{listId} {

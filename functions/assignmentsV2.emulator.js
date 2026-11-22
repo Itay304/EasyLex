@@ -238,6 +238,44 @@ async function seed() {
     assert.equal((await doc(mixedId)).status, "archived");
   });
 
+  // ---- מחיקה לצמיתות ----
+  // mixedId בארכיון עכשיו (המנהל העביר). התקדמות גלובלית של התלמיד — לוודא שלא נמחקת.
+  await db.doc("users/S/progress/bone0").set({ englishWord: "bone0", sourceListId: "B1", correctAttempts: 2, totalAttempts: 3 });
+  const active = await call("createAssignment", T1, { ...base, title: "פעילה", words: words("B1", 12) });
+
+  await check("מחיקה לצמיתות של משימה פעילה (לא בארכיון) — נדחית", () =>
+    expectError(call("deleteAssignmentPermanently", T1, { assignmentId: active.assignmentId }), "FAILED_PRECONDITION", /רק משימה שנמצאת בארכיון/));
+  await check("מורה אחר — לא יכול למחוק לצמיתות", () =>
+    expectError(call("deleteAssignmentPermanently", T2, { assignmentId: mixedId }), "PERMISSION_DENIED"));
+  await check("תלמיד — לא יכול למחוק לצמיתות", () =>
+    expectError(call("deleteAssignmentPermanently", S, { assignmentId: mixedId }), "PERMISSION_DENIED"));
+
+  await check("המורה שיצר מוחק לצמיתות משימה בארכיון: משימה + students/* נמחקים, users/*/progress נשאר, רישום נכתב", async () => {
+    const before = await doc(mixedId);
+    const r = await call("deleteAssignmentPermanently", T1, { assignmentId: mixedId });
+    assert.equal(r.deleted, true);
+    assert.equal(r.studentProgressDocs, 1);
+    assert.equal((await db.doc(`institutions/${INST}/assignments/${mixedId}`).get()).exists, false);
+    assert.equal((await db.collection(`institutions/${INST}/assignments/${mixedId}/students`).get()).size, 0);
+    assert.equal((await db.doc("users/S/progress/bone0").get()).data().correctAttempts, 2);
+    const log = (await db.doc(`institutions/${INST}/deletionLog/${r.logId}`).get()).data();
+    assert.equal(log.assignmentId, mixedId);
+    assert.equal(log.title, before.title);
+    assert.equal(log.wordCount, before.wordIds.length);
+    assert.equal(log.deletedBy, "T1");
+    assert.ok(log.deletedAt);
+  });
+
+  await check("מנהל המוסד יכול למחוק לצמיתות משימה בארכיון של מורה אחר", async () => {
+    await call("archiveAssignment", T1, { assignmentId: active.assignmentId });
+    const r = await call("deleteAssignmentPermanently", P, { assignmentId: active.assignmentId });
+    assert.equal(r.deleted, true);
+    assert.equal((await db.doc(`institutions/${INST}/assignments/${active.assignmentId}`).get()).exists, false);
+  });
+
+  await check("משימה שכבר נמחקה — not-found", () =>
+    expectError(call("deleteAssignmentPermanently", T1, { assignmentId: mixedId }), "NOT_FOUND"));
+
   console.log(results.join("\n"));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} passed`);

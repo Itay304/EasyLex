@@ -411,3 +411,20 @@ describe('assignments — ארכיון רק דרך archiveAssignment', () => {
     await assertSucceeds(t.doc('institutions/inst_a/assignments/as1').update({ title: 'שם חדש' }));
   });
 });
+
+// ── institutions/{inst}/deletionLog — רישום מחיקות לצמיתות (שרת בלבד) ──────────────────
+describe('deletionLog — נכתב רק בשרת', () => {
+  beforeEach(async () => {
+    await seed(async (db) => db.doc('institutions/inst_a/deletionLog/l1').set({ assignmentId: 'as1', title: 'x' }));
+  });
+  test('מורה לא קורא ולא כותב', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertFails(t.doc('institutions/inst_a/deletionLog/l1').get());
+    await assertFails(t.doc('institutions/inst_a/deletionLog/l2').set({ x: 1 }));
+  });
+  test('מנהל המוסד קורא, לא כותב', async () => {
+    const p = authedContext('principal_a', { role: 'principal', institutionId: 'inst_a' });
+    await assertSucceeds(p.doc('institutions/inst_a/deletionLog/l1').get());
+    await assertFails(p.doc('institutions/inst_a/deletionLog/l1').delete());
+  });
+});
