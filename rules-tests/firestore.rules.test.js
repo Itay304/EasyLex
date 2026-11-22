@@ -428,3 +428,13 @@ describe('deletionLog — נכתב רק בשרת', () => {
     await assertFails(p.doc('institutions/inst_a/deletionLog/l1').delete());
   });
 });
+
+// ── rateLimits — שרת בלבד (checkClassCode) ─────────────────────────────────────────────
+describe('rateLimits — אין גישה ללקוחות', () => {
+  test('גם משתמש מחובר לא קורא ולא כותב', async () => {
+    await seed(async (db) => db.doc('rateLimits/checkClassCode_x').set({ attempts: [1] }));
+    const s = authedContext('stu_a', { role: 'student' });
+    await assertFails(s.doc('rateLimits/checkClassCode_x').get());
+    await assertFails(s.doc('rateLimits/checkClassCode_y').set({ attempts: [] }));
+  });
+});

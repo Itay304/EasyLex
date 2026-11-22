@@ -49,6 +49,9 @@ const stages = require("./stages");
 const contentFilter = require("./contentFilter");
 // מילים ממקורות מרובים, הסרת כפילויות ומגבלות גודל של משימה (assignments-v2)
 const assignmentWords = require("./assignmentWords");
+// הצטרפות לכיתה בקוד: נרמול, וסיבה מדויקת כשאי אפשר להצטרף (קוד שגוי / כיתה סגורה / מוסד מושבת)
+const classJoin = require("./classJoin");
+const crypto = require("crypto");
 
 admin.initializeApp();
 
@@ -525,10 +528,9 @@ exports.joinClass = onCall(
     }
     const uid = request.auth.uid;
 
-    const rawCode = (request.data && request.data.joinCode) || "";
-    const joinCode = String(rawCode).trim().toUpperCase();
+    const joinCode = classJoin.normalizeJoinCode(request.data && request.data.joinCode);
     if (!joinCode) {
-      throw new HttpsError("invalid-argument", "חסר קוד כיתה.");
+      throw new HttpsError("invalid-argument", "חסר קוד כיתה.", { reason: "missing" });
     }
 
     const userRef = admin.firestore().collection("users").doc(uid);
@@ -545,33 +547,22 @@ exports.joinClass = onCall(
 
     if (recentAttempts.length >= CLASS_JOIN_RATE_LIMIT_MAX_ATTEMPTS) {
       logger.warn(`joinClass: ${uid} חסום זמנית — יותר מדי ניסיונות`);
-      throw new HttpsError(
-        "resource-exhausted",
-        "יותר מדי ניסיונות הצטרפות. נסה שוב בעוד כמה דקות."
-      );
+      throw new HttpsError("resource-exhausted", classJoin.REASON_MESSAGES["rate-limited"], { reason: "rate-limited" });
     }
     recentAttempts.push(now);
 
-    // חיפוש הכיתה בכל המוסדות.
-    const classQuery = await admin
-      .firestore()
-      .collectionGroup("classes")
-      .where("joinCode", "==", joinCode)
-      .where("archived", "==", false)
-      .limit(1)
-      .get();
-
-    if (classQuery.empty) {
+    // חיפוש הכיתה בכל המוסדות — עם סיבה מדויקת: קוד לא קיים / כיתה סגורה (archived) / מוסד מושבת (disabled)
+    const found = await classJoin.findClassForJoin(admin.firestore(), joinCode);
+    if (!found.ok) {
       // רושמים את הניסיון גם כשהקוד שגוי — נספר לצורך הגבלת הקצב.
       await userRef.set({ classJoinAttempts: recentAttempts }, { merge: true });
-      throw new HttpsError("not-found", "קוד הכיתה לא נמצא. ודא שהקלדת אותו נכון.");
+      throw new HttpsError(classJoin.REASON_CODES[found.reason], classJoin.REASON_MESSAGES[found.reason], { reason: found.reason });
     }
 
-    const classDoc = classQuery.docs[0];
+    const classDoc = found.classDoc;
     const classId = classDoc.id;
     const className = classDoc.data().name || "";
-    // institutions/{instId}/classes/{classId} — ה-ref.parent.parent הוא מסמך המוסד.
-    const institutionId = classDoc.ref.parent.parent.id;
+    const institutionId = found.institutionId;
 
     const userUpdate = {
       classJoinAttempts: recentAttempts,
@@ -596,6 +587,48 @@ exports.joinClass = onCall(
     return { classId, className, institutionId };
   }
 );
+
+/**
+ * =====================================================================
+ * checkClassCode — בדיקת קוד כיתה לפני יצירת חשבון (הרשמת תלמיד)
+ * =====================================================================
+ * לא דורש התחברות: אפליקציית התלמיד בודקת את הקוד לפני createUserWithEmailAndPassword, כך שקוד
+ * שגוי / כיתה סגורה / מוסד מושבת לא יוצרים חשבון בכלל. מחזיר רק { ok: true } — בלי שם הכיתה או המוסד.
+ * אותן סיבות ואותן הודעות כמו joinClass (details.reason). joinClass עצמו בודק שוב בהצטרפות בפועל.
+ * הגבלת קצב לפי IP (נשמר רק hash של ה-IP): CHECK_CODE_MAX_ATTEMPTS ניסיונות ל-10 דקות. מרחב הקודים
+ * (2 אותיות + 5 תווים ≈ 19 מיליארד) הופך ניחוש לבלתי מעשי גם בלי ההגבלה.
+ */
+const CHECK_CODE_MAX_ATTEMPTS = 20;
+const CHECK_CODE_WINDOW_MS = 10 * 60 * 1000;
+
+exports.checkClassCode = onCall({ region: "europe-west1" }, async (request) => {
+  const joinCode = classJoin.normalizeJoinCode(request.data && request.data.joinCode);
+  if (!joinCode) {
+    throw new HttpsError("invalid-argument", "חסר קוד כיתה.", { reason: "missing" });
+  }
+  const db = admin.firestore();
+  const ip = (request.rawRequest && (request.rawRequest.ip || request.rawRequest.headers["x-forwarded-for"])) || "unknown";
+  const key = crypto.createHash("sha256").update(String(ip)).digest("hex").slice(0, 32);
+  const limitRef = db.collection("rateLimits").doc(`checkClassCode_${key}`);
+  const now = Date.now();
+  const recent = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(limitRef);
+    const list = ((snap.exists && snap.data().attempts) || []).filter((ts) => now - ts < CHECK_CODE_WINDOW_MS);
+    if (list.length < CHECK_CODE_MAX_ATTEMPTS) {
+      list.push(now);
+      tx.set(limitRef, { attempts: list, updatedAt: FieldValue.serverTimestamp() });
+    }
+    return list;
+  });
+  if (recent.length >= CHECK_CODE_MAX_ATTEMPTS && recent[recent.length - 1] !== now) {
+    throw new HttpsError("resource-exhausted", classJoin.REASON_MESSAGES["rate-limited"], { reason: "rate-limited" });
+  }
+  const found = await classJoin.findClassForJoin(db, joinCode);
+  if (!found.ok) {
+    throw new HttpsError(classJoin.REASON_CODES[found.reason], classJoin.REASON_MESSAGES[found.reason], { reason: found.reason });
+  }
+  return { ok: true };
+});
 
 /**
  * =====================================================================

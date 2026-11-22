@@ -110,6 +110,11 @@ service cloud.firestore {
         : [];
     }
 
+    // ── rateLimits/{id} — הגבלת קצב של checkClassCode (שרת בלבד, hash של IP). אין גישה ללקוחות.
+    match /rateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
     // ── 1. users/{uid} ───────────────────────────────────────────────────
     // קריאה: הבעלים, superadmin, או עמית באותו מוסד (טבלת מובילים — שינוי
     // ארכיטקטוני "4 עולמות לפי role", מסך הבית המוסדי). כתיבה: הבעלים בלבד,
