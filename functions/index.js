@@ -47,6 +47,8 @@ const { FieldValue } = require("firebase-admin/firestore");
 const stages = require("./stages");
 // "תוכן מותאם לבתי ספר דתיים" — סינון מילים מתויגות sensitive למוסד שהפעיל את ההגדרה (contentFilter.js)
 const contentFilter = require("./contentFilter");
+// מילים ממקורות מרובים, הסרת כפילויות ומגבלות גודל של משימה (assignments-v2)
+const assignmentWords = require("./assignmentWords");
 
 admin.initializeApp();
 
@@ -110,23 +112,24 @@ async function getTokensForUids(uids) {
  */
 async function loadAssignmentWords(institutionId, assignment) {
   const db = admin.firestore();
-  const listId = assignment.listId;
-  let source = assignment.listSource;
-  if (source !== "custom" && source !== "global") {
-    source = (await db.collection("word_lists").doc(listId).get()).exists ? "global" : "custom";
+  // assignments-v2: משימה יכולה להכיל מילים מכמה רשימות — כל קבוצה נטענת מהרשימה שלה
+  const out = [];
+  for (const g of assignmentWords.wordGroups(assignment)) {
+    let source = g.listSource;
+    if (source !== "custom" && source !== "global") {
+      source = (await db.collection("word_lists").doc(g.listId).get()).exists ? "global" : "custom";
+    }
+    const wordsCol = source === "custom"
+      ? db.collection("institutions").doc(institutionId).collection("customLists").doc(g.listId).collection("words")
+      : db.collection("word_lists").doc(g.listId).collection("words");
+    const docs = g.wordIds.length > 0
+      ? await db.getAll(...g.wordIds.map((id) => wordsCol.doc(id)))
+      : (await wordsCol.get()).docs;
+    for (const d of docs) {
+      if (d.exists) out.push({ id: d.id, englishWord: d.data().englishWord, sensitive: contentFilter.isSensitive(d.data()) });
+    }
   }
-  const wordsCol = source === "custom"
-    ? db.collection("institutions").doc(institutionId).collection("customLists").doc(listId).collection("words")
-    : db.collection("word_lists").doc(listId).collection("words");
-  const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
-  const docs = wordIds.length > 0
-    ? await db.getAll(...wordIds.map((id) => wordsCol.doc(id)))
-    : (await wordsCol.get()).docs;
-  return docs.filter((d) => d.exists).map((d) => ({
-    id: d.id,
-    englishWord: d.data().englishWord,
-    sensitive: contentFilter.isSensitive(d.data()),
-  }));
+  return out;
 }
 
 function todayKeyIsrael() {
@@ -699,35 +702,34 @@ exports.createAssignment = onCall(
 
     const data = request.data || {};
     const classId = data.classId;
-    const listId = data.listId;
     const title = typeof data.title === "string" ? data.title.trim() : "";
-    const wordIds = Array.isArray(data.wordIds) ? data.wordIds : [];
     const dueDateMs = typeof data.dueDateMs === "number" ? data.dueDateMs : null;
     // תרגול משימה הוא תמיד מגוון (מסירים את הבחירה מהמורה) — practiceMode נשמר "varied" לכל משימה
     // חדשה, לתאימות עם לקוחות שקוראים את השדה.
     const practiceMode = "varied";
-    // מאיפה המילים: "global" = word_lists (רשימות ה-Band), "custom" = institutions/{inst}/customLists
-    const listSource = data.listSource === "custom" ? "custom" : "global";
+    // המילים: פורמט חדש — words: [{ id, listId, listSource }] (כמה מקורות: רשימות Band ו/או רשימה מוסדית);
+    // פורמט ישן — listId + listSource + wordIds (מקור אחד). listSource: "global" = word_lists, "custom" = customLists.
+    const requested = assignmentWords.wordsFromRequest(data);
 
-    if (!classId || !listId || !title) {
-      throw new HttpsError(
-        "invalid-argument",
-        "חסרים שדות חובה: כיתה, רשימת מילים ושם משימה."
-      );
+    // שדה חסר — ההודעה מציינת בדיוק מה חסר (בעברית), והאפליקציה מציגה אותה כמו שהיא
+    const missing = [];
+    if (!classId) missing.push("כיתה");
+    if (requested.length === 0 && !data.listId) missing.push("מילים (רשימת מילים)");
+    if (!title) missing.push("שם המשימה");
+    if (missing.length > 0) {
+      throw new HttpsError("invalid-argument", `חסרים שדות חובה: ${missing.join(", ")}.`);
     }
-    // משימה = רשימת מילים מפורשת, 1–300. "כל הרשימה" (wordIds ריק = עד 1,902 מילים ב-Band 2) כבר לא אפשרי.
-    if (wordIds.length === 0) {
+    // משימה = רשימת מילים מפורשת. "כל הרשימה" (wordIds ריק) כבר לא אפשרי.
+    if (requested.length === 0) {
       // רשימה ריקה = "כל הרשימה" — מה שאפליקציית האנדרואיד שולחת. מפנים את המורה לאפליקציה בדפדפן.
       throw new HttpsError(
         "invalid-argument",
         "יצירת משימות עברה לאפליקציית המורה בדפדפן: https://teacher.theeasywayapp.co.il. שם אפשר לבחור מילים ולחלק לשלבים."
       );
     }
-    if (wordIds.length > stages.MAX_ASSIGNMENT_WORDS) {
-      throw new HttpsError(
-        "invalid-argument",
-        `משימה יכולה לכלול עד ${stages.MAX_ASSIGNMENT_WORDS} מילים (נבחרו ${wordIds.length}). צמצמו בסינון או חלקו לכמה משימות.`
-      );
+    // הגנה מבקשה ענקית עוד לפני קריאת מסמכים (הכפילויות מוסרות רק אחרי הטעינה)
+    if (requested.length > stages.MAX_ASSIGNMENT_WORDS * 3) {
+      throw new HttpsError("invalid-argument", `משימה יכולה לכלול עד ${stages.MAX_ASSIGNMENT_WORDS.toLocaleString("en-US")} מילים.`);
     }
 
     // ודא שהכיתה קיימת במוסד הזה, ושמורה (לא מנהל) יוצר משימה רק לכיתה שלו.
@@ -744,30 +746,53 @@ exports.createAssignment = onCall(
       throw new HttpsError("permission-denied", "זו לא הכיתה שלך.");
     }
 
-    // מוסד עם "תוכן מותאם לבתי ספר דתיים": אי אפשר להוסיף מילים רגישות גם אם הלקוח שלח אותן
+    // טעינת המילים מכל המקורות (englishWord + תיוג רגיש). מזהה שלא קיים ברשימה שלו — מושמט.
     const db = admin.firestore();
+    const loaded = await assignmentWords.loadRequestedWords(db, institutionId, requested);
+
+    // מוסד עם "תוכן מותאם לבתי ספר דתיים": אי אפשר להוסיף מילים רגישות גם אם הלקוח שלח אותן (מכל מקור)
     if (await contentFilter.institutionHidesSensitive(db, institutionId)) {
-      const hidden = await contentFilter.sensitiveIdsAmong(db, institutionId, listId, listSource, wordIds);
-      if (hidden.size > 0) {
+      const hiddenCount = loaded.filter((w) => w.sensitive).length;
+      if (hiddenCount > 0) {
         throw new HttpsError(
           "failed-precondition",
-          `המוסד שלך מוגדר ל"תוכן מותאם לבתי ספר דתיים" — ${hidden.size} מהמילים שנבחרו אינן זמינות. הסירו אותן ונסו שוב.`
+          `המוסד שלך מוגדר ל"תוכן מותאם לבתי ספר דתיים" — ${hiddenCount} מהמילים שנבחרו אינן זמינות. הסירו אותן ונסו שוב.`
         );
       }
     }
 
+    // אותה מילה באנגלית מכמה רשימות — פעם אחת. המגבלות נבדקות אחרי הסרת הכפילויות.
+    const { kept, duplicates } = assignmentWords.dedupeByEnglish(loaded);
+    const sources = assignmentWords.uniqueSources(kept);
+    const limitError = assignmentWords.checkLimits({
+      count: kept.length,
+      sourceCount: sources.length,
+      acknowledgedLarge: data.acknowledgedLarge === true,
+      acknowledgedMixed: data.acknowledgedMixed === true,
+    });
+    if (limitError) {
+      throw new HttpsError(limitError.code, limitError.message);
+    }
+
+    const wordIds = kept.map((w) => w.id);
     const assignmentData = {
       title,
       classId,
-      listId,
+      // המקור הראשון — לתאימות עם לקוחות שקוראים listId/listSource בלבד
+      listId: sources[0].listId,
+      listSource: sources[0].listSource,
+      sources,
       wordIds,
+      // מקביל ל-wordIds: מאיזו רשימה כל מילה (assignments-v2)
+      wordListIds: kept.map((w) => w.listId),
       createdBy: request.auth.uid,
       createdAt: FieldValue.serverTimestamp(),
       status: "active",
-      listSource,
       // חלוקה לשלבים של 10–15 מילים לפי סדר wordIds (stages.buildStageSizes)
       stagePlan: { sizes: stages.buildStageSizes(wordIds.length) },
     };
+    if (wordIds.length > stages.LARGE_ASSIGNMENT_WORDS) assignmentData.acknowledgedLarge = true;
+    if (sources.length > 1) assignmentData.acknowledgedMixed = true;
     if (dueDateMs !== null) {
       assignmentData.dueDateMs = dueDateMs;
     }
@@ -785,7 +810,7 @@ exports.createAssignment = onCall(
       `createAssignment: ${request.auth.uid} יצר משימה ${assignmentRef.id} לכיתה ${classId} (מוסד ${institutionId})`
     );
 
-    return { assignmentId: assignmentRef.id };
+    return { assignmentId: assignmentRef.id, wordCount: wordIds.length, duplicatesRemoved: duplicates };
   }
 );
 
@@ -846,6 +871,8 @@ exports.getMyAssignments = onCall(
       .collection("assignments")
       .where("classId", "in", classIds.slice(0, 30))
       .get();
+    // משימה בארכיון לא מוצגת לתלמידים (ההתקדמות שלהם נשמרת — רק מוסתרת)
+    const visibleDocs = snap.docs.filter((d) => d.data().status !== "archived");
 
     const toClient = (doc) => {
       const data = doc.data();
@@ -859,6 +886,9 @@ exports.getMyAssignments = onCall(
         status: data.status || "active",
         practiceMode: data.practiceMode === "varied" ? "varied" : null,
         listSource: data.listSource || null,
+        // assignments-v2: מקורות מרובים — מאיזו רשימה כל מילה (null במשימה ישנה = הכל מ-listId)
+        sources: Array.isArray(data.sources) ? data.sources : null,
+        wordListIds: Array.isArray(data.wordListIds) ? data.wordListIds : null,
         // משימות ישנות בלי stagePlan — מחושב כאן בזמן הקריאה (אותה חלוקה בדיוק)
         stagePlan: data.stagePlan || { sizes: stages.buildStageSizes(Array.isArray(data.wordIds) ? data.wordIds.length : 0) },
         createdAtMs: data.createdAt && typeof data.createdAt.toMillis === "function" ? data.createdAt.toMillis() : null,
@@ -869,11 +899,16 @@ exports.getMyAssignments = onCall(
     // "נתקע" על מילה מוסתרת. משימה ישנה בלי wordIds (כל הרשימה) מסוננת בלקוח בטעינת המילים.
     const db = admin.firestore();
     const hides = await contentFilter.institutionHidesSensitive(db, institutionId);
-    const assignments = await Promise.all(snap.docs.map(async (doc) => {
+    const assignments = await Promise.all(visibleDocs.map(async (doc) => {
       const a = toClient(doc);
       if (!hides) return a;
-      const hidden = await contentFilter.sensitiveIdsAmong(db, institutionId, a.listId, a.listSource, a.wordIds);
-      return contentFilter.applyToAssignment(a, hidden, true);
+      const hidden = await assignmentWords.sensitiveIdsForAssignment(db, institutionId, a);
+      const filtered = contentFilter.applyToAssignment(a, hidden, true);
+      // wordListIds נשאר מקביל ל-wordIds אחרי הסינון
+      if (Array.isArray(a.wordListIds) && a.wordListIds.length === a.wordIds.length) {
+        filtered.wordListIds = a.wordListIds.filter((_, i) => !hidden.has(a.wordIds[i]));
+      }
+      return filtered;
     }));
 
     assignments.sort((a, b) => {
@@ -1275,10 +1310,12 @@ exports.getAssignmentProgress = onCall(
       throw new HttpsError("not-found", "המשימה לא נמצאה.");
     }
     const assignment = assignmentDoc.data();
+    if (assignment.status === "archived") {
+      throw new HttpsError("failed-precondition", "המשימה בארכיון.");
+    }
     const classId = assignment.classId;
-    const listId = assignment.listId;
-    const wordIds = Array.isArray(assignment.wordIds) ? assignment.wordIds : [];
-
+    // כל הרשימות של המשימה (assignments-v2: יכולות להיות כמה)
+    const listIds = [...new Set(assignmentWords.wordGroups(assignment).map((g) => g.listId))].filter(Boolean);
     const classRef = admin
       .firestore()
       .collection("institutions").doc(institutionId)
@@ -1321,7 +1358,7 @@ exports.getAssignmentProgress = onCall(
           .firestore()
           .collection("users").doc(userDoc.id)
           .collection("progress")
-          .where("sourceListId", "==", listId)
+          .where("sourceListId", "in", listIds.slice(0, 30))
           .get();
 
         let mastered = 0;
@@ -1395,6 +1432,10 @@ exports.getAssignmentSummary = onCall(
       throw new HttpsError("not-found", "המשימה לא נמצאה.");
     }
     const assignment = assignmentDoc.data();
+    // משימה בארכיון לא נכללת בסיכומים
+    if (assignment.status === "archived") {
+      throw new HttpsError("failed-precondition", "המשימה בארכיון.");
+    }
     const classDoc = await db.collection("institutions").doc(institutionId).collection("classes").doc(assignment.classId).get();
     if (!classDoc.exists) {
       throw new HttpsError("not-found", "הכיתה לא נמצאה.");
@@ -1406,7 +1447,7 @@ exports.getAssignmentSummary = onCall(
     // מוסד שמסנן: מילים רגישות יוצאות מהמשימה ומהשלבים — בדיוק מה שהתלמידים רואים (getMyAssignments)
     const hides = await contentFilter.institutionHidesSensitive(db, institutionId);
     const hidden = hides
-      ? await contentFilter.sensitiveIdsAmong(db, institutionId, assignment.listId, assignment.listSource, assignment.wordIds)
+      ? await assignmentWords.sensitiveIdsForAssignment(db, institutionId, assignment)
       : new Set();
     const { wordIds, stagePlan } = contentFilter.filterStagePlan(assignment.wordIds, assignment.stagePlan, hidden);
     const totalWords = wordIds.length;
@@ -1813,3 +1854,101 @@ exports.setInstitutionContentSettings = onCall(
     return { hideSensitiveWords: data.hideSensitiveWords };
   }
 );
+
+/**
+ * =====================================================================
+ * archiveAssignment / restoreAssignment — "מחיקת" משימה למורה (assignments-v2)
+ * =====================================================================
+ * מחיקה = העברה לארכיון: status "archived" + archivedAt + archivedBy. המשימה נעלמת מהתלמידים
+ * (getMyAssignments) ומהרשימה הפעילה של המורה, ולא נכללת בסיכומים (getAssignmentSummary,
+ * getAssignmentProgress, getPrincipalStats סופר רק status=="active"). ההתקדמות של התלמידים
+ * (assignments/{aid}/students/*, users/{uid}/progress) לא נמחקת — ו"שחזור" מחזיר את המשימה כמו שהייתה.
+ * הרשאה: רק המורה שיצר את המשימה (createdBy), או מנהל המוסד. בכללי Firestore הלקוח לא יכול לשנות
+ * את status/archivedAt/archivedBy בעצמו — רק דרך הפונקציות האלה.
+ */
+async function loadAssignmentForManage(request) {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "יש להתחבר.");
+  }
+  const role = request.auth.token.role;
+  if (role !== "teacher" && role !== "principal") {
+    throw new HttpsError("permission-denied", "רק מורה או מנהל יכולים לנהל משימות.");
+  }
+  const institutionId = request.auth.token.institutionId;
+  const assignmentId = request.data && request.data.assignmentId;
+  if (!institutionId || !assignmentId) {
+    throw new HttpsError("invalid-argument", "חסר מזהה משימה.");
+  }
+  const ref = admin.firestore().collection("institutions").doc(institutionId).collection("assignments").doc(String(assignmentId));
+  const doc = await ref.get();
+  if (!doc.exists) {
+    throw new HttpsError("not-found", "המשימה לא נמצאה.");
+  }
+  if (role !== "principal" && doc.data().createdBy !== request.auth.uid) {
+    throw new HttpsError("permission-denied", "רק המורה שיצר את המשימה או מנהל המוסד יכולים להעביר אותה לארכיון או לשחזר אותה.");
+  }
+  return { ref, data: doc.data(), institutionId };
+}
+
+exports.archiveAssignment = onCall({ region: "europe-west1" }, async (request) => {
+  const { ref, data, institutionId } = await loadAssignmentForManage(request);
+  if (data.status === "archived") return { status: "archived" };
+  await ref.update({ status: "archived", archivedAt: FieldValue.serverTimestamp(), archivedBy: request.auth.uid });
+  logger.info(`archiveAssignment: ${request.auth.uid} העביר לארכיון את ${ref.id} (מוסד ${institutionId})`);
+  return { status: "archived" };
+});
+
+exports.restoreAssignment = onCall({ region: "europe-west1" }, async (request) => {
+  const { ref, data, institutionId } = await loadAssignmentForManage(request);
+  if (data.status !== "archived") return { status: data.status || "active" };
+  await ref.update({
+    status: "active",
+    archivedAt: FieldValue.delete(),
+    archivedBy: FieldValue.delete(),
+    restoredAt: FieldValue.serverTimestamp(),
+    restoredBy: request.auth.uid,
+  });
+  logger.info(`restoreAssignment: ${request.auth.uid} שחזר את ${ref.id} (מוסד ${institutionId})`);
+  return { status: "active" };
+});
+
+/**
+ * =====================================================================
+ * deleteAssignmentPermanently — "מחיקה לצמיתות" ממשימות בארכיון (assignments-v2)
+ * =====================================================================
+ * רק משימה שכבר בארכיון (status "archived"), ורק המורה שיצר אותה או מנהל המוסד.
+ * נמחקים: מסמך המשימה + institutions/{inst}/assignments/{id}/students/* (ההתקדמות של התלמידים במשימה).
+ * לא נוגעים ב-users/{uid}/progress (ההתקדמות הגלובלית של כל תלמיד במילים נשארת).
+ * לפני המחיקה נכתב רישום: institutions/{inst}/deletionLog/{auto} (מי, מתי, איזו משימה, שם, מספר מילים,
+ * מספר מסמכי התקדמות שנמחקו) + שורת לוג בשרת. אי אפשר לבטל.
+ */
+exports.deleteAssignmentPermanently = onCall({ region: "europe-west1" }, async (request) => {
+  const { ref, data, institutionId } = await loadAssignmentForManage(request);
+  if (data.status !== "archived") {
+    throw new HttpsError("failed-precondition", "אפשר למחוק לצמיתות רק משימה שנמצאת בארכיון.");
+  }
+  const db = admin.firestore();
+  const studentsSnap = await ref.collection("students").get();
+  const wordCount = Array.isArray(data.wordIds) ? data.wordIds.length : 0;
+  const entry = {
+    type: "assignment-permanently-deleted",
+    assignmentId: ref.id,
+    title: data.title || "",
+    wordCount,
+    classId: data.classId || null,
+    createdBy: data.createdBy || null,
+    archivedAt: data.archivedAt || null,
+    studentProgressDocs: studentsSnap.size,
+    deletedBy: request.auth.uid,
+    deletedByRole: request.auth.token.role,
+    deletedAt: FieldValue.serverTimestamp(),
+  };
+  // הרישום נכתב לפני המחיקה — אם הכתיבה נכשלת, לא מוחקים כלום
+  const logRef = await db.collection("institutions").doc(institutionId).collection("deletionLog").add(entry);
+  logger.info(
+    `deleteAssignmentPermanently: ${request.auth.uid} (${request.auth.token.role}) מוחק לצמיתות את ${ref.id} "${entry.title}" — ${wordCount} מילים, ${studentsSnap.size} מסמכי התקדמות (מוסד ${institutionId}, רישום ${logRef.id})`
+  );
+  // מסמך המשימה + תת-האוסף students (אין תתי-אוספים אחרים במשימה)
+  await db.recursiveDelete(ref);
+  return { deleted: true, studentProgressDocs: studentsSnap.size, logId: logRef.id };
+});

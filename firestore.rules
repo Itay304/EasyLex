@@ -266,7 +266,16 @@ service cloud.firestore {
         allow read: if isSuperAdmin() ||
           ((isTeacher() || myRole() == 'principal') && belongsToInstitution(instId)) ||
           (resource != null && resource.data.classId in myClassIds());
-        allow write: if isTeacher() && belongsToInstitution(instId);
+        // assignments-v2: ארכיון/שחזור רק דרך הפונקציות archiveAssignment/restoreAssignment (שבודקות שהמבקש
+        // יצר את המשימה או מנהל המוסד) — הלקוח לא משנה status/archivedAt/archivedBy/restoredAt/restoredBy,
+        // ולא מוחק משימה (ההתקדמות של התלמידים נשמרת). כל השאר — כמו קודם.
+        allow create: if isTeacher() && belongsToInstitution(instId) &&
+          request.resource.data.get('status', 'active') == 'active' &&
+          !request.resource.data.keys().hasAny(['archivedAt', 'archivedBy', 'restoredAt', 'restoredBy']);
+        allow update: if isTeacher() && belongsToInstitution(instId) &&
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['status', 'archivedAt', 'archivedBy', 'restoredAt', 'restoredBy']);
+        allow delete: if false;
 
         // 5א. institutions/{instId}/assignments/{assignmentId}/students/{studentId}
         // התקדמות של תלמיד אחד במשימה אחת (שלבים, מילים "ידועות" — the-easy-way-app-student,
@@ -290,6 +299,13 @@ service cloud.firestore {
             request.resource.data.uid == studentId;
           allow delete: if false;
         }
+      }
+
+      // 5ב. institutions/{instId}/deletionLog/{logId} — רישום מחיקות לצמיתות (deleteAssignmentPermanently).
+      // נכתב רק בשרת (Admin SDK); קריאה — מנהל המוסד ו-superadmin בלבד.
+      match /deletionLog/{logId} {
+        allow read: if isSuperAdmin() || (myRole() == 'principal' && belongsToInstitution(instId));
+        allow write: if false;
       }
 
       // 6. institutions/{instId}/customLists/{listId}(/words/{wordId})

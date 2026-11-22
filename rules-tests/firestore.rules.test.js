@@ -381,3 +381,50 @@ describe('users/{uid} — שדות הסכמה', () => {
     await assertSucceeds(s.doc('users/stu_a').update({ totalXp: 10 }));
   });
 });
+
+// ── institutions/{inst}/assignments — ארכיון רק דרך פונקציה (assignments-v2) ────────────
+describe('assignments — ארכיון רק דרך archiveAssignment', () => {
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await db.doc('institutions/inst_a/classes/class_a').set({ name: 'a', teacherId: 'teacher_a' });
+      await db.doc('institutions/inst_a/assignments/as1').set({ classId: 'class_a', title: 'x', status: 'active', createdBy: 'teacher_a' });
+    });
+  });
+
+  test('מורה לא יכול להעביר לארכיון ישירות (status)', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertFails(t.doc('institutions/inst_a/assignments/as1').update({ status: 'archived', archivedBy: 'teacher_a' }));
+  });
+
+  test('מורה לא יכול למחוק משימה', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertFails(t.doc('institutions/inst_a/assignments/as1').delete());
+  });
+
+  test('מורה לא יכול ליצור משימה שכבר בארכיון', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertFails(t.doc('institutions/inst_a/assignments/as2').set({ classId: 'class_a', status: 'archived' }));
+  });
+
+  test('עדכון שדה אחר (שם המשימה) — כמו קודם', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertSucceeds(t.doc('institutions/inst_a/assignments/as1').update({ title: 'שם חדש' }));
+  });
+});
+
+// ── institutions/{inst}/deletionLog — רישום מחיקות לצמיתות (שרת בלבד) ──────────────────
+describe('deletionLog — נכתב רק בשרת', () => {
+  beforeEach(async () => {
+    await seed(async (db) => db.doc('institutions/inst_a/deletionLog/l1').set({ assignmentId: 'as1', title: 'x' }));
+  });
+  test('מורה לא קורא ולא כותב', async () => {
+    const t = authedContext('teacher_a', { role: 'teacher', institutionId: 'inst_a' });
+    await assertFails(t.doc('institutions/inst_a/deletionLog/l1').get());
+    await assertFails(t.doc('institutions/inst_a/deletionLog/l2').set({ x: 1 }));
+  });
+  test('מנהל המוסד קורא, לא כותב', async () => {
+    const p = authedContext('principal_a', { role: 'principal', institutionId: 'inst_a' });
+    await assertSucceeds(p.doc('institutions/inst_a/deletionLog/l1').get());
+    await assertFails(p.doc('institutions/inst_a/deletionLog/l1').delete());
+  });
+});
