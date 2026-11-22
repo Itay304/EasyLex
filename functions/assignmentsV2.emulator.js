@@ -182,6 +182,14 @@ async function seed() {
     assert.deepEqual(d.sources, [{ listId: "B1", listSource: "global" }]);
   });
 
+  await check("שם משימה חסר — ההודעה מציינת בדיוק מה חסר", () =>
+    expectError(call("createAssignment", T1, { classId: "K", title: "  ", words: words("B1", 3) }), "INVALID_ARGUMENT", /^חסרים שדות חובה: שם המשימה.$/));
+
+  await check("בקשה כפולת-פורמט (words + listId/wordIds) — נוצרת פעם אחת, לפי words", async () => {
+    const r = await call("createAssignment", T1, { ...base, words: words("B1", 4), listId: "B1", listSource: "global", wordIds: ["B1_w0", "B1_w1", "B1_w2", "B1_w3"] });
+    assert.equal(r.wordCount, 4);
+  });
+
   // ---- ארכיון ----
   await db.doc(`institutions/${INST}/assignments/${mixedId}/students/S`).set({ uid: "S", words: { B1_w0: { en: "bone0", seen: true, n: 1 } } });
 

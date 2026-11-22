@@ -711,11 +711,13 @@ exports.createAssignment = onCall(
     // פורמט ישן — listId + listSource + wordIds (מקור אחד). listSource: "global" = word_lists, "custom" = customLists.
     const requested = assignmentWords.wordsFromRequest(data);
 
-    if (!classId || !title || (requested.length === 0 && !data.listId)) {
-      throw new HttpsError(
-        "invalid-argument",
-        "חסרים שדות חובה: כיתה, רשימת מילים ושם משימה."
-      );
+    // שדה חסר — ההודעה מציינת בדיוק מה חסר (בעברית), והאפליקציה מציגה אותה כמו שהיא
+    const missing = [];
+    if (!classId) missing.push("כיתה");
+    if (requested.length === 0 && !data.listId) missing.push("מילים (רשימת מילים)");
+    if (!title) missing.push("שם המשימה");
+    if (missing.length > 0) {
+      throw new HttpsError("invalid-argument", `חסרים שדות חובה: ${missing.join(", ")}.`);
     }
     // משימה = רשימת מילים מפורשת. "כל הרשימה" (wordIds ריק) כבר לא אפשרי.
     if (requested.length === 0) {
